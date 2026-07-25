@@ -36,17 +36,32 @@ class TasksScreen extends ConsumerWidget {
             final inProgressTasks = tasks.where((t) => t.status == 'in_progress').toList();
             final doneTasks = tasks.where((t) => t.status == 'done').toList();
 
+            final isMobile = MediaQuery.of(context).size.width < 600;
+
             return Padding(
               padding: const EdgeInsets.only(top: 100, bottom: 24, left: 16, right: 16),
-              child: Row(
-                children: [
-                  Expanded(child: _buildColumn(context, ref, 'To Do', 'todo', todoTasks, const Color(0xFF94A3B8), isDark)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildColumn(context, ref, 'In Progress', 'in_progress', inProgressTasks, const Color(0xFFFBBF24), isDark)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildColumn(context, ref, 'Done', 'done', doneTasks, const Color(0xFF34D399), isDark)),
-                ],
-              ),
+              child: isMobile
+                ? SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        SizedBox(width: 280, child: _buildColumn(context, ref, 'To Do', 'todo', todoTasks, const Color(0xFF94A3B8), isDark)),
+                        const SizedBox(width: 16),
+                        SizedBox(width: 280, child: _buildColumn(context, ref, 'In Progress', 'in_progress', inProgressTasks, const Color(0xFFFBBF24), isDark)),
+                        const SizedBox(width: 16),
+                        SizedBox(width: 280, child: _buildColumn(context, ref, 'Done', 'done', doneTasks, const Color(0xFF34D399), isDark)),
+                      ],
+                    ),
+                  )
+                : Row(
+                    children: [
+                      Expanded(child: _buildColumn(context, ref, 'To Do', 'todo', todoTasks, const Color(0xFF94A3B8), isDark)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildColumn(context, ref, 'In Progress', 'in_progress', inProgressTasks, const Color(0xFFFBBF24), isDark)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildColumn(context, ref, 'Done', 'done', doneTasks, const Color(0xFF34D399), isDark)),
+                    ],
+                  ),
             );
           },
         ),
@@ -94,6 +109,25 @@ class TasksScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text('Due Date', style: theme.textTheme.labelLarge),
+                    subtitle: Text('${dueDate.day}/${dueDate.month}/${dueDate.year}'),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: dueDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setState(() { dueDate = picked; });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   Text('Priority', style: theme.textTheme.labelLarge),
                   const SizedBox(height: 8),
                   SegmentedButton<String>(
@@ -120,7 +154,7 @@ class TasksScreen extends ConsumerWidget {
                   onPressed: () {
                     if (titleController.text.isNotEmpty) {
                       ref.read(tasksProvider.notifier).addTask(
-                        Task(id: 0, title: titleController.text, description: descController.text, status: 'todo', priority: priority)
+                        Task(id: 0, title: titleController.text, description: descController.text, status: 'todo', priority: priority, dueDate: dueDate)
                       );
                       Navigator.pop(ctx);
                     }

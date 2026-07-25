@@ -44,12 +44,13 @@ Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-a
 
 ## ✨ Key Features
 
-- **📊 Comprehensive Dashboard:** Real-time budget overviews, dynamic productivity scores, and weather integrations—all at a glance.
-- **📋 Kanban Task Manager:** Effortlessly organize your work with intuitive *To-Do*, *In Progress*, and *Done* lanes.
-- **💰 Smart Expense Tracker:** Track income and expenses, set monthly budgets, and visualize your spending patterns with interactive Donut and Bar charts.
+- **📊 Comprehensive Dashboard:** Real-time budget overviews, dynamic productivity scores, weather integrations, and a live recent activity feed—all at a glance.
+- **📋 Kanban Task Manager:** Effortlessly organize your work with intuitive *To-Do*, *In Progress*, and *Done* lanes. Includes task priorities and due dates.
+- **💰 Smart Expense Tracker:** Track income and expenses, set strict monthly budgets (with alerts), and visualize your spending patterns with interactive Donut and Bar charts.
 - **🔥 Habit Tracker:** Build lasting routines with a visual streak system, daily check-ins, and weekly progress overviews.
-- **🤖 Integrated AI Assistant:** Receive intelligent, data-driven suggestions on your financial health and task prioritization.
-- **🔐 Secure & Persistent Auth:** Robust token-based authentication with seamless session persistence.
+- **📈 Weekly Analytics:** A dedicated analytics page featuring interactive line charts for task tracking and grouped bar charts for income vs. expense tracking.
+- **🤖 Integrated AI Assistant:** Receive intelligent, data-driven suggestions on your financial health and task prioritization (Coming soon).
+- **🔐 Secure & Persistent Auth:** Robust token-based authentication with seamless session persistence and profile image uploads.
 
 ---
 
@@ -101,9 +102,11 @@ LifeFlow/
         ├── features/              # Feature-based folder structure
         │   ├── auth/              # Authentication UI & Logic
         │   ├── dashboard/         # Dashboard & Summary API Logic
+        │   ├── analytics/         # Weekly Analytics & Charts
         │   ├── expenses/          # Transaction tracking & Charts
         │   ├── habits/            # Habit trackers & logs
-        │   └── settings/          # User preferences
+        │   ├── tasks/             # Task manager & Kanban board
+        │   └── settings/          # User preferences & Profile
         └── main.dart              # App entry point
 ```
 

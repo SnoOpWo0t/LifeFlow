@@ -145,12 +145,36 @@ class DashboardScreen extends ConsumerWidget {
 
                 // Budget & Expenses Overview
                 Builder(builder: (context) {
-                  final budget = summary.monthlyIncome;
+                  final budget = summary.monthlyBudget > 0 ? summary.monthlyBudget : summary.monthlyIncome;
                   final spent = summary.monthlyExpenses;
                   final left = budget - spent;
                   final isOverspent = left < 0;
 
-                  return Container(
+                  return Column(
+                    children: [
+                      if (isOverspent)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.redAccent.withOpacity(0.5)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Warning: You have exceeded your monthly budget by ৳ ${left.abs().toStringAsFixed(0)}!',
+                                  style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Container(
                     decoration: BoxDecoration(
                       color: theme.cardTheme.color ?? (isDark ? const Color(0xFF1E1E2C) : Colors.white),
                       borderRadius: BorderRadius.circular(24),
@@ -180,7 +204,7 @@ class DashboardScreen extends ConsumerWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Income (Budget)', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                                Text(summary.monthlyBudget > 0 ? 'Target Budget' : 'Income (Budget)', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
                                 const SizedBox(height: 4),
                                 Text('৳ ${budget.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.greenAccent)),
                               ],
@@ -198,7 +222,7 @@ class DashboardScreen extends ConsumerWidget {
                               children: [
                                 Text(isOverspent ? 'Overspent' : 'Left', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
                                 const SizedBox(height: 4),
-                                Text('৳ ${left.abs().toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: isOverspent ? Colors.redAccent : Colors.green)),
+                                Text('৳ ${left.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: isOverspent ? Colors.redAccent : Colors.green)),
                               ],
                             ),
                           ],
@@ -215,8 +239,75 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                  );
-                }),
+                  ),
+                ],
+              );
+            }),
+            const SizedBox(height: 32),
+                Text('Recent Activity', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                if (summary.recentActivity.isEmpty)
+                  const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No recent activity.', style: TextStyle(color: Colors.grey))))
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: summary.recentActivity.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = summary.recentActivity[index];
+                      final isTask = item.type == 'task';
+                      
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: theme.cardTheme.color ?? (isDark ? const Color(0xFF1E1E2C) : Colors.white),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            )
+                          ]
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          leading: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isTask 
+                                ? Colors.blueAccent.withOpacity(0.2)
+                                : (item.isIncome == true ? Colors.greenAccent.withOpacity(0.2) : Colors.redAccent.withOpacity(0.2)),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isTask 
+                                ? Icons.check_circle_outline
+                                : (item.isIncome == true ? Icons.arrow_downward : Icons.arrow_upward),
+                              color: isTask 
+                                ? Colors.blueAccent
+                                : (item.isIncome == true ? Colors.green : Colors.redAccent),
+                            ),
+                          ),
+                          title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(
+                            '${item.date.day}/${item.date.month}/${item.date.year} • ${item.subtitle}',
+                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                          trailing: isTask || item.amount == null 
+                            ? null
+                            : Text(
+                                '${item.isIncome == true ? '+' : '-'}৳ ${item.amount!.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  color: item.isIncome == true ? Colors.green : Colors.redAccent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
           );

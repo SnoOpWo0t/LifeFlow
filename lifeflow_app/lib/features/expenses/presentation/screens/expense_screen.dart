@@ -4,6 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../providers/expense_provider.dart';
 import 'category_management_dialog.dart';
 import '../../domain/expense_models.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 
 class ExpenseScreen extends ConsumerWidget {
   const ExpenseScreen({super.key});
@@ -19,6 +21,10 @@ class ExpenseScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Expense Manager', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_balance_wallet),
+            onPressed: () => _showSetBudgetDialog(context, ref, theme),
+          ),
           IconButton(
             icon: const Icon(Icons.category),
             onPressed: () {
@@ -87,7 +93,7 @@ class ExpenseScreen extends ConsumerWidget {
                           ),
                           title: Text(tx.note ?? tx.category?.name ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text(
-                            '${tx.transactionDate.day}/${tx.transactionDate.month}/${tx.transactionDate.year} â€¢ ${tx.category?.name ?? "General"}',
+                            '${tx.transactionDate.day}/${tx.transactionDate.month}/${tx.transactionDate.year} • ${tx.category?.name ?? "General"}',
                             style: const TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                           trailing: Text(
@@ -205,7 +211,7 @@ class ExpenseScreen extends ConsumerWidget {
                           tileColor: theme.brightness == Brightness.dark ? Colors.black12 : Colors.grey[100],
                           leading: const Icon(Icons.calendar_today),
                           title: const Text('Transaction Date'),
-                          subtitle: Text('//'),
+                          subtitle: Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
                           onTap: () async {
                             final picked = await showDatePicker(
                               context: context,
@@ -251,6 +257,63 @@ class ExpenseScreen extends ConsumerWidget {
               }
             );
           }
+        );
+      }
+    );
+  }
+
+  void _showSetBudgetDialog(BuildContext context, WidgetRef ref, ThemeData theme) {
+    final currentBudget = ref.read(settingsRepositoryProvider).monthlyBudget;
+    final controller = TextEditingController(text: currentBudget > 0 ? currentBudget.toString() : '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: theme.cardTheme.color,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Row(
+            children: [
+              const Icon(Icons.account_balance_wallet, color: Colors.blueAccent),
+              const SizedBox(width: 8),
+              Text('Set Monthly Budget', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter your target monthly budget limit. Leave blank or 0 to dynamically use your total monthly income.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Amount (৳)',
+                  prefixIcon: const Icon(Icons.money),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: theme.brightness == Brightness.dark ? Colors.black12 : Colors.grey[100],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final amount = double.tryParse(controller.text) ?? 0.0;
+                await ref.read(settingsRepositoryProvider).saveSettings(monthlyBudget: amount);
+                ref.invalidate(dashboardSummaryProvider); // Refresh dashboard with new budget
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            ),
+          ],
         );
       }
     );

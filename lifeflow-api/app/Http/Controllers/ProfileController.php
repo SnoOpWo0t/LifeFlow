@@ -19,12 +19,12 @@ class ProfileController extends Controller
         if ($request->hasFile('avatar')) {
             // Delete old avatar if exists
             if ($user->avatar_url) {
-                $oldPath = str_replace(asset('storage/'), '', $user->avatar_url);
-                Storage::disk('public')->delete($oldPath);
+                $oldFilename = basename($user->avatar_url);
+                Storage::disk('public')->delete('avatars/' . $oldFilename);
             }
 
             $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar_url = asset('storage/' . $path);
+            $user->avatar_url = url('/api/v1/avatar/' . basename($path));
             $user->save();
         }
 

@@ -53,6 +53,49 @@ class DashboardController extends Controller
         
         $productivityScore = $divisor > 0 ? (($taskScore + $habitScore) / $divisor) * 100 : 0;
 
+        // Recent Activity
+        $recentTransactions = Transaction::where('user_id', $user->id)
+            ->with('category')
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get()
+            ->map(function($t) {
+                return [
+                    'id' => 'tx_'.$t->id,
+                    'type' => 'transaction',
+                    'title' => $t->note ?? $t->category?->name ?? 'Transaction',
+                    'subtitle' => $t->type == 'income' ? 'Income' : 'Expense',
+                    'amount' => $t->amount,
+                    'is_income' => $t->type == 'income',
+                    'date' => \Carbon\Carbon::parse($t->created_at)->toIso8601String()
+                ];
+            });
+
+        $recentTasks = Task::where('user_id', $user->id)
+            ->where('status', 'done')
+            ->orderBy('updated_at', 'desc')
+            ->limit(3)
+            ->get()
+            ->map(function($t) {
+                return [
+                    'id' => 'task_'.$t->id,
+                    'type' => 'task',
+                    'title' => $t->title,
+                    'subtitle' => 'Completed Task',
+                    'amount' => null,
+                    'is_income' => null,
+                    'date' => \Carbon\Carbon::parse($t->updated_at)->toIso8601String()
+                ];
+            });
+
+        $recentActivity = $recentTransactions->merge($recentTasks)
+            ->sortByDesc('date')
+            ->take(5)
+            ->values();
+
+        // Budget from preferences
+        $monthlyBudget = isset($user->preferences['monthly_budget']) ? (float) $user->preferences['monthly_budget'] : 0;
+
         return response()->json([
             'tasks_today' => [
                 'completed' => $tasksCompleted,
@@ -64,7 +107,9 @@ class DashboardController extends Controller
             ],
             'monthly_expenses' => (float) $monthlyExpenses,
             'monthly_income' => (float) $monthlyIncome,
-            'productivity_score' => (int) round($productivityScore)
+            'monthly_budget' => $monthlyBudget,
+            'productivity_score' => (int) round($productivityScore),
+            'recent_activity' => $recentActivity
         ]);
     }
 }

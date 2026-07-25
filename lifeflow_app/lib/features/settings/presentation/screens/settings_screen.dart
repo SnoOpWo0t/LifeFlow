@@ -30,11 +30,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       setState(() => _isUploading = true);
       
       final repo = ref.read(settingsRepositoryProvider);
-      final newUrl = await repo.uploadAvatar(File(pickedFile.path));
+      final bytes = await pickedFile.readAsBytes();
+      final newUrl = await repo.uploadAvatar(bytes, pickedFile.name);
       
       if (newUrl != null) {
-        // Optimistically update the auth user state if needed
-        // (In a full app, we'd copyWith the user object)
+        ref.read(authProvider.notifier).updateAvatarUrl(newUrl);
       }
       
       setState(() => _isUploading = false);
@@ -58,10 +58,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.blueGrey,
-                  // Placeholder logic for avatar_url
+                  backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
                   child: _isUploading 
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Icon(Icons.person, size: 50, color: Colors.white),
+                    : (user?.avatarUrl == null ? const Icon(Icons.person, size: 50, color: Colors.white) : null),
                 ),
                 Positioned(
                   bottom: 0,
@@ -146,6 +146,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     'manage your monthly expenses all in one place. With live weather, '
                     'productivity scoring, and interactive charts, LifeFlow empowers you to '
                     'take control of your time and money.\n\n'
+                    '**Weekly Savings Logic**\n'
+                    'Your Weekly Savings are calculated as the total sum of all Income minus the total sum of all Expenses over the last 7 days. This simple zero-based calculation helps you quickly see if you spent more than you earned this week!\n\n'
                     'Creator: Afrin Sultana Akhi'
                   ),
                 ),

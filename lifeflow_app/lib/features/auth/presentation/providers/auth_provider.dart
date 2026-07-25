@@ -34,6 +34,18 @@ class AuthNotifier extends AsyncNotifier<User?> {
     return await repo.getUser();
   }
 
+  void updateAvatarUrl(String url) {
+    if (state.value != null) {
+      final user = state.value!;
+      state = AsyncData(User(
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: url,
+      ));
+    }
+  }
+
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();
     try {

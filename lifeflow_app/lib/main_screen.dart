@@ -4,6 +4,7 @@ import 'features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'features/tasks/presentation/screens/tasks_screen.dart';
 import 'features/expenses/presentation/screens/expense_screen.dart';
 import 'features/habits/presentation/screens/habit_screen.dart';
+import 'features/analytics/presentation/screens/analytics_screen.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _MainScreenState extends State<MainScreen> {
     const TasksScreen(),
     const ExpenseScreen(),
     const HabitScreen(),
+    const AnalyticsScreen(),
     const SettingsScreen(),
   ];
 
@@ -44,6 +46,7 @@ class _MainScreenState extends State<MainScreen> {
               NavigationRailDestination(icon: Icon(Icons.check_circle_outline), label: Text('Tasks')),
               NavigationRailDestination(icon: Icon(Icons.account_balance_wallet), label: Text('Expenses')),
               NavigationRailDestination(icon: Icon(Icons.repeat), label: Text('Habits')),
+              NavigationRailDestination(icon: Icon(Icons.bar_chart), label: Text('Analytics')),
               NavigationRailDestination(icon: Icon(Icons.settings), label: Text('Settings')),
             ],
           ),
@@ -63,6 +66,7 @@ class _MainScreenState extends State<MainScreen> {
           NavigationDestination(icon: Icon(Icons.check_circle_outline), label: 'Tasks'),
           NavigationDestination(icon: Icon(Icons.account_balance_wallet), label: 'Expenses'),
           NavigationDestination(icon: Icon(Icons.repeat), label: 'Habits'),
+          NavigationDestination(icon: Icon(Icons.bar_chart), label: 'Analytics'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
