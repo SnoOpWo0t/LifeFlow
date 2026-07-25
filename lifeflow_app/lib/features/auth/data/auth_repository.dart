@@ -26,7 +26,7 @@ class AuthRepository {
 
   Future<User?> getUser() async {
     try {
-      final token = await _storageService.getToken();
+      final token = _storageService.getToken();
       if (token == null) return null;
       final data = await _dataSource.getUser();
       return User.fromJson(data);

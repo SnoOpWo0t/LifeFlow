@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Life%20Flow%20LOGO/LF%202.png" alt="LifeFlow Logo" width="600" height="auto">
+  <img src="Life%20Flow%20LOGO/LF%202.png" alt="LifeFlow Logo" width="850" height="auto">
 
   # LifeFlow 🌱
 
@@ -38,7 +38,7 @@
 
 In today's fast-paced world, managing tasks, tracking habits, and budgeting finances often requires juggling multiple disjointed apps. **LifeFlow** is designed to solve this by providing a single, unified ecosystem.
 
-Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-app feel across all devices. Featuring rich glassmorphism elements, dynamic charts, and micro-animations, it offers a seamless user experience. Furthermore, an integrated AI Assistant helps you analyze your spending habits and prioritize your day.
+Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-app feel across all devices. The UI is fully responsive, working seamlessly across both PC Web browsers and Mobile devices. Featuring rich glassmorphism elements, dynamic charts, and micro-animations, it offers a seamless user experience. Furthermore, an integrated AI Assistant helps you analyze your spending habits and prioritize your day.
 
 ---
 
