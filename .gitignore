@@ -1,0 +1,34 @@
+# OS Metadata
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Agent Metadata
+.gemini/
+agent-artifacts/
+MISSING_FEATURES.md
+
+# Logs and databases
+*.log
+*.sqlite
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build directories (just in case)
+node_modules/
+build/
+dist/
+vendor/

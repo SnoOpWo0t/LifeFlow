@@ -79,7 +79,13 @@ Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-a
 
 ## 🏗️ Architecture & Code Structure
 
-LifeFlow utilizes **Clean Architecture** to ensure the codebase remains maintainable, testable, and highly scalable. This is a monorepo consisting of two highly decoupled environments:
+LifeFlow utilizes **Clean Architecture** to ensure the codebase remains maintainable, testable, and highly scalable. 
+
+### Why Two Separate Folders?
+You will notice the project is split into two main directories: `lifeflow-api` and `lifeflow_app`. This is a professional industry standard known as **Frontend/Backend Decoupling (or Headless Architecture)**.
+* 🛡️ **Security:** The database and business logic (Laravel) live in the API folder. The Flutter app never talks to the database directly, preventing malicious attacks.
+* 🚀 **Scalability:** You can host the Laravel API on a powerful cloud server (like AWS or DigitalOcean) while the Flutter app can be compiled to Web, iOS, and Android seamlessly.
+* 🔄 **Reusability:** If you ever want to build a React website or a desktop app in the future, they can all securely connect to the exact same `lifeflow-api` without rewriting any logic!
 
 ```text
 LifeFlow/

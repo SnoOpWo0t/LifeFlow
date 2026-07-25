@@ -16,7 +16,7 @@ class TasksScreen extends ConsumerWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Kanban Board', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Task Manager', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_circle_outline, size: 28),
@@ -145,18 +145,22 @@ class TasksScreen extends ConsumerWidget {
       builder: (context, candidateData, rejectedData) {
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02),
-            borderRadius: BorderRadius.circular(20),
+            color: isDark ? indicatorColor.withOpacity(0.08) : indicatorColor.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: candidateData.isNotEmpty ? indicatorColor.withOpacity(0.5) : Colors.transparent,
+              color: candidateData.isNotEmpty ? indicatorColor.withOpacity(0.6) : indicatorColor.withOpacity(0.2),
               width: 2,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
+              Container(
                 padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: indicatorColor.withOpacity(isDark ? 0.2 : 0.15),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                ),
                 child: Row(
                   children: [
                     Container(width: 12, height: 12, decoration: BoxDecoration(color: indicatorColor, shape: BoxShape.circle)),
@@ -174,6 +178,7 @@ class TasksScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 12),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
