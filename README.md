@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Life%20Flow%20LOGO/LF3.png" alt="LifeFlow Logo" width="200" height="auto">
+  <img src="Life%20Flow%20LOGO/LF3.png" alt="LifeFlow Logo" width="400" height="auto">
 
   # LifeFlow 🌱
 
