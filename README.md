@@ -1,15 +1,6 @@
 <div align="center">
   <img src="Life%20Flow%20LOGO/LF3.png" alt="LifeFlow Logo" width="400" height="auto">
 
-  # LifeFlow 🌱
-
-  **Your Intelligent All-In-One Mobile-First Life Management Platform**
-
-  [![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
-  [![Laravel Version](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
-  [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-</div>
-
 <br />
 
 <div align="center">
@@ -19,12 +10,13 @@
 ---
 
 ## 📑 Table of Contents
+
 - [About the Project](#-about-the-project)
 - [Key Features](#-key-features)
-- [Visuals & Demos](#-visuals--demos)
+- [Visuals &amp; Demos](#-visuals--demos)
   - [Screenshots](#screenshots)
   - [Video Walkthrough](#video-walkthrough)
-- [Architecture & Code Structure](#-architecture--code-structure)
+- [Architecture &amp; Code Structure](#-architecture--code-structure)
 - [Tech Stack](#-tech-stack)
 - [Future Roadmap](#-future-roadmap)
 - [Getting Started](#-getting-started)
@@ -35,7 +27,7 @@
 
 ## 🚀 About the Project
 
-In today's fast-paced world, managing tasks, tracking habits, and budgeting finances often requires juggling multiple disjointed apps. **LifeFlow** is designed to solve this by providing a single, unified ecosystem. 
+In today's fast-paced world, managing tasks, tracking habits, and budgeting finances often requires juggling multiple disjointed apps. **LifeFlow** is designed to solve this by providing a single, unified ecosystem.
 
 Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-app feel across all devices. Featuring rich glassmorphism elements, dynamic charts, and micro-animations, it offers a seamless user experience. Furthermore, an integrated AI Assistant helps you analyze your spending habits and prioritize your day.
 
@@ -55,17 +47,19 @@ Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-a
 ## 📱 Visuals & Demos
 
 ### Screenshots
+
 *(Upload your Shots.so or Canva mobile mockups here)*
 
 <div align="center">
   <img src="https://via.placeholder.com/250x500?text=Dashboard+Mobile" alt="Dashboard Mobile" width="30%">
-  &nbsp;
+   
   <img src="https://via.placeholder.com/250x500?text=Expense+Manager" alt="Expense Mobile" width="30%">
-  &nbsp;
+   
   <img src="https://via.placeholder.com/250x500?text=Habits+%26+Tasks" alt="Habits Mobile" width="30%">
 </div>
 
 ### Video Walkthrough
+
 *(Embed a short 60-second GIF or video recording of the app in action here)*
 
 <div align="center">
@@ -103,17 +97,20 @@ LifeFlow/
 ## 💻 Tech Stack
 
 **Frontend (Mobile & Web)**
+
 - **Framework:** [Flutter 3.x](https://flutter.dev/)
 - **State Management:** [Riverpod](https://riverpod.dev/)
 - **Networking:** Dio
 - **Data Visualization:** FL Chart
 
 **Backend (REST API)**
+
 - **Framework:** [Laravel 11.x](https://laravel.com/)
 - **Language:** PHP 8.2+
 - **Authentication:** Laravel Sanctum
 
 **Database**
+
 - **Development:** SQLite
 - **Production:** MySQL / PostgreSQL
 
@@ -134,6 +131,7 @@ LifeFlow/
 Follow these instructions to set up the LifeFlow development environment locally.
 
 ### Prerequisites
+
 - [PHP 8.2+](https://www.php.net/) & [Composer](https://getcomposer.org/)
 - [Flutter SDK](https://docs.flutter.dev/get-started/install)
 - SQLite (or your preferred SQL database)
@@ -141,11 +139,13 @@ Follow these instructions to set up the LifeFlow development environment locally
 ### 1. Backend Setup (Laravel)
 
 Navigate to the API directory:
+
 ```bash
 cd lifeflow-api
 ```
 
 Install dependencies and copy environment variables:
+
 ```bash
 composer install
 cp .env.example .env
@@ -153,32 +153,39 @@ php artisan key:generate
 ```
 
 Run database migrations to build the tables:
+
 ```bash
 php artisan migrate
 ```
 
 Start the local server:
+
 ```bash
 php artisan serve
 ```
+
 *The API will run securely at `http://localhost:8000`.*
 
 ### 2. Frontend Setup (Flutter)
 
 In a new terminal window, navigate to the Flutter app directory:
+
 ```bash
 cd lifeflow_app
 ```
 
 Install packages:
+
 ```bash
 flutter pub get
 ```
 
 Run the application (for Web):
+
 ```bash
 flutter run -d web-server --web-port 8080
 ```
+
 *The application will be accessible at `http://localhost:8080`.*
 
 ---
@@ -191,8 +198,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📬 Contact
 
-**Afrin Sultana Akhi**  
-Creator & Lead Developer
+**Afrin Sultana Akhi**Creator & Lead Developer
 
 - **Portfolio:** [Your Portfolio URL Here](#)
 - **LinkedIn:** [Your LinkedIn URL Here](#)
