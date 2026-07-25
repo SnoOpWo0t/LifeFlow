@@ -207,10 +207,11 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📬 Contact
 
-**Afrin Sultana Akhi**Creator & Lead Developer
+**Afrin Sultana Akhi**  
+Creator & Lead Developer
 
-- **Portfolio:** [Your Portfolio URL Here](#)
-- **LinkedIn:** [Your LinkedIn URL Here](#)
-- **GitHub:** [@yourusername](https://github.com/yourusername)
+- **Portfolio:** [afrinsultana-akhi.vercel.app](https://afrinsultana-akhi.vercel.app/)
+- **LinkedIn:** [afrin-sultana-akhi](https://www.linkedin.com/in/afrin-sultana-akhi-1ab3a4422/)
+- **GitHub:** [@SnoOpWo0t](https://github.com/SnoOpWo0t)
 
 <p align="right"><a href="#lifeflow-">⬆️ Back to top</a></p>
