@@ -1,0 +1,12 @@
+image: lorisleiva/laravel-docker:8.2
+
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
+    - cp .env.example .env
+    - php artisan key:generate
+    - php artisan test
