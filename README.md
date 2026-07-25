@@ -1,32 +1,33 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150?text=LifeFlow+Logo" alt="LifeFlow Logo" width="150" height="150">
+  <img src="Life%20Flow%20LOGO/LF3.png" alt="LifeFlow Logo" width="200" height="auto">
 
   # LifeFlow 🌱
 
-  **Your Intelligent All-In-One Life Management Platform**
+  **Your Intelligent All-In-One Mobile-First Life Management Platform**
 
-  [![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
-  [![Laravel Version](https://img.shields.io/badge/Laravel-11.x-FF2D20?logo=laravel)](https://laravel.com)
-  [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-  [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#)
+  [![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+  [![Laravel Version](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+  [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+</div>
+
+<br />
+
+<div align="center">
+  <i>LifeFlow brings your tasks, finances, and habits under one roof with a stunning glassmorphism interface, backed by a powerful AI assistant.</i>
 </div>
 
 ---
 
-LifeFlow is a modern, beautifully designed life management platform built to help you organize your daily routine, track your expenses, and boost your productivity. Featuring a smart AI Assistant, Kanban-style task boards, and detailed financial analytics, LifeFlow puts you in complete control of your life.
-
----
-
 ## 📑 Table of Contents
-
 - [About the Project](#-about-the-project)
 - [Key Features](#-key-features)
-- [Screenshots](#-screenshots)
-- [Architecture](#-architecture)
+- [Visuals & Demos](#-visuals--demos)
+  - [Screenshots](#screenshots)
+  - [Video Walkthrough](#video-walkthrough)
+- [Architecture & Code Structure](#-architecture--code-structure)
 - [Tech Stack](#-tech-stack)
+- [Future Roadmap](#-future-roadmap)
 - [Getting Started](#-getting-started)
-- [API Documentation](#-api-documentation)
-- [Contributing](#-contributing)
 - [License](#-license)
 - [Contact](#-contact)
 
@@ -34,70 +35,108 @@ LifeFlow is a modern, beautifully designed life management platform built to hel
 
 ## 🚀 About the Project
 
-In today's fast-paced world, managing tasks, habits, and finances often requires juggling multiple apps. LifeFlow brings everything under one roof. Designed with a premium aesthetic and glassmorphism UI, it provides a seamless user experience across devices. 
+In today's fast-paced world, managing tasks, tracking habits, and budgeting finances often requires juggling multiple disjointed apps. **LifeFlow** is designed to solve this by providing a single, unified ecosystem. 
 
-What truly sets LifeFlow apart is its integrated **AI Assistant**—a smart companion that analyzes your habits, helps you budget your expenses, and provides personalized productivity insights directly on your dashboard.
+Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-app feel across all devices. Featuring rich glassmorphism elements, dynamic charts, and micro-animations, it offers a seamless user experience. Furthermore, an integrated AI Assistant helps you analyze your spending habits and prioritize your day.
 
 ---
 
 ## ✨ Key Features
 
-- **📊 Comprehensive Dashboard:** Get a bird's-eye view of your day with real-time budget overviews, productivity scores, and weather integrations.
-- **📋 Kanban Task Manager:** Organize your work with intuitive To-Do, In Progress, and Done lanes.
-- **💰 Smart Expense Tracker:** Track income and expenses, set budgets, and visualize your spending habits with dynamic pie and bar charts.
-- **🔥 Habit Tracker:** Build lasting routines with a visual streak system and daily check-ins.
-- **🤖 Integrated AI Assistant:** Receive intelligent suggestions on your spending and task prioritization.
-- **🔐 Secure Authentication:** Robust, token-based authentication with seamless session persistence.
+- **📊 Comprehensive Dashboard:** Real-time budget overviews, dynamic productivity scores, and weather integrations—all at a glance.
+- **📋 Kanban Task Manager:** Effortlessly organize your work with intuitive *To-Do*, *In Progress*, and *Done* lanes.
+- **💰 Smart Expense Tracker:** Track income and expenses, set monthly budgets, and visualize your spending patterns with interactive Donut and Bar charts.
+- **🔥 Habit Tracker:** Build lasting routines with a visual streak system, daily check-ins, and weekly progress overviews.
+- **🤖 Integrated AI Assistant:** Receive intelligent, data-driven suggestions on your financial health and task prioritization.
+- **🔐 Secure & Persistent Auth:** Robust token-based authentication with seamless session persistence.
 
 ---
 
-## 🖼️ Screenshots
+## 📱 Visuals & Demos
+
+### Screenshots
+*(Upload your Shots.so or Canva mobile mockups here)*
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x400?text=Dashboard+Screenshot" alt="Dashboard" width="800">
-  <p><i>The LifeFlow Dashboard</i></p>
+  <img src="https://via.placeholder.com/250x500?text=Dashboard+Mobile" alt="Dashboard Mobile" width="30%">
+  &nbsp;
+  <img src="https://via.placeholder.com/250x500?text=Expense+Manager" alt="Expense Mobile" width="30%">
+  &nbsp;
+  <img src="https://via.placeholder.com/250x500?text=Habits+%26+Tasks" alt="Habits Mobile" width="30%">
+</div>
 
-  <img src="https://via.placeholder.com/800x400?text=Expense+Manager+Screenshot" alt="Expense Manager" width="800">
-  <p><i>Expense & Budget Manager</i></p>
+### Video Walkthrough
+*(Embed a short 60-second GIF or video recording of the app in action here)*
+
+<div align="center">
+  <img src="https://via.placeholder.com/600x400?text=App+Demo+GIF" alt="App Demo GIF" width="80%">
 </div>
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture & Code Structure
 
-LifeFlow is built using **Clean Architecture** principles to ensure high maintainability, testability, and scalability. The project is split into two distinct repositories (housed within this monorepo structure):
+LifeFlow utilizes **Clean Architecture** to ensure the codebase remains maintainable, testable, and highly scalable. This is a monorepo consisting of two highly decoupled environments:
 
-1. **`lifeflow-api` (Backend):** A robust REST API built with Laravel. It handles business logic, database transactions, user authentication (Sanctum), and serves endpoints for the frontend.
-2. **`lifeflow_app` (Frontend):** A cross-platform application built with Flutter. It utilizes Riverpod for state management, Dio for network requests, and strictly separates the UI, Domain, and Data layers.
+```text
+LifeFlow/
+├── lifeflow-api/                  # Backend REST API
+│   ├── app/Http/Controllers/      # API Controllers (Dashboard, Expenses, Tasks)
+│   ├── app/Models/                # Eloquent Models
+│   ├── routes/api.php             # API routing
+│   └── database/migrations/       # Database schemas
+│
+└── lifeflow_app/                  # Frontend Application
+    └── lib/
+        ├── core/                  # Network client, theme, storage
+        ├── features/              # Feature-based folder structure
+        │   ├── auth/              # Authentication UI & Logic
+        │   ├── dashboard/         # Dashboard & Summary API Logic
+        │   ├── expenses/          # Transaction tracking & Charts
+        │   ├── habits/            # Habit trackers & logs
+        │   └── settings/          # User preferences
+        └── main.dart              # App entry point
+```
 
 ---
 
 ## 💻 Tech Stack
 
-### Frontend
-- **Framework:** [Flutter](https://flutter.dev/) (Web & Mobile)
+**Frontend (Mobile & Web)**
+- **Framework:** [Flutter 3.x](https://flutter.dev/)
 - **State Management:** [Riverpod](https://riverpod.dev/)
-- **Networking:** [Dio](https://pub.dev/packages/dio)
-- **Charts:** [FL Chart](https://pub.dev/packages/fl_chart)
+- **Networking:** Dio
+- **Data Visualization:** FL Chart
 
-### Backend
-- **Framework:** [Laravel 11](https://laravel.com/)
+**Backend (REST API)**
+- **Framework:** [Laravel 11.x](https://laravel.com/)
 - **Language:** PHP 8.2+
 - **Authentication:** Laravel Sanctum
 
-### Database
-- **Primary Database:** SQLite (Development) / MySQL or PostgreSQL (Production ready)
+**Database**
+- **Development:** SQLite
+- **Production:** MySQL / PostgreSQL
+
+---
+
+## 🛣️ Future Roadmap
+
+- [ ] **Dark/Light Mode Toggle:** User-customizable UI themes.
+- [ ] **Push Notifications:** Reminders for habits and overdue tasks.
+- [ ] **Data Export:** Export expense reports to CSV/PDF.
+- [ ] **Multi-Currency Support:** For international users.
+- [ ] **Proactive AI Chatbot:** Conversational AI interface for adding tasks via natural language.
 
 ---
 
 ## 🛠️ Getting Started
 
-Follow these steps to set up the LifeFlow development environment locally.
+Follow these instructions to set up the LifeFlow development environment locally.
 
 ### Prerequisites
 - [PHP 8.2+](https://www.php.net/) & [Composer](https://getcomposer.org/)
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (latest stable)
-- SQLite (or your preferred database server)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install)
+- SQLite (or your preferred SQL database)
 
 ### 1. Backend Setup (Laravel)
 
@@ -106,14 +145,14 @@ Navigate to the API directory:
 cd lifeflow-api
 ```
 
-Install dependencies and set up the environment:
+Install dependencies and copy environment variables:
 ```bash
 composer install
 cp .env.example .env
 php artisan key:generate
 ```
 
-Run database migrations:
+Run database migrations to build the tables:
 ```bash
 php artisan migrate
 ```
@@ -122,11 +161,11 @@ Start the local server:
 ```bash
 php artisan serve
 ```
-*The API will be available at `http://localhost:8000`.*
+*The API will run securely at `http://localhost:8000`.*
 
 ### 2. Frontend Setup (Flutter)
 
-In a new terminal, navigate to the Flutter app directory:
+In a new terminal window, navigate to the Flutter app directory:
 ```bash
 cd lifeflow_app
 ```
@@ -136,30 +175,11 @@ Install packages:
 flutter pub get
 ```
 
-Run the application (Web):
+Run the application (for Web):
 ```bash
 flutter run -d web-server --web-port 8080
 ```
-*The web app will be available at `http://localhost:8080`.*
-
----
-
-## 📖 API Documentation
-
-REST API documentation is currently provided via Postman collections and OpenAPI specifications. 
-*(Link to Swagger/Postman docs to be added here).*
-
----
-
-## 🤝 Contributing
-
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+*The application will be accessible at `http://localhost:8080`.*
 
 ---
 
@@ -169,13 +189,13 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-## 📬 Contact / Author
+## 📬 Contact
 
 **Afrin Sultana Akhi**  
 Creator & Lead Developer
 
-- **Portfolio:** [your-portfolio-link.com](#)
-- **LinkedIn:** [linkedin.com/in/afrinsultanaakhi](#)
-- **Project Link:** [https://github.com/yourusername/LifeFlow](https://github.com/yourusername/LifeFlow)
+- **Portfolio:** [Your Portfolio URL Here](#)
+- **LinkedIn:** [Your LinkedIn URL Here](#)
+- **GitHub:** [@yourusername](https://github.com/yourusername)
 
 <p align="right"><a href="#lifeflow-">⬆️ Back to top</a></p>

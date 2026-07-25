@@ -397,7 +397,7 @@ class ExpenseScreen extends ConsumerWidget {
               getTooltipColor: (group) => isDark ? Colors.white : Colors.black87,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 return BarTooltipItem(
-                  '৳',
+                  '৳ ${rod.toY.toStringAsFixed(0)}',
                   TextStyle(color: isDark ? Colors.black : Colors.white, fontWeight: FontWeight.bold),
                 );
               },
