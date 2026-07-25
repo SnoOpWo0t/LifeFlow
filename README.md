@@ -1,10 +1,19 @@
 <div align="center">
-  <img src="Life%20Flow%20LOGO/LF3.png" alt="LifeFlow Logo" width="400" height="auto">
+  <img src="Life%20Flow%20LOGO/LF%202.png" alt="LifeFlow Logo" width="600" height="auto">
+
+  # LifeFlow 🌱
+
+  **Your Intelligent All-In-One Mobile-First Life Management Platform** 📱✨
+
+  [![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+  [![Laravel Version](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+  [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+</div>
 
 <br />
 
 <div align="center">
-  <i>LifeFlow brings your tasks, finances, and habits under one roof with a stunning glassmorphism interface, backed by a powerful AI assistant.</i>
+  <i>LifeFlow brings your tasks, finances, and habits under one roof with a stunning glassmorphism interface, backed by a powerful AI assistant. 🤖💎</i>
 </div>
 
 ---
