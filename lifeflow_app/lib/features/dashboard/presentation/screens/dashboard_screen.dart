@@ -198,31 +198,57 @@ class DashboardScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Column(
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(summary.monthlyBudget > 0 ? 'Target Budget' : 'Income (Budget)', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-                                const SizedBox(height: 4),
-                                Text('৳ ${budget.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Total Income', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                                      const SizedBox(height: 4),
+                                      Text('৳ ${summary.monthlyIncome.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(summary.monthlyBudget > 0 ? 'Target Budget' : 'Est. Budget', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                                      const SizedBox(height: 4),
+                                      Text('৳ ${budget.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Spent', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-                                const SizedBox(height: 4),
-                                Text('৳ ${spent.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(isOverspent ? 'Overspent' : 'Left', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-                                const SizedBox(height: 4),
-                                Text('৳ ${left.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: isOverspent ? Colors.redAccent : Colors.green)),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Total Spent', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                                      const SizedBox(height: 4),
+                                      Text('৳ ${spent.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(isOverspent ? 'Overspent' : 'Remaining', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                                      const SizedBox(height: 4),
+                                      Text('৳ ${left.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: isOverspent ? Colors.redAccent : Colors.green)),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ],

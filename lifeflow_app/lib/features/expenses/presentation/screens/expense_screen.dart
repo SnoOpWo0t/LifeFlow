@@ -440,7 +440,7 @@ class ExpenseScreen extends ConsumerWidget {
     }
 
     return Container(
-      height: 250,
+      height: 300,
       padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -450,46 +450,101 @@ class ExpenseScreen extends ConsumerWidget {
           BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 15, offset: const Offset(0, 8))
         ]
       ),
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: maxVal * 1.2,
-          barTouchData: BarTouchData(
-            enabled: true,
-            touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (group) => isDark ? Colors.white : Colors.black87,
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                return BarTooltipItem(
-                  '৳ ${rod.toY.toStringAsFixed(0)}',
-                  TextStyle(color: isDark ? Colors.black : Colors.white, fontWeight: FontWeight.bold),
-                );
-              },
-            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Income vs Expense', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Row(
+                children: [
+                  _buildLegendItem(Colors.greenAccent, 'Income', isDark),
+                  const SizedBox(width: 12),
+                  _buildLegendItem(Colors.redAccent, 'Expense', isDark),
+                ],
+              ),
+            ],
           ),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (value, meta) {
-                  if (value.toInt() >= 0 && value.toInt() < sortedDates.length) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8), 
-                      child: Text(sortedDates[value.toInt()], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10))
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
+          const SizedBox(height: 24),
+          Expanded(
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: maxVal * 1.2,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (group) => isDark ? Colors.white : Colors.black87,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        '৳ ${rod.toY.toStringAsFixed(0)}',
+                        TextStyle(color: isDark ? Colors.black : Colors.white, fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        if (value == 0) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Text(
+                            value >= 1000 ? '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}k' : value.toStringAsFixed(0),
+                            style: const TextStyle(fontSize: 10, color: Colors.grey),
+                            textAlign: TextAlign.right,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        if (value.toInt() >= 0 && value.toInt() < sortedDates.length) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8), 
+                            child: Text(sortedDates[value.toInt()], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10))
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ),
+                ),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: isDark ? Colors.white10 : Colors.black12,
+                    strokeWidth: 1,
+                    dashArray: [5, 5],
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: barGroups,
               ),
             ),
           ),
-          gridData: FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          barGroups: barGroups,
-        ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String text, bool isDark) {
+    return Row(
+      children: [
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text(text, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[700])),
+      ],
     );
   }
 }

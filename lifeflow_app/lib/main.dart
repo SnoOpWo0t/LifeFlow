@@ -29,6 +29,7 @@ class LifeFlowApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'LifeFlow',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: isDark ? ThemeMode.dark : ThemeMode.light,

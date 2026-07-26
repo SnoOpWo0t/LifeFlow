@@ -215,10 +215,19 @@ class HabitScreen extends ConsumerWidget {
       habitColor = Color(int.parse(habit.colorHex!.replaceAll('#', '0xFF')));
     }
 
+    final completedThisWeek = last7Days.where((d) => d['completed'] == true).length;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color,
+        gradient: LinearGradient(
+          colors: [
+            theme.cardTheme.color ?? (isDark ? const Color(0xFF1E293B) : Colors.white),
+            habitColor.withValues(alpha: isDark ? 0.15 : 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -228,8 +237,8 @@ class HabitScreen extends ConsumerWidget {
           ),
         ],
         border: Border.all(
-          color: habitColor.withValues(alpha: 0.2),
-          width: 1.5,
+          color: habitColor.withValues(alpha: 0.3),
+          width: 1,
         ),
       ),
       child: Padding(
@@ -241,37 +250,62 @@ class HabitScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    habit.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        habit.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Keep up the good work!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                    horizontal: 14,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: habitColor.withValues(alpha: 0.1),
+                    gradient: LinearGradient(
+                      colors: [
+                        habitColor.withValues(alpha: 0.8),
+                        habitColor,
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: habitColor.withValues(alpha: 0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.local_fire_department,
-                        color: habitColor,
+                        color: Colors.white,
                         size: 20,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         '${habit.currentStreak}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: habitColor,
+                          color: Colors.white,
                         ),
                       ),
                     ],
@@ -308,10 +342,10 @@ class HabitScreen extends ConsumerWidget {
                           : null,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
-                        width: 36,
-                        height: 36,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(12),
                           color: isCompleted
                               ? habitColor
                               : (isDark ? Colors.white12 : Colors.grey[200]),
@@ -323,15 +357,16 @@ class HabitScreen extends ConsumerWidget {
                                   BoxShadow(
                                     color: habitColor.withValues(alpha: 0.4),
                                     blurRadius: 8,
+                                    offset: const Offset(0, 4),
                                   ),
                                 ]
                               : null,
                         ),
                         child: isCompleted
                             ? const Icon(
-                                Icons.check,
+                                Icons.check_rounded,
                                 color: Colors.white,
-                                size: 20,
+                                size: 24,
                               )
                             : null,
                       ),
@@ -339,6 +374,24 @@ class HabitScreen extends ConsumerWidget {
                   ],
                 );
               }).toList(),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Weekly Progress', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
+                Text('$completedThisWeek/7 Days', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: habitColor)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: completedThisWeek / 7,
+                backgroundColor: isDark ? Colors.white12 : Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation<Color>(habitColor),
+                minHeight: 8,
+              ),
             ),
           ],
         ),

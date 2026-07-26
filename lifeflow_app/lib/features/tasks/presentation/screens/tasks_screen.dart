@@ -225,13 +225,13 @@ class TasksScreen extends ConsumerWidget {
                         elevation: 12,
                         borderRadius: BorderRadius.circular(16),
                         color: Colors.transparent,
-                        child: SizedBox(width: 260, child: _buildTaskCard(context, task, isDark)),
+                        child: SizedBox(width: 260, child: _buildTaskCard(context, ref, task, isDark)),
                       ),
                       childWhenDragging: Opacity(
                         opacity: 0.4,
-                        child: _buildTaskCard(context, task, isDark),
+                        child: _buildTaskCard(context, ref, task, isDark),
                       ),
-                      child: _buildTaskCard(context, task, isDark),
+                      child: _buildTaskCard(context, ref, task, isDark),
                     );
                   },
                 ),
@@ -243,7 +243,7 @@ class TasksScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTaskCard(BuildContext context, Task task, bool isDark) {
+  Widget _buildTaskCard(BuildContext context, WidgetRef ref, Task task, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12.0),
       padding: const EdgeInsets.all(16.0),
@@ -266,6 +266,10 @@ class TasksScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(task.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+              ),
+              InkWell(
+                onTap: () => ref.read(tasksProvider.notifier).deleteTask(task),
+                child: const Icon(Icons.close, size: 18, color: Colors.grey),
               ),
             ],
           ),

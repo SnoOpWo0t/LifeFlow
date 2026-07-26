@@ -38,4 +38,18 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
       state = AsyncData(current); // revert
     }
   }
+
+  Future<void> deleteTask(Task task) async {
+    final repo = ref.read(taskRepositoryProvider);
+    final current = state.value ?? [];
+    
+    // Optimistic delete
+    state = AsyncData(current.where((t) => t.id != task.id).toList());
+    
+    try {
+      await repo.deleteTask(task.id);
+    } catch (e) {
+      state = AsyncData(current); // revert on error
+    }
+  }
 }

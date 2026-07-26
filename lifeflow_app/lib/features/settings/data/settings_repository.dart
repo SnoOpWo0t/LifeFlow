@@ -58,7 +58,11 @@ class SettingsRepository {
         data: formData,
       );
       return response.data['avatar_url'];
+    } on DioException catch (e) {
+      print('Dio error uploading avatar: ${e.response?.data ?? e.message}');
+      return null;
     } catch (e) {
+      print('Error uploading avatar: $e');
       return null;
     }
   }
