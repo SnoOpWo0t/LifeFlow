@@ -82,9 +82,11 @@ Watch the full 1080p deep-dive walkthrough on YouTube!
 
 [![LifeFlow YouTube Demo](https://img.youtube.com/vi/EQXaW4yCKzU/0.jpg)](https://www.youtube.com/shorts/EQXaW4yCKzU)
 
-*Or watch the quick 27-second highlight reel below:*
+*Or watch the quick highlight reel below:*
 
-<video src="Life%20Flow%20github.mp4" controls="controls" style="max-width: 800px; width: 100%; border-radius: 12px;"></video>
+<div align="center">
+  <img src="Life%20Flow%20github.gif" alt="App Demo GIF" width="80%" style="border-radius: 12px;">
+</div>
 
 ---
 
