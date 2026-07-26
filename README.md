@@ -58,23 +58,33 @@ Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-a
 
 ### Screenshots
 
-*(Upload your Shots.so or Canva mobile mockups here)*
+<div align="center">
+  <img src="Screenshots/home%20Dark.png" alt="Dashboard Dark" width="30%">
+  &nbsp;
+  <img src="Screenshots/Expense%20Manager.png" alt="Expense Manager" width="30%">
+  &nbsp;
+  <img src="Screenshots/Habit%20Tracker.png" alt="Habits Tracker" width="30%">
+</div>
+
+<br>
 
 <div align="center">
-  <img src="https://via.placeholder.com/250x500?text=Dashboard+Mobile" alt="Dashboard Mobile" width="30%">
-   
-  <img src="https://via.placeholder.com/250x500?text=Expense+Manager" alt="Expense Mobile" width="30%">
-   
-  <img src="https://via.placeholder.com/250x500?text=Habits+%26+Tasks" alt="Habits Mobile" width="30%">
+  <img src="Screenshots/Task%20manager.png" alt="Task Manager" width="30%">
+  &nbsp;
+  <img src="Screenshots/Weekly%20analytics.png" alt="Weekly Analytics" width="30%">
+  &nbsp;
+  <img src="Screenshots/Home%20Light.png" alt="Dashboard Light Mode" width="30%">
 </div>
 
 ### Video Walkthrough
 
-*(Embed a short 60-second GIF or video recording of the app in action here)*
+Watch the full 1080p deep-dive walkthrough on YouTube!
 
-<div align="center">
-  <img src="https://via.placeholder.com/600x400?text=App+Demo+GIF" alt="App Demo GIF" width="80%">
-</div>
+[![LifeFlow YouTube Demo](https://img.youtube.com/vi/EQXaW4yCKzU/0.jpg)](https://www.youtube.com/shorts/EQXaW4yCKzU)
+
+*Or watch the quick 27-second highlight reel below:*
+
+<video src="Life%20Flow%20github.mp4" controls="controls" style="max-width: 800px; width: 100%; border-radius: 12px;"></video>
 
 ---
 
