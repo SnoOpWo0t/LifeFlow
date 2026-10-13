@@ -4,6 +4,8 @@ import '../providers/weather_provider.dart';
 import 'dart:ui';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../../settings/presentation/widgets/city_picker.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -46,28 +48,15 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 
                 // Weather Glass Card
-                _buildGlassCard(
-                  context,
-                  isDark: isDark,
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blueAccent.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.cloud, color: Colors.blueAccent, size: 32),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('London, UK', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-                          Text('18°C - Partly Cloudy', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ],
+                GestureDetector(
+                  onTap: () => showCityPicker(context),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: _buildGlassCard(
+                      context,
+                      isDark: isDark,
+                      child: _buildWeather(context, ref),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -338,6 +327,83 @@ class DashboardScreen extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildWeather(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final location = ref.watch(weatherLocationProvider);
+    final weatherAsync = ref.watch(weatherProvider);
+    final muted = theme.textTheme.bodyMedium?.copyWith(color: Colors.grey);
+
+    Widget badge(IconData icon, Color color) => Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 32),
+        );
+
+    return weatherAsync.when(
+      data: (weather) => Row(
+        children: [
+          badge(weather.icon, weather.color),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(location.label, style: muted, overflow: TextOverflow.ellipsis),
+                Text(
+                  '${weather.temperature.round()}°C - ${weather.description}',
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Feels like ${weather.feelsLike.round()}° · Humidity ${weather.humidity}% · Wind ${weather.windSpeed.round()} km/h',
+                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.edit_location_alt_outlined, color: Colors.grey, size: 20),
+        ],
+      ),
+      loading: () => Row(
+        children: [
+          badge(Icons.cloud_outlined, Colors.blueAccent),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(location.label, style: muted),
+                Text('Loading weather…', style: theme.textTheme.titleMedium),
+              ],
+            ),
+          ),
+        ],
+      ),
+      error: (_, _) => Row(
+        children: [
+          badge(Icons.cloud_off_rounded, Colors.grey),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(location.label, style: muted),
+                Text('Weather unavailable', style: theme.textTheme.titleMedium),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Retry',
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () => ref.invalidate(weatherProvider),
+          ),
+        ],
       ),
     );
   }

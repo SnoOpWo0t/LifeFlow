@@ -1,13 +1,14 @@
 <div align="center">
   <img src="Life%20Flow%20LOGO/LF%202.png" alt="LifeFlow Logo" width="850" height="auto">
 
-  # LifeFlow 🌱
+# LifeFlow 🌱
 
-  **Your Intelligent All-In-One Mobile-First Life Management Platform** 📱✨
+**Your Intelligent All-In-One Mobile-First Life Management Platform** 📱✨
 
-  [![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
-  [![Laravel Version](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
-  [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Laravel Version](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+
 </div>
 
 <br />
@@ -60,9 +61,9 @@ Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-a
 
 <div align="center">
   <img src="Screenshots/home%20Dark.png" alt="Dashboard Dark" width="30%">
-  &nbsp;
+   
   <img src="Screenshots/Expense%20Manager.png" alt="Expense Manager" width="30%">
-  &nbsp;
+   
   <img src="Screenshots/Habit%20Tracker.png" alt="Habits Tracker" width="30%">
 </div>
 
@@ -70,9 +71,9 @@ Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-a
 
 <div align="center">
   <img src="Screenshots/Task%20manager.png" alt="Task Manager" width="30%">
-  &nbsp;
+   
   <img src="Screenshots/Weekly%20analytics.png" alt="Weekly Analytics" width="30%">
-  &nbsp;
+   
   <img src="Screenshots/Home%20Light.png" alt="Dashboard Light Mode" width="30%">
 </div>
 
@@ -88,14 +89,14 @@ Watch the full 1080p deep-dive walkthrough on YouTube!
   <img src="Life%20Flow%20github.gif" alt="App Demo GIF" width="80%" style="border-radius: 12px;">
 </div>
 
----
-
 ## 🏗️ Architecture & Code Structure
 
-LifeFlow utilizes **Clean Architecture** to ensure the codebase remains maintainable, testable, and highly scalable. 
+LifeFlow utilizes **Clean Architecture** to ensure the codebase remains maintainable, testable, and highly scalable.
 
 ### Why Two Separate Folders?
+
 You will notice the project is split into two main directories: `lifeflow-api` and `lifeflow_app`. This is a professional industry standard known as **Frontend/Backend Decoupling (or Headless Architecture)**.
+
 * 🛡️ **Security:** The database and business logic (Laravel) live in the API folder. The Flutter app never talks to the database directly, preventing malicious attacks.
 * 🚀 **Scalability:** You can host the Laravel API on a powerful cloud server (like AWS or DigitalOcean) while the Flutter app can be compiled to Web, iOS, and Android seamlessly.
 * 🔄 **Reusability:** If you ever want to build a React website or a desktop app in the future, they can all securely connect to the exact same `lifeflow-api` without rewriting any logic!
@@ -148,11 +149,11 @@ LifeFlow/
 
 ## 🛣️ Future Roadmap
 
-- [ ] **Dark/Light Mode Toggle:** User-customizable UI themes.
-- [ ] **Push Notifications:** Reminders for habits and overdue tasks.
-- [ ] **Data Export:** Export expense reports to CSV/PDF.
-- [ ] **Multi-Currency Support:** For international users.
-- [ ] **Proactive AI Chatbot:** Conversational AI interface for adding tasks via natural language.
+- [ ]  **Dark/Light Mode Toggle:** User-customizable UI themes.
+- [ ]  **Push Notifications:** Reminders for habits and overdue tasks.
+- [ ]  **Data Export:** Export expense reports to CSV/PDF.
+- [ ]  **Multi-Currency Support:** For international users.
+- [ ]  **Proactive AI Chatbot:** Conversational AI interface for adding tasks via natural language.
 
 ---
 
@@ -228,8 +229,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📬 Contact
 
-**Afrin Sultana Akhi**  
-Creator & Lead Developer
+**Afrin Sultana Akhi**Creator & Lead Developer
 
 - **Portfolio:** [afrinsultana-akhi.vercel.app](https://afrinsultana-akhi.vercel.app/)
 - **LinkedIn:** [afrin-sultana-akhi](https://www.linkedin.com/in/afrin-sultana-akhi-1ab3a4422/)

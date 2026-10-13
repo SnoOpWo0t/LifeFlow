@@ -1,7 +1,15 @@
-import 'dart:io';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/api_client.dart';
+import '../domain/weather_location.dart';
+
+class AvatarUploadException implements Exception {
+  final String message;
+  AvatarUploadException(this.message);
+  @override
+  String toString() => message;
+}
 
 class SettingsRepository {
   final ApiClient _apiClient;
@@ -9,25 +17,43 @@ class SettingsRepository {
 
   SettingsRepository(this._apiClient, this._prefs);
 
-  bool get isDarkMode => _prefs.getBool('is_dark_mode') ?? false;
-  bool get pushNotifications => _prefs.getBool('push_notifications') ?? true;
-  String get defaultCity => _prefs.getString('default_city') ?? 'London';
-  double get monthlyBudget => _prefs.getDouble('monthly_budget') ?? 0.0;
+  static const _darkModeKey = 'is_dark_mode';
+  static const _pushKey = 'push_notifications';
+  static const _cityKey = 'default_city';
+  static const _locationKey = 'weather_location';
+  static const _budgetKey = 'monthly_budget';
+
+  bool get isDarkMode => _prefs.getBool(_darkModeKey) ?? false;
+  bool get pushNotifications => _prefs.getBool(_pushKey) ?? true;
+  String get defaultCity => weatherLocation.name;
+  double get monthlyBudget => _prefs.getDouble(_budgetKey) ?? 0.0;
+
+  WeatherLocation get weatherLocation {
+    final raw = _prefs.getString(_locationKey);
+    if (raw == null) return WeatherLocation.fallback;
+    try {
+      return WeatherLocation.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return WeatherLocation.fallback;
+    }
+  }
 
   Future<void> saveSettings({
     bool? isDarkMode,
     bool? pushNotifications,
-    String? defaultCity,
+    WeatherLocation? weatherLocation,
     double? monthlyBudget,
   }) async {
     // 1. Save locally for instant UI update
-    if (isDarkMode != null) await _prefs.setBool('is_dark_mode', isDarkMode);
-    if (pushNotifications != null)
-      await _prefs.setBool('push_notifications', pushNotifications);
-    if (defaultCity != null)
-      await _prefs.setString('default_city', defaultCity);
-    if (monthlyBudget != null)
-      await _prefs.setDouble('monthly_budget', monthlyBudget);
+    if (isDarkMode != null) await _prefs.setBool(_darkModeKey, isDarkMode);
+    if (pushNotifications != null) {
+      await _prefs.setBool(_pushKey, pushNotifications);
+    }
+    if (weatherLocation != null) {
+      await _prefs.setString(_locationKey, jsonEncode(weatherLocation.toJson()));
+      await _prefs.setString(_cityKey, weatherLocation.name);
+    }
+    if (monthlyBudget != null) await _prefs.setDouble(_budgetKey, monthlyBudget);
 
     // 2. Sync silently to cloud
     try {
@@ -35,10 +61,13 @@ class SettingsRepository {
         '/profile/settings',
         data: {
           'preferences': {
-            if (isDarkMode != null) 'is_dark_mode': isDarkMode,
-            if (pushNotifications != null) 'push_notifications': pushNotifications,
-            if (defaultCity != null) 'default_city': defaultCity,
-            if (monthlyBudget != null) 'monthly_budget': monthlyBudget,
+            if (isDarkMode != null) _darkModeKey: isDarkMode,
+            if (pushNotifications != null) _pushKey: pushNotifications,
+            if (weatherLocation != null) ...{
+              _cityKey: weatherLocation.name,
+              _locationKey: weatherLocation.toJson(),
+            },
+            if (monthlyBudget != null) _budgetKey: monthlyBudget,
           },
         },
       );
@@ -47,7 +76,47 @@ class SettingsRepository {
     }
   }
 
-  Future<String?> uploadAvatar(List<int> bytes, String filename) async {
+  /// Makes the account's saved preferences the local ones after sign-in, so
+  /// settings follow the user across browsers and devices. An account with
+  /// nothing saved yet adopts (and uploads) whatever this device has.
+  Future<void> applyRemote(Map<String, dynamic>? remote) async {
+    if (remote == null || remote.isEmpty) {
+      await saveSettings(
+        isDarkMode: isDarkMode,
+        pushNotifications: pushNotifications,
+        weatherLocation: weatherLocation,
+        monthlyBudget: monthlyBudget,
+      );
+      return;
+    }
+
+    final dark = remote[_darkModeKey];
+    if (dark is bool) await _prefs.setBool(_darkModeKey, dark);
+    final push = remote[_pushKey];
+    if (push is bool) await _prefs.setBool(_pushKey, push);
+    final budget = remote[_budgetKey];
+    if (budget is num) await _prefs.setDouble(_budgetKey, budget.toDouble());
+    final location = remote[_locationKey];
+    if (location is Map) {
+      await _prefs.setString(_locationKey, jsonEncode(location));
+      await _prefs.setString(_cityKey, location['name'].toString());
+    }
+  }
+
+  /// Forget the signed-out user's preferences so the next account starts clean.
+  Future<void> clearLocal() async {
+    for (final key in [
+      _darkModeKey,
+      _pushKey,
+      _cityKey,
+      _locationKey,
+      _budgetKey,
+    ]) {
+      await _prefs.remove(key);
+    }
+  }
+
+  Future<String> uploadAvatar(List<int> bytes, String filename) async {
     final formData = FormData.fromMap({
       'avatar': MultipartFile.fromBytes(bytes, filename: filename),
     });
@@ -57,14 +126,19 @@ class SettingsRepository {
         '/profile/avatar',
         data: formData,
       );
-      return response.data['avatar_url'];
+      return response.data['avatar_url'] as String;
     } on DioException catch (e) {
-      print('Dio error uploading avatar: ${e.response?.data ?? e.message}');
-      return null;
-    } catch (e) {
-      print('Error uploading avatar: $e');
-      return null;
+      final data = e.response?.data;
+      final errors = data is Map ? data['errors'] : null;
+      if (errors is Map && errors['avatar'] is List) {
+        throw AvatarUploadException((errors['avatar'] as List).first.toString());
+      }
+      if (data is Map && data['message'] is String) {
+        throw AvatarUploadException(data['message'] as String);
+      }
+      throw AvatarUploadException(
+        "Couldn't upload the photo. Check your connection and try again.",
+      );
     }
   }
 }
-

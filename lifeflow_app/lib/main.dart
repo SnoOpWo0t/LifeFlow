@@ -33,19 +33,14 @@ class LifeFlowApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-      home: authState.when(
-        loading: () =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
-        error: (err, stack) =>
-            Scaffold(body: Center(child: Text('Error: $err'))),
-        data: (user) {
-          if (user != null) {
-            return const MainScreen();
-          } else {
-            return const AuthScreen();
-          }
-        },
-      ),
+      // Only the very first token check gets a splash. A login/register request
+      // keeps the previous (null) user, so AuthScreen stays mounted and shows
+      // its own progress and error states instead of being swapped out.
+      home: authState.value != null
+          ? const MainScreen()
+          : authState.hasValue || authState.hasError
+          ? const AuthScreen()
+          : const Scaffold(body: Center(child: CircularProgressIndicator())),
     );
   }
 }

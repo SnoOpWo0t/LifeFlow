@@ -1,9 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/settings_repository.dart';
 import '../providers/settings_provider.dart';
+import '../widgets/city_picker.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -15,30 +16,50 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _picker = ImagePicker();
   bool _isUploading = false;
-  late TextEditingController _cityController;
-
-  @override
-  void initState() {
-    super.initState();
-    final repo = ref.read(settingsRepositoryProvider);
-    _cityController = TextEditingController(text: repo.defaultCity);
-  }
+  bool _avatarFailedToLoad = false;
 
   Future<void> _pickAndUploadImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() => _isUploading = true);
-      
-      final repo = ref.read(settingsRepositoryProvider);
+    // Downscale before upload: full-size photos exceed PHP's default 2 MB
+    // upload limit, which used to make larger pictures fail silently.
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 85,
+    );
+    if (pickedFile == null) return;
+
+    setState(() => _isUploading = true);
+    try {
       final bytes = await pickedFile.readAsBytes();
-      final newUrl = await repo.uploadAvatar(bytes, pickedFile.name);
-      
-      if (newUrl != null) {
-        ref.read(authProvider.notifier).updateAvatarUrl(newUrl);
-      }
-      
-      setState(() => _isUploading = false);
+      final newUrl = await ref
+          .read(settingsRepositoryProvider)
+          .uploadAvatar(bytes, pickedFile.name);
+      ref.read(authProvider.notifier).updateAvatarUrl(newUrl);
+      _avatarFailedToLoad = false;
+      _showMessage('Profile photo updated.');
+    } on AvatarUploadException catch (e) {
+      _showMessage(e.message, isError: true);
+    } catch (_) {
+      _showMessage("Couldn't read that image. Try a JPG or PNG.", isError: true);
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
     }
+  }
+
+  void _showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : null,
+      ),
+    );
+  }
+
+  String _initials(String? name) {
+    final parts = (name ?? '').trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    return parts.take(2).map((p) => p[0].toUpperCase()).join();
   }
 
   @override
@@ -46,6 +67,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final user = ref.watch(authProvider).value;
     final isDark = ref.watch(themeModeProvider);
     final repo = ref.read(settingsRepositoryProvider);
+    final location = ref.watch(weatherLocationProvider);
+    final avatarUrl = _avatarFailedToLoad ? null : user?.avatarUrl;
+    final initials = _initials(user?.name);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile & Settings')),
@@ -58,16 +82,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.blueGrey,
-                  backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
-                  child: _isUploading 
+                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                  onBackgroundImageError: avatarUrl != null
+                      ? (_, _) {
+                          if (mounted) setState(() => _avatarFailedToLoad = true);
+                        }
+                      : null,
+                  child: _isUploading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : (user?.avatarUrl == null ? const Icon(Icons.person, size: 50, color: Colors.white) : null),
+                    : (avatarUrl == null
+                        ? (initials.isEmpty
+                            ? const Icon(Icons.person, size: 50, color: Colors.white)
+                            : Text(initials, style: const TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.w600)))
+                        : null),
                 ),
                 Positioned(
                   bottom: 0,
                   right: 0,
                   child: InkWell(
-                    onTap: _pickAndUploadImage,
+                    onTap: _isUploading ? null : _pickAndUploadImage,
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: const BoxDecoration(
@@ -111,25 +144,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.location_city),
-            title: const Text('Default Weather City'),
-            subtitle: Text(repo.defaultCity),
-            onTap: () {
-              showDialog(context: context, builder: (_) => AlertDialog(
-                title: const Text('Change City'),
-                content: TextField(controller: _cityController),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                  TextButton(
-                    onPressed: () {
-                      repo.saveSettings(defaultCity: _cityController.text);
-                      setState(() {});
-                      Navigator.pop(context);
-                    }, 
-                    child: const Text('Save')
-                  )
-                ],
-              ));
-            },
+            title: const Text('Weather Location'),
+            subtitle: Text(location.label),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showCityPicker(context),
           ),
           const Divider(),
           const Text('About', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),

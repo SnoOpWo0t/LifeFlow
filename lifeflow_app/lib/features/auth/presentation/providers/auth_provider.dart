@@ -5,6 +5,7 @@ import '../../../../core/storage/storage_service.dart';
 import '../../data/auth_data_source.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/user.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
 
@@ -31,18 +32,20 @@ class AuthNotifier extends AsyncNotifier<User?> {
   Future<User?> build() async {
     // Fetch current user if token exists on boot
     final repo = ref.read(authRepositoryProvider);
-    return await repo.getUser();
+    final user = await repo.getUser();
+    if (user != null) await _loadPreferences(user);
+    return user;
+  }
+
+  /// Applies the account's saved settings before the user is emitted, so
+  /// theme and weather providers rebuild with the right values.
+  Future<void> _loadPreferences(User user) {
+    return ref.read(settingsRepositoryProvider).applyRemote(user.preferences);
   }
 
   void updateAvatarUrl(String url) {
     if (state.value != null) {
-      final user = state.value!;
-      state = AsyncData(User(
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatarUrl: url,
-      ));
+      state = AsyncData(state.value!.copyWith(avatarUrl: url));
     }
   }
 
@@ -51,6 +54,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
     try {
       final repo = ref.read(authRepositoryProvider);
       final user = await repo.login(email, password);
+      await _loadPreferences(user);
       state = AsyncData(user);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -62,6 +66,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
     try {
       final repo = ref.read(authRepositoryProvider);
       final user = await repo.register(name, email, password);
+      await _loadPreferences(user);
       state = AsyncData(user);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -71,6 +76,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
   Future<void> logout() async {
     final repo = ref.read(authRepositoryProvider);
     await repo.logout();
+    await ref.read(settingsRepositoryProvider).clearLocal();
     state = const AsyncData(null);
   }
 }
