@@ -7,6 +7,8 @@ use App\Models\ExpenseCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class ExpenseController extends Controller
@@ -39,16 +41,46 @@ class ExpenseController extends Controller
 
     public function storeTransaction(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'category_id' => 'nullable|exists:expense_categories,id',
-            'amount' => 'required|numeric|min:0.01',
-            'type' => 'required|in:income,expense',
-            'transaction_date' => 'required|date',
-            'note' => 'nullable|string'
-        ]);
+        $validated = $request->validate($this->transactionRules($request));
 
         $transaction = Transaction::create(array_merge($validated, ['user_id' => $request->user()->id]));
         return response()->json($transaction->load('category'), 201);
+    }
+
+    public function updateTransaction(Request $request, Transaction $transaction): JsonResponse
+    {
+        Gate::authorize('update', $transaction);
+
+        $rules = array_map(fn ($rule) => array_merge(['sometimes'], (array) $rule), $this->transactionRules($request));
+        $transaction->update($request->validate($rules));
+
+        return response()->json($transaction->load('category'));
+    }
+
+    public function destroyTransaction(Request $request, Transaction $transaction): JsonResponse
+    {
+        Gate::authorize('delete', $transaction);
+
+        $transaction->delete();
+        return response()->json(null, 204);
+    }
+
+    /**
+     * The category must belong to the same user; a bare `exists` check let a
+     * request attach (and then read) someone else's category.
+     */
+    private function transactionRules(Request $request): array
+    {
+        return [
+            'category_id' => [
+                'nullable',
+                Rule::exists('expense_categories', 'id')->where('user_id', $request->user()->id),
+            ],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'type' => ['required', 'in:income,expense'],
+            'transaction_date' => ['required', 'date'],
+            'note' => ['nullable', 'string'],
+        ];
     }
     
     public function getChartData(Request $request): JsonResponse

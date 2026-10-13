@@ -7,7 +7,9 @@ final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
   return AnalyticsRepository(ref.watch(apiClientProvider));
 });
 
-final weeklyAnalyticsProvider = FutureProvider.autoDispose<WeeklyAnalytics>((ref) async {
+final weeklyAnalyticsProvider = FutureProvider.autoDispose<WeeklyAnalytics>((
+  ref,
+) async {
   final repository = ref.watch(analyticsRepositoryProvider);
   return repository.fetchWeeklyStats();
 });

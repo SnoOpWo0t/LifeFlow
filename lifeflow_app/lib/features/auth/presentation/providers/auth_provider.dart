@@ -7,14 +7,19 @@ import '../../data/auth_repository.dart';
 import '../../domain/user.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
+final sharedPreferencesProvider = Provider<SharedPreferences>(
+  (ref) => throw UnimplementedError(),
+);
 
 final storageServiceProvider = Provider<StorageService>((ref) {
   return StorageService(ref.watch(sharedPreferencesProvider));
 });
 
 final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient(ref.watch(storageServiceProvider));
+  return ApiClient(
+    ref.watch(storageServiceProvider),
+    onUnauthorized: () => ref.read(authProvider.notifier).sessionExpired(),
+  );
 });
 
 final authDataSourceProvider = Provider<AuthDataSource>((ref) {
@@ -22,10 +27,15 @@ final authDataSourceProvider = Provider<AuthDataSource>((ref) {
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(ref.watch(authDataSourceProvider), ref.watch(storageServiceProvider));
+  return AuthRepository(
+    ref.watch(authDataSourceProvider),
+    ref.watch(storageServiceProvider),
+  );
 });
 
-final authProvider = AsyncNotifierProvider<AuthNotifier, User?>(AuthNotifier.new);
+final authProvider = AsyncNotifierProvider<AuthNotifier, User?>(
+  AuthNotifier.new,
+);
 
 class AuthNotifier extends AsyncNotifier<User?> {
   @override
@@ -73,9 +83,15 @@ class AuthNotifier extends AsyncNotifier<User?> {
     }
   }
 
-  Future<void> logout() async {
+  /// The server rejected our token: drop it and show the sign-in screen.
+  Future<void> sessionExpired() async {
+    if (state.value == null) return;
+    await logout(revoke: false);
+  }
+
+  Future<void> logout({bool revoke = true}) async {
     final repo = ref.read(authRepositoryProvider);
-    await repo.logout();
+    await repo.logout(revoke: revoke);
     await ref.read(settingsRepositoryProvider).clearLocal();
     state = const AsyncData(null);
   }

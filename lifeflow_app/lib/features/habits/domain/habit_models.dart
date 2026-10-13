@@ -5,10 +5,7 @@ class HabitLog {
   HabitLog({required this.id, required this.completedDate});
 
   factory HabitLog.fromJson(Map<String, dynamic> json) {
-    return HabitLog(
-      id: json['id'],
-      completedDate: json['completed_date'],
-    );
+    return HabitLog(id: json['id'], completedDate: json['completed_date']);
   }
 }
 
@@ -36,12 +33,11 @@ class Habit {
       colorHex: json['color_hex'],
       currentStreak: json['current_streak'],
       longestStreak: json['longest_streak'],
-      logs: json['logs'] != null ? (json['logs'] as List).map((l) => HabitLog.fromJson(l)).toList() : [],
+      logs: json['logs'] != null
+          ? (json['logs'] as List).map((l) => HabitLog.fromJson(l)).toList()
+          : [],
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'color_hex': colorHex,
-  };
+  Map<String, dynamic> toJson() => {'name': name, 'color_hex': colorHex};
 }

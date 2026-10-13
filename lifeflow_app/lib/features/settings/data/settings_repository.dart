@@ -50,10 +50,14 @@ class SettingsRepository {
       await _prefs.setBool(_pushKey, pushNotifications);
     }
     if (weatherLocation != null) {
-      await _prefs.setString(_locationKey, jsonEncode(weatherLocation.toJson()));
+      await _prefs.setString(
+        _locationKey,
+        jsonEncode(weatherLocation.toJson()),
+      );
       await _prefs.setString(_cityKey, weatherLocation.name);
     }
-    if (monthlyBudget != null) await _prefs.setDouble(_budgetKey, monthlyBudget);
+    if (monthlyBudget != null)
+      await _prefs.setDouble(_budgetKey, monthlyBudget);
 
     // 2. Sync silently to cloud
     try {
@@ -131,7 +135,9 @@ class SettingsRepository {
       final data = e.response?.data;
       final errors = data is Map ? data['errors'] : null;
       if (errors is Map && errors['avatar'] is List) {
-        throw AvatarUploadException((errors['avatar'] as List).first.toString());
+        throw AvatarUploadException(
+          (errors['avatar'] as List).first.toString(),
+        );
       }
       if (data is Map && data['message'] is String) {
         throw AvatarUploadException(data['message'] as String);

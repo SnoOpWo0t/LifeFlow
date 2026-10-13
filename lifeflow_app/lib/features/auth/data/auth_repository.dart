@@ -20,7 +20,16 @@ class AuthRepository {
     return User.fromJson(data['user']);
   }
 
-  Future<void> logout() async {
+  /// [revoke] also invalidates the token on the server, so a copied token
+  /// stops working. Skipped when the server already rejected it.
+  Future<void> logout({bool revoke = true}) async {
+    if (revoke) {
+      try {
+        await _dataSource.logout();
+      } catch (_) {
+        // Offline or already invalid: still sign out locally.
+      }
+    }
     await _storageService.deleteToken();
   }
 

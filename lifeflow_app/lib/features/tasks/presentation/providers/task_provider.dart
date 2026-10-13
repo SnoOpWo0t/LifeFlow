@@ -7,7 +7,9 @@ final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   return TaskRepository(ref.watch(apiClientProvider));
 });
 
-final tasksProvider = AsyncNotifierProvider<TasksNotifier, List<Task>>(TasksNotifier.new);
+final tasksProvider = AsyncNotifierProvider<TasksNotifier, List<Task>>(
+  TasksNotifier.new,
+);
 
 class TasksNotifier extends AsyncNotifier<List<Task>> {
   @override
@@ -18,7 +20,7 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
   Future<void> addTask(Task task) async {
     final repo = ref.read(taskRepositoryProvider);
     final current = state.value ?? [];
-    
+
     // Add optimistic logic if desired, or just wait for server
     final newTask = await repo.createTask(task);
     state = AsyncData([...current, newTask]);
@@ -27,13 +29,17 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
   Future<void> updateTaskStatus(Task task, String newStatus) async {
     final repo = ref.read(taskRepositoryProvider);
     final current = state.value ?? [];
-    
+
     final updatedTask = task.copyWith(status: newStatus);
-    state = AsyncData(current.map((t) => t.id == task.id ? updatedTask : t).toList());
-    
+    state = AsyncData(
+      current.map((t) => t.id == task.id ? updatedTask : t).toList(),
+    );
+
     try {
       final serverTask = await repo.updateTask(updatedTask);
-      state = AsyncData(state.value!.map((t) => t.id == task.id ? serverTask : t).toList());
+      state = AsyncData(
+        state.value!.map((t) => t.id == task.id ? serverTask : t).toList(),
+      );
     } catch (e) {
       state = AsyncData(current); // revert
     }
@@ -42,10 +48,10 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
   Future<void> deleteTask(Task task) async {
     final repo = ref.read(taskRepositoryProvider);
     final current = state.value ?? [];
-    
+
     // Optimistic delete
     state = AsyncData(current.where((t) => t.id != task.id).toList());
-    
+
     try {
       await repo.deleteTask(task.id);
     } catch (e) {

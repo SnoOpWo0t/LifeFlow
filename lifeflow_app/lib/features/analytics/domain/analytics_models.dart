@@ -42,7 +42,9 @@ class WeeklyAnalytics {
 
   factory WeeklyAnalytics.fromJson(Map<String, dynamic> json) {
     var list = json['weekly_data'] as List? ?? [];
-    List<DailyStats> dailyData = list.map((i) => DailyStats.fromJson(i)).toList();
+    List<DailyStats> dailyData = list
+        .map((i) => DailyStats.fromJson(i))
+        .toList();
 
     return WeeklyAnalytics(
       weeklyData: dailyData,

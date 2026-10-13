@@ -23,7 +23,9 @@ class RecentActivity {
       type: json['type'],
       title: json['title'],
       subtitle: json['subtitle'],
-      amount: json['amount'] != null ? (json['amount'] as num).toDouble() : null,
+      amount: json['amount'] != null
+          ? (json['amount'] as num).toDouble()
+          : null,
       isIncome: json['is_income'],
       date: DateTime.parse(json['date']),
     );
@@ -55,7 +57,9 @@ class DashboardSummary {
 
   factory DashboardSummary.fromJson(Map<String, dynamic> json) {
     var list = json['recent_activity'] as List? ?? [];
-    List<RecentActivity> activities = list.map((i) => RecentActivity.fromJson(i)).toList();
+    List<RecentActivity> activities = list
+        .map((i) => RecentActivity.fromJson(i))
+        .toList();
 
     return DashboardSummary(
       tasksCompleted: json['tasks_today']['completed'],
@@ -64,7 +68,9 @@ class DashboardSummary {
       habitsTotal: json['habits_today']['total'],
       monthlyExpenses: (json['monthly_expenses'] as num).toDouble(),
       monthlyIncome: (json['monthly_income'] as num).toDouble(),
-      monthlyBudget: json['monthly_budget'] != null ? (json['monthly_budget'] as num).toDouble() : 0.0,
+      monthlyBudget: json['monthly_budget'] != null
+          ? (json['monthly_budget'] as num).toDouble()
+          : 0.0,
       productivityScore: json['productivity_score'],
       recentActivity: activities,
     );

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'features/tasks/presentation/screens/tasks_screen.dart';
 import 'features/expenses/presentation/screens/expense_screen.dart';
@@ -29,47 +28,104 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = MediaQuery.of(context).size.width >= 800;
-    
+
     return Scaffold(
-      body: isDesktop ? Row(
-        children: [
-          NavigationRail(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-            labelType: NavigationRailLabelType.all,
-            destinations: const [
-              NavigationRailDestination(icon: Icon(Icons.dashboard), label: Text('Dashboard')),
-              NavigationRailDestination(icon: Icon(Icons.check_circle_outline), label: Text('Tasks')),
-              NavigationRailDestination(icon: Icon(Icons.account_balance_wallet), label: Text('Expenses')),
-              NavigationRailDestination(icon: Icon(Icons.repeat), label: Text('Habits')),
-              NavigationRailDestination(icon: Icon(Icons.bar_chart), label: Text('Analytics')),
-              NavigationRailDestination(icon: Icon(Icons.settings), label: Text('Settings')),
-            ],
-          ),
-          const VerticalDivider(thickness: 1, width: 1),
-          Expanded(child: _screens[_currentIndex]),
-        ],
-      ) : _screens[_currentIndex],
-      bottomNavigationBar: isDesktop ? null : NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-          NavigationDestination(icon: Icon(Icons.check_circle_outline), label: 'Tasks'),
-          NavigationDestination(icon: Icon(Icons.account_balance_wallet), label: 'Expenses'),
-          NavigationDestination(icon: Icon(Icons.repeat), label: 'Habits'),
-          NavigationDestination(icon: Icon(Icons.bar_chart), label: 'Analytics'),
-          NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
-      ),
+      body: isDesktop
+          ? Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _currentIndex,
+                  onDestinationSelected: (index) {
+                    setState(() {
+                      _currentIndex = index;
+                    });
+                  },
+                  labelType: NavigationRailLabelType.all,
+                  leading: Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    child: Image.asset(
+                      'assets/images/logo_mark.png',
+                      width: 36,
+                      height: 36,
+                    ),
+                  ),
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.dashboard),
+                      label: Text('Dashboard'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.check_circle_outline),
+                      label: Text('Tasks'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.account_balance_wallet),
+                      label: Text('Expenses'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.repeat),
+                      label: Text('Habits'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.bar_chart),
+                      label: Text('Analytics'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.settings),
+                      label: Text('Settings'),
+                    ),
+                  ],
+                ),
+                const VerticalDivider(thickness: 1, width: 1),
+                // Keep pages readable on wide monitors instead of stretching edge to edge.
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      child: _screens[_currentIndex],
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : _screens[_currentIndex],
+      bottomNavigationBar: isDesktop
+          ? null
+          : NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.dashboard),
+                  label: 'Home',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.check_circle_outline),
+                  label: 'Tasks',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.account_balance_wallet),
+                  label: 'Expenses',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.repeat),
+                  label: 'Habits',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.bar_chart),
+                  label: 'Analytics',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings),
+                  label: 'Settings',
+                ),
+              ],
+            ),
     );
   }
 }

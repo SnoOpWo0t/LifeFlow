@@ -6,7 +6,10 @@ import '../../domain/weather_location.dart';
 import '../providers/settings_provider.dart';
 
 Future<void> showCityPicker(BuildContext context) {
-  return showDialog(context: context, builder: (_) => const _CityPickerDialog());
+  return showDialog(
+    context: context,
+    builder: (_) => const _CityPickerDialog(),
+  );
 }
 
 class _CityPickerDialog extends ConsumerStatefulWidget {
@@ -59,11 +62,15 @@ class _CityPickerDialogState extends ConsumerState<_CityPickerDialog> {
       if (!mounted || id != _searchId) return;
       setState(() {
         _results = results;
-        _error = results.isEmpty ? 'No cities found for "${query.trim()}".' : null;
+        _error = results.isEmpty
+            ? 'No cities found for "${query.trim()}".'
+            : null;
       });
     } catch (_) {
       if (!mounted || id != _searchId) return;
-      setState(() => _error = "Couldn't search right now. Check your connection.");
+      setState(
+        () => _error = "Couldn't search right now. Check your connection.",
+      );
     } finally {
       if (mounted && id == _searchId) setState(() => _searching = false);
     }
@@ -79,9 +86,11 @@ class _CityPickerDialogState extends ConsumerState<_CityPickerDialog> {
       await _select(location);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e is LocationException
-          ? e.message
-          : "Couldn't get your location. Try searching for your city instead.");
+      setState(
+        () => _error = e is LocationException
+            ? e.message
+            : "Couldn't get your location. Try searching for your city instead.",
+      );
     } finally {
       if (mounted) setState(() => _locating = false);
     }
@@ -111,7 +120,9 @@ class _CityPickerDialogState extends ConsumerState<_CityPickerDialog> {
               const SizedBox(height: 4),
               Text(
                 'Currently ${current.label}',
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.hintColor,
+                ),
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
@@ -123,10 +134,14 @@ class _CityPickerDialogState extends ConsumerState<_CityPickerDialog> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.my_location_rounded),
-                label: Text(_locating ? 'Finding you…' : 'Use my current location'),
+                label: Text(
+                  _locating ? 'Finding you…' : 'Use my current location',
+                ),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -149,7 +164,9 @@ class _CityPickerDialogState extends ConsumerState<_CityPickerDialog> {
                           ),
                         )
                       : null,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               if (_error != null)
@@ -157,7 +174,9 @@ class _CityPickerDialogState extends ConsumerState<_CityPickerDialog> {
                   padding: const EdgeInsets.only(top: 12),
                   child: Text(
                     _error!,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
                   ),
                 ),
               Flexible(
@@ -169,10 +188,14 @@ class _CityPickerDialogState extends ConsumerState<_CityPickerDialog> {
                     final result = _results[i];
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       leading: const Icon(Icons.location_on_outlined),
                       title: Text(result.name),
-                      subtitle: result.detail.isEmpty ? null : Text(result.detail),
+                      subtitle: result.detail.isEmpty
+                          ? null
+                          : Text(result.detail),
                       onTap: () => _select(result),
                     );
                   },

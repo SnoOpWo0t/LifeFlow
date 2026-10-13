@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/analytics_provider.dart';
 import '../../domain/analytics_models.dart';
@@ -17,7 +17,10 @@ class AnalyticsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Weekly Analytics', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Weekly Analytics',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -27,8 +30,13 @@ class AnalyticsScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, stack) => ListView(
             children: [
-               SizedBox(height: MediaQuery.of(context).size.height * 0.4),
-               Center(child: Text('Error: $err')),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.35),
+              Center(
+                child: TextButton(
+                  onPressed: () => ref.invalidate(weeklyAnalyticsProvider),
+                  child: const Text("Couldn't load analytics. Tap to retry."),
+                ),
+              ),
             ],
           ),
           data: (analytics) {
@@ -40,10 +48,41 @@ class AnalyticsScreen extends ConsumerWidget {
                     delegate: SliverChildListDelegate([
                       _buildSummaryCards(context, analytics, isDark, theme),
                       const SizedBox(height: 24),
-                      _buildFinancialChart(context, analytics, isDark, theme),
-                      const SizedBox(height: 24),
-                      _buildProductivityChart(context, analytics, isDark, theme),
-                      const SizedBox(height: 80),
+                      // Charts side by side on desktop, stacked on phones.
+                      if (MediaQuery.sizeOf(context).width >= 1100)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _buildFinancialChart(
+                                context,
+                                analytics,
+                                isDark,
+                                theme,
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: _buildProductivityChart(
+                                context,
+                                analytics,
+                                isDark,
+                                theme,
+                              ),
+                            ),
+                          ],
+                        )
+                      else ...[
+                        _buildFinancialChart(context, analytics, isDark, theme),
+                        const SizedBox(height: 24),
+                        _buildProductivityChart(
+                          context,
+                          analytics,
+                          isDark,
+                          theme,
+                        ),
+                      ],
+                      const SizedBox(height: 32),
                     ]),
                   ),
                 ),
@@ -55,7 +94,34 @@ class AnalyticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSummaryCards(BuildContext context, WeeklyAnalytics analytics, bool isDark, ThemeData theme) {
+  /// A round axis step (1, 2, 5, 10, 20, 50…) giving about four gridlines.
+  double _niceStep(double maxVal) {
+    if (maxVal <= 0) return 1;
+    final raw = maxVal / 4;
+    final magnitude = pow(10, (log(raw) / ln10).floor()).toDouble();
+    final normalized = raw / magnitude;
+    final nice = normalized <= 1
+        ? 1
+        : normalized <= 2
+        ? 2
+        : normalized <= 5
+        ? 5
+        : 10;
+    return max(1.0, nice * magnitude);
+  }
+
+  /// Axis top: the first step above the data, so the highest point never touches the edge.
+  double _niceMax(double maxVal) {
+    final step = _niceStep(maxVal);
+    return ((maxVal / step).floor() + 1) * step;
+  }
+
+  Widget _buildSummaryCards(
+    BuildContext context,
+    WeeklyAnalytics analytics,
+    bool isDark,
+    ThemeData theme,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -67,11 +133,21 @@ class AnalyticsScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.savings, color: Colors.greenAccent, size: 28),
                 const SizedBox(height: 12),
-                Text('Weekly Savings', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                Text(
+                  'Weekly Savings',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
-                  '${analytics.totalSavings >= 0 ? '+' : '-'}৳ ${analytics.totalSavings.abs().toStringAsFixed(0)}',
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: analytics.totalSavings >= 0 ? Colors.green : Colors.redAccent),
+                  '${analytics.totalSavings >= 0 ? '+' : '-'}${formatMoney(analytics.totalSavings.abs())}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: analytics.totalSavings >= 0
+                        ? Colors.green
+                        : Colors.redAccent,
+                  ),
                 ),
               ],
             ),
@@ -87,11 +163,18 @@ class AnalyticsScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.bolt, color: Colors.amber, size: 28),
                 const SizedBox(height: 12),
-                Text('Best Day', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                Text(
+                  'Best Day',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   analytics.mostProductiveDay,
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -101,7 +184,12 @@ class AnalyticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFinancialChart(BuildContext context, WeeklyAnalytics analytics, bool isDark, ThemeData theme) {
+  Widget _buildFinancialChart(
+    BuildContext context,
+    WeeklyAnalytics analytics,
+    bool isDark,
+    ThemeData theme,
+  ) {
     double maxVal = 0;
     for (var day in analytics.weeklyData) {
       if (day.income > maxVal) maxVal = day.income;
@@ -115,7 +203,12 @@ class AnalyticsScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Income vs Expenses', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Income vs Expenses',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 24),
           SizedBox(
             height: 220,
@@ -125,12 +218,19 @@ class AnalyticsScreen extends ConsumerWidget {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxVal / 4 > 0 ? maxVal / 4 : 1,
-                  getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.2), strokeWidth: 1),
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: Colors.grey.withValues(alpha: 0.2),
+                    strokeWidth: 1,
+                  ),
                 ),
                 titlesData: FlTitlesData(
                   show: true,
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -138,10 +238,17 @@ class AnalyticsScreen extends ConsumerWidget {
                       interval: 1,
                       getTitlesWidget: (value, meta) {
                         int index = value.toInt();
-                        if (index < 0 || index >= analytics.weeklyData.length) return const SizedBox.shrink();
+                        if (index < 0 || index >= analytics.weeklyData.length)
+                          return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(analytics.weeklyData[index].dayName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          child: Text(
+                            analytics.weeklyData[index].dayName,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -149,12 +256,20 @@ class AnalyticsScreen extends ConsumerWidget {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      interval: maxVal / 4 > 0 ? maxVal / 4 : 1,
+                      interval: _niceStep(maxVal),
                       reservedSize: 42,
                       getTitlesWidget: (value, meta) {
                         if (value == 0) return const SizedBox.shrink();
-                        String text = value >= 1000 ? '${(value / 1000).toStringAsFixed(1)}k' : value.toStringAsFixed(0);
-                        return Text(text, style: const TextStyle(color: Colors.grey, fontSize: 10));
+                        String text = value >= 1000
+                            ? '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}k'
+                            : value.toStringAsFixed(0);
+                        return Text(
+                          text,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 10,
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -163,30 +278,40 @@ class AnalyticsScreen extends ConsumerWidget {
                 minX: 0,
                 maxX: 6,
                 minY: 0,
-                maxY: maxVal * 1.2,
+                maxY: _niceMax(maxVal),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: analytics.weeklyData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.income)).toList(),
+                    spots: analytics.weeklyData
+                        .asMap()
+                        .entries
+                        .map((e) => FlSpot(e.key.toDouble(), e.value.income))
+                        .toList(),
                     isCurved: true,
+                    preventCurveOverShooting: true,
                     color: Colors.greenAccent,
                     barWidth: 3,
                     isStrokeCapRound: true,
                     dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Colors.greenAccent.withOpacity(0.1),
+                      color: Colors.greenAccent.withValues(alpha: 0.1),
                     ),
                   ),
                   LineChartBarData(
-                    spots: analytics.weeklyData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.expenses)).toList(),
+                    spots: analytics.weeklyData
+                        .asMap()
+                        .entries
+                        .map((e) => FlSpot(e.key.toDouble(), e.value.expenses))
+                        .toList(),
                     isCurved: true,
+                    preventCurveOverShooting: true,
                     color: Colors.redAccent,
                     barWidth: 3,
                     isStrokeCapRound: true,
                     dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Colors.redAccent.withOpacity(0.1),
+                      color: Colors.redAccent.withValues(alpha: 0.1),
                     ),
                   ),
                 ],
@@ -201,16 +326,22 @@ class AnalyticsScreen extends ConsumerWidget {
               const SizedBox(width: 16),
               _buildLegendItem(Colors.redAccent, 'Expenses'),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildProductivityChart(BuildContext context, WeeklyAnalytics analytics, bool isDark, ThemeData theme) {
+  Widget _buildProductivityChart(
+    BuildContext context,
+    WeeklyAnalytics analytics,
+    bool isDark,
+    ThemeData theme,
+  ) {
     double maxVal = 0;
     for (var day in analytics.weeklyData) {
-      if (day.productivityScore > maxVal) maxVal = day.productivityScore.toDouble();
+      if (day.productivityScore > maxVal)
+        maxVal = day.productivityScore.toDouble();
     }
     if (maxVal == 0) maxVal = 5;
 
@@ -220,14 +351,19 @@ class AnalyticsScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Productivity Score', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Productivity Score',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 24),
           SizedBox(
             height: 220,
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: maxVal * 1.2,
+                maxY: _niceMax(maxVal),
                 barTouchData: BarTouchData(enabled: false),
                 titlesData: FlTitlesData(
                   show: true,
@@ -236,10 +372,17 @@ class AnalyticsScreen extends ConsumerWidget {
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
                         int index = value.toInt();
-                        if (index < 0 || index >= analytics.weeklyData.length) return const SizedBox.shrink();
+                        if (index < 0 || index >= analytics.weeklyData.length)
+                          return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(analytics.weeklyData[index].dayName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          child: Text(
+                            analytics.weeklyData[index].dayName,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -248,21 +391,35 @@ class AnalyticsScreen extends ConsumerWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 28,
-                      interval: max(1.0, (maxVal / 4).roundToDouble()),
+                      interval: _niceStep(maxVal),
                       getTitlesWidget: (value, meta) {
-                        if (value == 0) return const SizedBox.shrink();
-                        return Text(value.toInt().toString(), style: const TextStyle(color: Colors.grey, fontSize: 10));
+                        if (value == 0 || value != value.roundToDouble())
+                          return const SizedBox.shrink();
+                        return Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 10,
+                          ),
+                        );
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  horizontalInterval: max(1.0, (maxVal / 4).roundToDouble()),
-                  getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.2), strokeWidth: 1),
+                  horizontalInterval: _niceStep(maxVal),
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: Colors.grey.withValues(alpha: 0.2),
+                    strokeWidth: 1,
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: analytics.weeklyData.asMap().entries.map((e) {
@@ -273,13 +430,23 @@ class AnalyticsScreen extends ConsumerWidget {
                         toY: e.value.tasksCompleted.toDouble(),
                         color: Colors.purpleAccent,
                         width: 12,
-                        borderRadius: const BorderRadius.only(bottomLeft: Radius.zero, bottomRight: Radius.zero, topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.zero,
+                          bottomRight: Radius.zero,
+                          topLeft: Radius.circular(4),
+                          topRight: Radius.circular(4),
+                        ),
                       ),
                       BarChartRodData(
                         toY: e.value.habitsCompleted.toDouble(),
                         color: Colors.orangeAccent,
                         width: 12,
-                        borderRadius: const BorderRadius.only(bottomLeft: Radius.zero, bottomRight: Radius.zero, topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.zero,
+                          bottomRight: Radius.zero,
+                          topLeft: Radius.circular(4),
+                          topRight: Radius.circular(4),
+                        ),
                       ),
                     ],
                   );
@@ -295,7 +462,7 @@ class AnalyticsScreen extends ConsumerWidget {
               const SizedBox(width: 16),
               _buildLegendItem(Colors.orangeAccent, 'Habits'),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -315,14 +482,20 @@ class AnalyticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGlassCard(BuildContext context, {required Widget child, required bool isDark}) {
+  Widget _buildGlassCard(
+    BuildContext context, {
+    required Widget child,
+    required bool isDark,
+  }) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E2C) : Colors.white),
+        color:
+            Theme.of(context).cardTheme.color ??
+            (isDark ? const Color(0xFF1E1E2C) : Colors.white),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),

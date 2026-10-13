@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/weather_provider.dart';
 import 'dart:ui';
@@ -18,158 +19,219 @@ class DashboardScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authProvider.notifier).logout(),
-          )
-        ],
+        title: const Text(
+          'Dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: summaryAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: ')),
+        error: (err, stack) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Couldn't load your dashboard."),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => ref.invalidate(dashboardSummaryProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
         data: (summary) {
-          return RefreshIndicator(
-            onRefresh: () => ref.refresh(dashboardSummaryProvider.future),
-            child: ListView(
-              padding: const EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 24),
+          final greeting = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome back,',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                user?.name ?? 'Guest',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          );
+          final weather = GestureDetector(
+            onTap: () => showCityPicker(context),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: _buildGlassCard(
+                context,
+                isDark: isDark,
+                child: _buildWeather(context, ref),
+              ),
+            ),
+          );
+          final productivity = _buildGlassCard(
+            context,
+            isDark: isDark,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Welcome back,',
-                  style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
-                ),
-                Text(
-                  user?.name ?? 'Guest',
-                  style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 24),
-                
-                // Weather Glass Card
-                GestureDetector(
-                  onTap: () => showCityPicker(context),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: _buildGlassCard(
-                      context,
-                      isDark: isDark,
-                      child: _buildWeather(context, ref),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Productivity
-                _buildGlassCard(
-                  context,
-                  isDark: isDark,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.speed, color: Colors.greenAccent),
-                          const SizedBox(width: 8),
-                          Text('Productivity Score', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                          const Spacer(),
-                          Text('${summary.productivityScore}%', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.greenAccent)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: summary.productivityScore / 100,
-                          minHeight: 8,
-                          backgroundColor: Colors.greenAccent.withOpacity(0.2),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Two column layout
                 Row(
                   children: [
-                    Expanded(
-                      child: _buildGlassCard(
-                        context,
-                        isDark: isDark,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.check_circle_outline, color: Colors.purpleAccent, size: 32),
-                            const SizedBox(height: 12),
-                            Text('Tasks', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 4),
-                            Text('${summary.tasksCompleted} / ${summary.tasksTotal} done', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-                          ],
-                        ),
+                    const Icon(Icons.speed, color: Colors.greenAccent),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Productivity Score',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildGlassCard(
-                        context,
-                        isDark: isDark,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.repeat, color: Colors.orangeAccent, size: 32),
-                            const SizedBox(height: 12),
-                            Text('Habits', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 4),
-                            Text('${summary.habitsCompleted} / ${summary.habitsTotal} done', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-                          ],
-                        ),
+                    const Spacer(),
+                    Text(
+                      '${summary.productivityScore}%',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.greenAccent,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-
-                // Budget & Expenses Overview
-                Builder(builder: (context) {
-                  final budget = summary.monthlyBudget > 0 ? summary.monthlyBudget : summary.monthlyIncome;
-                  final spent = summary.monthlyExpenses;
-                  final left = budget - spent;
-                  final isOverspent = left < 0;
-
-                  return Column(
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: summary.productivityScore / 100,
+                    minHeight: 8,
+                    backgroundColor: Colors.greenAccent.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.greenAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+          final stats = Row(
+            children: [
+              Expanded(
+                child: _buildGlassCard(
+                  context,
+                  isDark: isDark,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (isOverspent)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.redAccent.withOpacity(0.5)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Warning: You have exceeded your monthly budget by ৳ ${left.abs().toStringAsFixed(0)}!',
-                                  style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
+                      const Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.purpleAccent,
+                        size: 32,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Today's tasks",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
-                      Container(
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        summary.tasksTotal == 0
+                            ? 'Nothing due today'
+                            : '${summary.tasksCompleted} / ${summary.tasksTotal} done',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildGlassCard(
+                  context,
+                  isDark: isDark,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.repeat,
+                        color: Colors.orangeAccent,
+                        size: 32,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Habits',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${summary.habitsCompleted} / ${summary.habitsTotal} done',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+          final budgetCard = Builder(
+            builder: (context) {
+              final budget = summary.monthlyBudget > 0
+                  ? summary.monthlyBudget
+                  : summary.monthlyIncome;
+              final spent = summary.monthlyExpenses;
+              final left = budget - spent;
+              final isOverspent = left < 0;
+
+              return Column(
+                children: [
+                  if (isOverspent)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.redAccent.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.redAccent,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Warning: You have exceeded your monthly budget by ${formatMoney(left.abs())}!',
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Container(
                     decoration: BoxDecoration(
-                      color: theme.cardTheme.color ?? (isDark ? const Color(0xFF1E1E2C) : Colors.white),
+                      color:
+                          theme.cardTheme.color ??
+                          (isDark ? const Color(0xFF1E1E2C) : Colors.white),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.2 : 0.05,
+                          ),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
@@ -181,9 +243,17 @@ class DashboardScreen extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.account_balance_wallet, color: theme.colorScheme.primary),
+                            Icon(
+                              Icons.account_balance_wallet,
+                              color: theme.colorScheme.primary,
+                            ),
                             const SizedBox(width: 8),
-                            Text('Budget Overview', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                            Text(
+                              'Budget Overview',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -194,21 +264,47 @@ class DashboardScreen extends ConsumerWidget {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text('Total Income', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                                      Text(
+                                        'Total Income',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(color: Colors.grey),
+                                      ),
                                       const SizedBox(height: 4),
-                                      Text('৳ ${summary.monthlyIncome.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                                      Text(
+                                        formatMoney(summary.monthlyIncome),
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.blueAccent,
+                                            ),
+                                      ),
                                     ],
                                   ),
                                 ),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(summary.monthlyBudget > 0 ? 'Target Budget' : 'Est. Budget', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                                      Text(
+                                        summary.monthlyBudget > 0
+                                            ? 'Target Budget'
+                                            : 'Est. Budget',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(color: Colors.grey),
+                                      ),
                                       const SizedBox(height: 4),
-                                      Text('৳ ${budget.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+                                      Text(
+                                        formatMoney(budget),
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.greenAccent,
+                                            ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -220,21 +316,47 @@ class DashboardScreen extends ConsumerWidget {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text('Total Spent', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                                      Text(
+                                        'Total Spent',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(color: Colors.grey),
+                                      ),
                                       const SizedBox(height: 4),
-                                      Text('৳ ${spent.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
+                                      Text(
+                                        formatMoney(spent),
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.orangeAccent,
+                                            ),
+                                      ),
                                     ],
                                   ),
                                 ),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(isOverspent ? 'Overspent' : 'Remaining', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                                      Text(
+                                        isOverspent ? 'Overspent' : 'Remaining',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(color: Colors.grey),
+                                      ),
                                       const SizedBox(height: 4),
-                                      Text('৳ ${left.toStringAsFixed(0)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: isOverspent ? Colors.redAccent : Colors.green)),
+                                      Text(
+                                        formatMoney(left),
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: isOverspent
+                                                  ? Colors.redAccent
+                                                  : Colors.green,
+                                            ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -246,10 +368,20 @@ class DashboardScreen extends ConsumerWidget {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
-                            value: budget > 0 ? (spent / budget).clamp(0.0, 1.0) : 0.0,
+                            value: budget > 0
+                                ? (spent / budget).clamp(0.0, 1.0)
+                                : 0.0,
                             minHeight: 12,
-                            backgroundColor: isDark ? Colors.white12 : Colors.grey[200],
-                            valueColor: AlwaysStoppedAnimation<Color>(isOverspent ? Colors.redAccent : (budget > 0 && spent/budget > 0.8 ? Colors.orangeAccent : Colors.greenAccent)),
+                            backgroundColor: isDark
+                                ? Colors.white12
+                                : Colors.grey[200],
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              isOverspent
+                                  ? Colors.redAccent
+                                  : (budget > 0 && spent / budget > 0.8
+                                        ? Colors.orangeAccent
+                                        : Colors.greenAccent),
+                            ),
                           ),
                         ),
                       ],
@@ -257,73 +389,177 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ],
               );
-            }),
-            const SizedBox(height: 32),
-                Text('Recent Activity', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                if (summary.recentActivity.isEmpty)
-                  const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No recent activity.', style: TextStyle(color: Colors.grey))))
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: summary.recentActivity.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final item = summary.recentActivity[index];
-                      final isTask = item.type == 'task';
-                      
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: theme.cardTheme.color ?? (isDark ? const Color(0xFF1E1E2C) : Colors.white),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            )
-                          ]
+            },
+          );
+          final recent = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Recent Activity',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (summary.recentActivity.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text(
+                      'No recent activity.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: summary.recentActivity.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final item = summary.recentActivity[index];
+                    final isTask = item.type == 'task';
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        color:
+                            theme.cardTheme.color ??
+                            (isDark ? const Color(0xFF1E1E2C) : Colors.white),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.2 : 0.03,
+                            ),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                          leading: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isTask 
-                                ? Colors.blueAccent.withOpacity(0.2)
-                                : (item.isIncome == true ? Colors.greenAccent.withOpacity(0.2) : Colors.redAccent.withOpacity(0.2)),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              isTask 
+                        leading: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isTask
+                                ? Colors.blueAccent.withValues(alpha: 0.2)
+                                : (item.isIncome == true
+                                      ? Colors.greenAccent.withValues(
+                                          alpha: 0.2,
+                                        )
+                                      : Colors.redAccent.withValues(
+                                          alpha: 0.2,
+                                        )),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isTask
                                 ? Icons.check_circle_outline
-                                : (item.isIncome == true ? Icons.arrow_downward : Icons.arrow_upward),
-                              color: isTask 
+                                : (item.isIncome == true
+                                      ? Icons.arrow_downward
+                                      : Icons.arrow_upward),
+                            color: isTask
                                 ? Colors.blueAccent
-                                : (item.isIncome == true ? Colors.green : Colors.redAccent),
-                            ),
+                                : (item.isIncome == true
+                                      ? Colors.green
+                                      : Colors.redAccent),
                           ),
-                          title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(
-                            '${item.date.day}/${item.date.month}/${item.date.year} • ${item.subtitle}',
-                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                        title: Text(
+                          item.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '${item.date.day}/${item.date.month}/${item.date.year} • ${item.subtitle}',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
                           ),
-                          trailing: isTask || item.amount == null 
+                        ),
+                        trailing: isTask || item.amount == null
                             ? null
                             : Text(
-                                '${item.isIncome == true ? '+' : '-'}৳ ${item.amount!.toStringAsFixed(0)}',
+                                '${item.isIncome == true ? '+' : '-'}${formatMoney(item.amount!)}',
                                 style: TextStyle(
-                                  color: item.isIncome == true ? Colors.green : Colors.redAccent,
+                                  color: item.isIncome == true
+                                      ? Colors.green
+                                      : Colors.redAccent,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
                               ),
-                        ),
-                      );
-                    },
-                  ),
-              ],
+                      ),
+                    );
+                  },
+                ),
+            ],
+          );
+          const gap = SizedBox(height: 16);
+
+          return RefreshIndicator(
+            onRefresh: () => ref.refresh(dashboardSummaryProvider.future),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Two columns once there's room, so everything fits above the fold on desktop.
+                final wide = constraints.maxWidth >= 960;
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  children: wide
+                      ? [
+                          greeting,
+                          const SizedBox(height: 24),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    weather,
+                                    gap,
+                                    productivity,
+                                    gap,
+                                    stats,
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    budgetCard,
+                                    const SizedBox(height: 24),
+                                    recent,
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ]
+                      : [
+                          greeting,
+                          const SizedBox(height: 24),
+                          weather,
+                          gap,
+                          productivity,
+                          gap,
+                          stats,
+                          gap,
+                          budgetCard,
+                          const SizedBox(height: 32),
+                          recent,
+                        ],
+                );
+              },
             ),
           );
         },
@@ -338,13 +574,13 @@ class DashboardScreen extends ConsumerWidget {
     final muted = theme.textTheme.bodyMedium?.copyWith(color: Colors.grey);
 
     Widget badge(IconData icon, Color color) => Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: color, size: 32),
-        );
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: color, size: 32),
+    );
 
     return weatherAsync.when(
       data: (weather) => Row(
@@ -355,19 +591,31 @@ class DashboardScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(location.label, style: muted, overflow: TextOverflow.ellipsis),
+                Text(
+                  location.label,
+                  style: muted,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text(
                   '${weather.temperature.round()}°C - ${weather.description}',
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   'Feels like ${weather.feelsLike.round()}° · Humidity ${weather.humidity}% · Wind ${weather.windSpeed.round()} km/h',
-                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.grey,
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.edit_location_alt_outlined, color: Colors.grey, size: 20),
+          const Icon(
+            Icons.edit_location_alt_outlined,
+            color: Colors.grey,
+            size: 20,
+          ),
         ],
       ),
       loading: () => Row(
@@ -408,7 +656,11 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGlassCard(BuildContext context, {required Widget child, required bool isDark}) {
+  Widget _buildGlassCard(
+    BuildContext context, {
+    required Widget child,
+    required bool isDark,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -416,10 +668,14 @@ class DashboardScreen extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.6),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.white.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.white,
               width: 1.5,
             ),
           ),

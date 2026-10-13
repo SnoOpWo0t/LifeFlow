@@ -24,7 +24,9 @@ class Task {
       description: json['description'],
       status: json['status'],
       priority: json['priority'],
-      dueDate: json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
+      dueDate: json['due_date'] != null
+          ? DateTime.parse(json['due_date'])
+          : null,
       recurrenceRule: json['recurrence_rule'],
     );
   }

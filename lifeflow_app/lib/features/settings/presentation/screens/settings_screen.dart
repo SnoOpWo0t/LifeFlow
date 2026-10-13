@@ -41,7 +41,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } on AvatarUploadException catch (e) {
       _showMessage(e.message, isError: true);
     } catch (_) {
-      _showMessage("Couldn't read that image. Try a JPG or PNG.", isError: true);
+      _showMessage(
+        "Couldn't read that image. Try a JPG or PNG.",
+        isError: true,
+      );
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -58,7 +61,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   String _initials(String? name) {
-    final parts = (name ?? '').trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    final parts = (name ?? '')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty);
     return parts.take(2).map((p) => p[0].toUpperCase()).join();
   }
 
@@ -73,110 +79,195 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile & Settings')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Center(
-            child: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.blueGrey,
-                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                  onBackgroundImageError: avatarUrl != null
-                      ? (_, _) {
-                          if (mounted) setState(() => _avatarFailedToLoad = true);
-                        }
-                      : null,
-                  child: _isUploading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : (avatarUrl == null
-                        ? (initials.isEmpty
-                            ? const Icon(Icons.person, size: 50, color: Colors.white)
-                            : Text(initials, style: const TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.w600)))
-                        : null),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: InkWell(
-                    onTap: _isUploading ? null : _pickAndUploadImage,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
-                        shape: BoxShape.circle,
+      body: LayoutBuilder(
+        builder: (context, constraints) => ListView(
+          // Centre a readable 720px column on wide screens; full width on phones.
+          padding: EdgeInsets.symmetric(
+            horizontal: constraints.maxWidth > 752
+                ? (constraints.maxWidth - 720) / 2
+                : 16,
+            vertical: 16,
+          ),
+          children: [
+            Center(
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.blueGrey,
+                    backgroundImage: avatarUrl != null
+                        ? NetworkImage(avatarUrl)
+                        : null,
+                    onBackgroundImageError: avatarUrl != null
+                        ? (_, _) {
+                            if (mounted)
+                              setState(() => _avatarFailedToLoad = true);
+                          }
+                        : null,
+                    child: _isUploading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : (avatarUrl == null
+                              ? (initials.isEmpty
+                                    ? const Icon(
+                                        Icons.person,
+                                        size: 50,
+                                        color: Colors.white,
+                                      )
+                                    : Text(
+                                        initials,
+                                        style: const TextStyle(
+                                          fontSize: 32,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ))
+                              : null),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: InkWell(
+                      onTap: _isUploading ? null : _pickAndUploadImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
-                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: Text(user?.name ?? 'User', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          ),
-          Center(
-            child: Text(user?.email ?? '', style: const TextStyle(color: Colors.grey)),
-          ),
-          const SizedBox(height: 32),
-          const Text('Preferences', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
-          const Divider(),
-          SwitchListTile(
-            title: const Text('Dark Mode'),
-            secondary: const Icon(Icons.dark_mode),
-            value: isDark,
-            onChanged: (val) {
-              ref.read(themeModeProvider.notifier).setMode(val);
-              repo.saveSettings(isDarkMode: val);
-            },
-          ),
-          SwitchListTile(
-            title: const Text('Push Notifications'),
-            secondary: const Icon(Icons.notifications),
-            value: repo.pushNotifications,
-            onChanged: (val) {
-              repo.saveSettings(pushNotifications: val);
-              setState(() {}); // Simple rebuild
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.location_city),
-            title: const Text('Weather Location'),
-            subtitle: Text(location.label),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => showCityPicker(context),
-          ),
-          const Divider(),
-          const Text('About', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: const Text('About Us'),
-            onTap: () {
-              showDialog(context: context, builder: (_) => AlertDialog(
-                title: const Text('About LifeFlow'),
-                content: const SingleChildScrollView(
-                  child: Text(
-                    'LifeFlow is your ultimate personal life management dashboard. '
-                    'It helps you track your daily tasks, maintain healthy habits, and '
-                    'manage your monthly expenses all in one place. With live weather, '
-                    'productivity scoring, and interactive charts, LifeFlow empowers you to '
-                    'take control of your time and money.\n\n'
-                    '**Weekly Savings Logic**\n'
-                    'Your Weekly Savings are calculated as the total sum of all Income minus the total sum of all Expenses over the last 7 days. This simple zero-based calculation helps you quickly see if you spent more than you earned this week!\n\n'
-                    'Creator: Afrin Sultana Akhi'
-                  ),
-                ),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))
                 ],
-              ));
-            },
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                user?.name ?? 'User',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Center(
+              child: Text(
+                user?.email ?? '',
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'Preferences',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const Divider(),
+            SwitchListTile(
+              title: const Text('Dark Mode'),
+              secondary: const Icon(Icons.dark_mode),
+              value: isDark,
+              onChanged: (val) {
+                ref.read(themeModeProvider.notifier).setMode(val);
+                repo.saveSettings(isDarkMode: val);
+              },
+            ),
+            // Reminders aren't implemented yet; a working-looking switch that
+            // did nothing was misleading, so it's shown as disabled for now.
+            const SwitchListTile(
+              title: Text('Reminders'),
+              subtitle: Text('Coming soon'),
+              secondary: Icon(Icons.notifications_none),
+              value: false,
+              onChanged: null,
+            ),
+            ListTile(
+              leading: const Icon(Icons.location_city),
+              title: const Text('Weather Location'),
+              subtitle: Text(location.label),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showCityPicker(context),
+            ),
+            const Divider(),
+            Text(
+              'About',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: const Text('About Us'),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('About LifeFlow'),
+                    content: const SingleChildScrollView(
+                      child: Text(
+                        'LifeFlow is your ultimate personal life management dashboard. '
+                        'It helps you track your daily tasks, maintain healthy habits, and '
+                        'manage your monthly expenses all in one place. With live weather, '
+                        'productivity scoring, and interactive charts, LifeFlow empowers you to '
+                        'take control of your time and money.\n\n'
+                        '**Weekly Savings Logic**\n'
+                        'Your Weekly Savings are calculated as the total sum of all Income minus the total sum of all Expenses over the last 7 days. This simple zero-based calculation helps you quickly see if you spent more than you earned this week!\n\n'
+                        'Creator: Afrin Sultana Akhi',
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text(
+                'Log out',
+                style: TextStyle(color: Colors.redAccent),
+              ),
+              onTap: _confirmLogout,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Log out?'),
+        content: const Text("You'll need to sign in again to see your data."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Log out'),
           ),
         ],
       ),
     );
+    if (confirmed == true) ref.read(authProvider.notifier).logout();
   }
 }

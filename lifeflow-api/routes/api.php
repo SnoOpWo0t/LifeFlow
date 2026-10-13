@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
 
 Route::prefix('v1')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+    // 10 attempts per minute per IP slows down password guessing.
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/register', [AuthController::class, 'register']);
+        Route::post('/login', [AuthController::class, 'login']);
+    });
 
     Route::get('/avatar/{filename}', function ($filename) {
         $path = storage_path('app/public/avatars/' . $filename);
@@ -40,9 +43,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/categories', [ExpenseController::class, 'storeCategory']);
         Route::get('/transactions', [ExpenseController::class, 'getTransactions']);
         Route::post('/transactions', [ExpenseController::class, 'storeTransaction']);
+        Route::put('/transactions/{transaction}', [ExpenseController::class, 'updateTransaction']);
+        Route::delete('/transactions/{transaction}', [ExpenseController::class, 'destroyTransaction']);
         Route::get('/transactions/chart', [ExpenseController::class, 'getChartData']);
         
-        Route::apiResource('habits', HabitController::class)->except(['update', 'show']);
+        Route::apiResource('habits', HabitController::class)->except(['show']);
         Route::post('/habits/{habit}/toggle', [HabitController::class, 'toggle']);
         
         // Profile & Settings Routes

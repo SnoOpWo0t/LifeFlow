@@ -17,9 +17,21 @@ class DashboardController extends Controller
         $today = now()->startOfDay();
         $startOfMonth = now()->startOfMonth();
         
-        // Tasks
-        $tasksToday = Task::where('user_id', $user->id)->get();
-            
+        // Today's tasks: due today, overdue and still open, or finished today.
+        // (This used to count every task the user had ever created.)
+        $todayDate = now()->toDateString();
+        $tasksToday = Task::where('user_id', $user->id)
+            ->where(function ($query) use ($todayDate) {
+                $query->whereDate('due_date', $todayDate)
+                    ->orWhere(function ($overdue) use ($todayDate) {
+                        $overdue->whereDate('due_date', '<', $todayDate)->where('status', '!=', 'done');
+                    })
+                    ->orWhere(function ($finished) use ($todayDate) {
+                        $finished->where('status', 'done')->whereDate('updated_at', $todayDate);
+                    });
+            })
+            ->get();
+
         $tasksCompleted = $tasksToday->where('status', 'done')->count();
         $tasksTotal = $tasksToday->count();
 
@@ -56,6 +68,7 @@ class DashboardController extends Controller
         // Recent Activity
         $recentTransactions = Transaction::where('user_id', $user->id)
             ->with('category')
+            ->orderBy('transaction_date', 'desc')
             ->orderBy('created_at', 'desc')
             ->limit(3)
             ->get()
@@ -67,7 +80,11 @@ class DashboardController extends Controller
                     'subtitle' => $t->type == 'income' ? 'Income' : 'Expense',
                     'amount' => $t->amount,
                     'is_income' => $t->type == 'income',
-                    'date' => \Carbon\Carbon::parse($t->created_at)->toIso8601String()
+                    // The date the money moved, not when it was typed in. Same-day
+                    // entries keep their entry time so they sort among today's tasks.
+                    'date' => \Carbon\Carbon::parse($t->transaction_date)->isSameDay($t->created_at)
+                        ? \Carbon\Carbon::parse($t->created_at)->toIso8601String()
+                        : \Carbon\Carbon::parse($t->transaction_date)->endOfDay()->toIso8601String(),
                 ];
             });
 
@@ -88,7 +105,9 @@ class DashboardController extends Controller
                 ];
             });
 
-        $recentActivity = $recentTransactions->merge($recentTasks)
+        // toBase(): with no transactions this is an empty *Eloquent* collection,
+        // whose merge() expects models and crashed on the task arrays.
+        $recentActivity = $recentTransactions->toBase()->merge($recentTasks)
             ->sortByDesc('date')
             ->take(5)
             ->values();

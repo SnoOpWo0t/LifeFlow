@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 
 class TaskController extends Controller
@@ -32,9 +33,7 @@ class TaskController extends Controller
 
     public function update(Request $request, Task $task): JsonResponse
     {
-        if ($task->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        Gate::authorize('update', $task);
 
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
@@ -70,10 +69,8 @@ class TaskController extends Controller
 
     public function destroy(Request $request, Task $task): JsonResponse
     {
-        if ($task->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-        
+        Gate::authorize('delete', $task);
+
         $task->delete();
         return response()->json(null, 204);
     }

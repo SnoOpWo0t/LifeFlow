@@ -21,6 +21,11 @@ class HabitRepository {
     return Habit.fromJson(response.data);
   }
 
+  Future<Habit> updateHabit(int id, Map<String, dynamic> data) async {
+    final response = await _apiClient.dio.put('/habits/$id', data: data);
+    return Habit.fromJson(response.data);
+  }
+
   Future<void> deleteHabit(int id) async {
     await _apiClient.dio.delete('/habits/$id');
   }

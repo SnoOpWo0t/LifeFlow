@@ -1,11 +1,11 @@
 {
-    "name": "lifeflow_app",
-    "short_name": "lifeflow_app",
+    "name": "LifeFlow",
+    "short_name": "LifeFlow",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0B1120",
+    "theme_color": "#0B1120",
+    "description": "Tasks, money and habits in one calm flow.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

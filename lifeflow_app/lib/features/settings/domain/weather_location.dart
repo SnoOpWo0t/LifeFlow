@@ -22,16 +22,16 @@ class WeatherLocation {
   );
 
   /// "Dhaka, Bangladesh"
-  String get label => [name, country]
-      .whereType<String>()
-      .where((part) => part.isNotEmpty)
-      .join(', ');
+  String get label => [
+    name,
+    country,
+  ].whereType<String>().where((part) => part.isNotEmpty).join(', ');
 
   /// "Dhaka Division, Bangladesh"
-  String get detail => [region, country]
-      .whereType<String>()
-      .where((part) => part.isNotEmpty)
-      .join(', ');
+  String get detail => [
+    region,
+    country,
+  ].whereType<String>().where((part) => part.isNotEmpty).join(', ');
 
   factory WeatherLocation.fromJson(Map<String, dynamic> json) {
     return WeatherLocation(

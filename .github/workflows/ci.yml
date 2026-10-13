@@ -1,0 +1,41 @@
+# Free on GitHub for public repositories: runs on every push and pull request.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  api:
+    name: Laravel API tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lifeflow-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, intl, zip, bcmath
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test
+
+  app:
+    name: Flutter analyze, test & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lifeflow_app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+      - run: flutter build web --release

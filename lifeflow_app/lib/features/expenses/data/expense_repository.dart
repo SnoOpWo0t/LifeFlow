@@ -8,7 +8,9 @@ class ExpenseRepository {
 
   Future<List<Transaction>> fetchTransactions() async {
     final response = await _apiClient.dio.get('/transactions');
-    return (response.data as List).map((json) => Transaction.fromJson(json)).toList();
+    return (response.data as List)
+        .map((json) => Transaction.fromJson(json))
+        .toList();
   }
 
   Future<Transaction> addTransaction(Map<String, dynamic> data) async {
@@ -16,9 +18,23 @@ class ExpenseRepository {
     return Transaction.fromJson(response.data);
   }
 
+  Future<Transaction> updateTransaction(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _apiClient.dio.put('/transactions/$id', data: data);
+    return Transaction.fromJson(response.data);
+  }
+
+  Future<void> deleteTransaction(int id) async {
+    await _apiClient.dio.delete('/transactions/$id');
+  }
+
   Future<List<ExpenseCategory>> fetchCategories() async {
     final response = await _apiClient.dio.get('/categories');
-    return (response.data as List).map((json) => ExpenseCategory.fromJson(json)).toList();
+    return (response.data as List)
+        .map((json) => ExpenseCategory.fromJson(json))
+        .toList();
   }
 
   Future<ExpenseCategory> createCategory(Map<String, dynamic> data) async {

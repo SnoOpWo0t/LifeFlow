@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/expense_provider.dart';
@@ -16,16 +17,22 @@ class ExpenseScreen extends ConsumerWidget {
     final chartDataAsync = ref.watch(chartDataProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isWide = MediaQuery.sizeOf(context).width >= 1100;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Expense Manager', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Expense Manager',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
+            tooltip: 'Set monthly budget',
             icon: const Icon(Icons.account_balance_wallet),
             onPressed: () => _showSetBudgetDialog(context, ref, theme),
           ),
           IconButton(
+            tooltip: 'Manage categories',
             icon: const Icon(Icons.category),
             onPressed: () {
               showDialog(
@@ -33,36 +40,84 @@ class ExpenseScreen extends ConsumerWidget {
                 builder: (context) => const CategoryManagementDialog(),
               );
             },
-          )
+          ),
+          if (isWide)
+            Padding(
+              padding: const EdgeInsets.only(left: 8, right: 12),
+              child: FilledButton.icon(
+                onPressed: () => _showTransactionDialog(context, ref, theme),
+                icon: const Icon(Icons.add),
+                label: const Text('Add transaction'),
+              ),
+            ),
         ],
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: chartDataAsync.when(
-              loading: () => const SizedBox(height: 250, child: Center(child: CircularProgressIndicator())),
-              error: (err, stack) => SizedBox(height: 250, child: Center(child: Text('Error: $err'))),
-              data: (chartData) => _buildBarChart(context, chartData, isDark),
+      body: Builder(
+        builder: (context) {
+          Future<void> refresh() async {
+            ref.invalidate(transactionsProvider);
+            ref.invalidate(chartDataProvider);
+            await ref.read(transactionsProvider.future);
+          }
+
+          final chart = chartDataAsync.when(
+            loading: () => const SizedBox(
+              height: 250,
+              child: Center(child: CircularProgressIndicator()),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-              child: Text('Recent Transactions', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            error: (err, stack) => const SizedBox(
+              height: 250,
+              child: Center(child: Text("Couldn't load the chart.")),
             ),
-          ),
-          transactionsAsync.when(
-            loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-            error: (err, stack) => SliverFillRemaining(child: Center(child: Text('Error: $err'))),
-            data: (transactions) {
-              if (transactions.isEmpty) {
-                return const SliverFillRemaining(child: Center(child: Text('No transactions yet.', style: TextStyle(color: Colors.grey))));
-              }
-              return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
+            data: (chartData) => _buildBarChart(context, chartData, isDark),
+          );
+          final transactionSlivers = <Widget>[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 8.0,
+                ),
+                child: Text(
+                  'Recent Transactions',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            transactionsAsync.when(
+              loading: () => const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (err, stack) => SliverFillRemaining(
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => ref.invalidate(transactionsProvider),
+                    child: const Text(
+                      "Couldn't load transactions. Tap to retry.",
+                    ),
+                  ),
+                ),
+              ),
+              data: (transactions) {
+                if (transactions.isEmpty) {
+                  return const SliverFillRemaining(
+                    child: Center(
+                      child: Text(
+                        'No transactions yet.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  );
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
                       final tx = transactions[index];
                       final isIncome = tx.type == 'income';
                       return Container(
@@ -72,32 +127,57 @@ class ExpenseScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.2 : 0.03,
+                              ),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
-                            )
-                          ]
+                            ),
+                          ],
                         ),
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          // Tap to edit; delete lives inside the edit dialog.
+                          onTap: () => _showTransactionDialog(
+                            context,
+                            ref,
+                            theme,
+                            existing: tx,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
                           leading: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isIncome ? Colors.greenAccent.withOpacity(0.2) : Colors.redAccent.withOpacity(0.2),
+                              color: isIncome
+                                  ? Colors.greenAccent.withValues(alpha: 0.2)
+                                  : Colors.redAccent.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+                              isIncome
+                                  ? Icons.arrow_downward
+                                  : Icons.arrow_upward,
                               color: isIncome ? Colors.green : Colors.redAccent,
                             ),
                           ),
-                          title: Text(tx.note ?? tx.category?.name ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          title: Text(
+                            tx.note ?? tx.category?.name ?? 'Transaction',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           subtitle: Text(
                             '${tx.transactionDate.day}/${tx.transactionDate.month}/${tx.transactionDate.year} • ${tx.category?.name ?? "General"}',
-                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
                           ),
                           trailing: Text(
-                            '${isIncome ? '+' : '-'}৳ ${tx.amount.toStringAsFixed(2)}',
+                            '${isIncome ? '+' : '-'}${formatMoney(tx.amount, decimals: 2)}',
                             style: TextStyle(
                               color: isIncome ? Colors.green : Colors.redAccent,
                               fontWeight: FontWeight.bold,
@@ -106,32 +186,85 @@ class ExpenseScreen extends ConsumerWidget {
                           ),
                         ),
                       );
-                    },
-                    childCount: transactions.length,
+                    }, childCount: transactions.length),
+                  ),
+                );
+              },
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(height: isWide ? 24 : 100),
+            ), // Room for the FAB on phones
+          ];
+
+          // Desktop: chart beside the list instead of above it.
+          if (isWide) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 5, child: SingleChildScrollView(child: chart)),
+                Expanded(
+                  flex: 6,
+                  child: RefreshIndicator(
+                    onRefresh: refresh,
+                    child: CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                        ...transactionSlivers,
+                      ],
+                    ),
                   ),
                 ),
-              );
-            },
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)), // Bottom padding for FAB
-        ],
+              ],
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: refresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: chart),
+                ...transactionSlivers,
+              ],
+            ),
+          );
+        },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddTransactionDialog(context, ref, theme),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Transaction'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: Colors.white,
-      ),
+      floatingActionButton: isWide
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _showTransactionDialog(context, ref, theme),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Transaction'),
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: Colors.white,
+            ),
     );
   }
 
-  void _showAddTransactionDialog(BuildContext context, WidgetRef ref, ThemeData theme) {
-    final amountController = TextEditingController();
-    final noteController = TextEditingController();
-    int? selectedCategoryId;
-    String type = 'expense';
-    DateTime selectedDate = DateTime.now();
+  /// Add a transaction, or edit/delete [existing] when given.
+  void _showTransactionDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeData theme, {
+    Transaction? existing,
+  }) {
+    final amountController = TextEditingController(
+      text: existing == null
+          ? ''
+          : existing.amount.toStringAsFixed(existing.amount % 1 == 0 ? 0 : 2),
+    );
+    final noteController = TextEditingController(text: existing?.note ?? '');
+    int? selectedCategoryId = existing?.category?.id;
+    String type = existing?.type ?? 'expense';
+    DateTime selectedDate = existing?.transactionDate ?? DateTime.now();
+    String? amountError;
+
+    void refreshMoneyViews() {
+      ref.invalidate(transactionsProvider);
+      ref.invalidate(chartDataProvider);
+      ref.invalidate(dashboardSummaryProvider);
+    }
 
     showDialog(
       context: context,
@@ -144,8 +277,15 @@ class ExpenseScreen extends ConsumerWidget {
 
                 return AlertDialog(
                   backgroundColor: theme.cardTheme.color,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                  title: Text('New Transaction', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  title: Text(
+                    existing == null ? 'New Transaction' : 'Edit Transaction',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   content: SizedBox(
                     width: double.maxFinite,
                     child: Column(
@@ -153,8 +293,14 @@ class ExpenseScreen extends ConsumerWidget {
                       children: [
                         SegmentedButton<String>(
                           segments: const [
-                            ButtonSegment(value: 'expense', label: Text('Expense')),
-                            ButtonSegment(value: 'income', label: Text('Income')),
+                            ButtonSegment(
+                              value: 'expense',
+                              label: Text('Expense'),
+                            ),
+                            ButtonSegment(
+                              value: 'income',
+                              label: Text('Income'),
+                            ),
                           ],
                           selected: {type},
                           onSelectionChanged: (Set<String> newSelection) {
@@ -164,13 +310,20 @@ class ExpenseScreen extends ConsumerWidget {
                         const SizedBox(height: 16),
                         TextField(
                           controller: amountController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: InputDecoration(
                             labelText: 'Amount (৳)',
+                            errorText: amountError,
                             prefixIcon: const Icon(Icons.attach_money),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             filled: true,
-                            fillColor: theme.brightness == Brightness.dark ? Colors.black12 : Colors.grey[100],
+                            fillColor: theme.brightness == Brightness.dark
+                                ? Colors.black12
+                                : Colors.grey[100],
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -179,26 +332,44 @@ class ExpenseScreen extends ConsumerWidget {
                           decoration: InputDecoration(
                             labelText: 'Note (optional)',
                             prefixIcon: const Icon(Icons.note),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             filled: true,
-                            fillColor: theme.brightness == Brightness.dark ? Colors.black12 : Colors.grey[100],
+                            fillColor: theme.brightness == Brightness.dark
+                                ? Colors.black12
+                                : Colors.grey[100],
                           ),
                         ),
                         const SizedBox(height: 12),
                         categoriesAsync.when(
                           loading: () => const CircularProgressIndicator(),
-                          error: (e, s) => Text('Error loading categories', style: TextStyle(color: theme.colorScheme.error)),
+                          error: (e, s) => Text(
+                            'Error loading categories',
+                            style: TextStyle(color: theme.colorScheme.error),
+                          ),
                           data: (categories) {
                             return DropdownButtonFormField<int>(
                               decoration: InputDecoration(
                                 labelText: 'Category',
                                 prefixIcon: const Icon(Icons.category),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 filled: true,
-                                fillColor: theme.brightness == Brightness.dark ? Colors.black12 : Colors.grey[100],
+                                fillColor: theme.brightness == Brightness.dark
+                                    ? Colors.black12
+                                    : Colors.grey[100],
                               ),
                               value: selectedCategoryId,
-                              items: categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+                              items: categories
+                                  .map(
+                                    (c) => DropdownMenuItem(
+                                      value: c.id,
+                                      child: Text(c.name),
+                                    ),
+                                  )
+                                  .toList(),
                               onChanged: (val) {
                                 setState(() => selectedCategoryId = val);
                               },
@@ -207,11 +378,17 @@ class ExpenseScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         ListTile(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          tileColor: theme.brightness == Brightness.dark ? Colors.black12 : Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          tileColor: theme.brightness == Brightness.dark
+                              ? Colors.black12
+                              : Colors.grey[100],
                           leading: const Icon(Icons.calendar_today),
                           title: const Text('Transaction Date'),
-                          subtitle: Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
+                          subtitle: Text(
+                            '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                          ),
                           onTap: () async {
                             final picked = await showDatePicker(
                               context: context,
@@ -228,61 +405,136 @@ class ExpenseScreen extends ConsumerWidget {
                     ),
                   ),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    if (existing != null)
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.redAccent,
+                        ),
+                        onPressed: () async {
+                          final confirmed = await showDialog<bool>(
+                            context: ctx,
+                            builder: (c) => AlertDialog(
+                              title: const Text('Delete transaction?'),
+                              content: Text(
+                                '"${existing.note ?? existing.category?.name ?? 'Transaction'}" will be permanently removed.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(c, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.redAccent,
+                                  ),
+                                  onPressed: () => Navigator.pop(c, true),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmed != true) return;
+                          await ref
+                              .read(expenseRepositoryProvider)
+                              .deleteTransaction(existing.id);
+                          refreshMoneyViews();
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        },
+                        child: const Text('Delete'),
+                      ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancel'),
+                    ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         backgroundColor: theme.colorScheme.primary,
                         foregroundColor: Colors.white,
                       ),
-                      onPressed: () {
-                        if (amountController.text.isNotEmpty) {
-                          ref.read(expenseRepositoryProvider).addTransaction({
-                            'amount': double.parse(amountController.text),
-                            'note': noteController.text,
-                            'type': type,
-                            if (selectedCategoryId != null) 'category_id': selectedCategoryId,
-                            'transaction_date': selectedDate.toIso8601String(),
-                          }).then((_) {
-                            ref.invalidate(transactionsProvider);
-                            ref.invalidate(chartDataProvider);
-                          });
-                          Navigator.pop(ctx);
+                      onPressed: () async {
+                        // Accept "1,500" as well as "1500"; reject anything else
+                        // instead of throwing (double.parse used to crash here).
+                        final amount = double.tryParse(
+                          amountController.text.replaceAll(',', '').trim(),
+                        );
+                        if (amount == null || amount <= 0) {
+                          setState(
+                            () =>
+                                amountError = 'Enter an amount greater than 0',
+                          );
+                          return;
                         }
+                        final data = {
+                          'amount': amount,
+                          'note': noteController.text,
+                          'type': type,
+                          'category_id': selectedCategoryId,
+                          'transaction_date': selectedDate.toIso8601String(),
+                        };
+                        final repo = ref.read(expenseRepositoryProvider);
+                        Navigator.pop(ctx);
+                        if (existing == null) {
+                          await repo.addTransaction(data);
+                        } else {
+                          await repo.updateTransaction(existing.id, data);
+                        }
+                        refreshMoneyViews();
                       },
                       child: const Text('Save'),
                     ),
                   ],
                 );
-              }
+              },
             );
-          }
+          },
         );
-      }
+      },
     );
   }
 
-  void _showSetBudgetDialog(BuildContext context, WidgetRef ref, ThemeData theme) {
+  void _showSetBudgetDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeData theme,
+  ) {
     final currentBudget = ref.read(settingsRepositoryProvider).monthlyBudget;
-    final controller = TextEditingController(text: currentBudget > 0 ? currentBudget.toString() : '');
+    final controller = TextEditingController(
+      text: currentBudget > 0 ? currentBudget.toString() : '',
+    );
 
     showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: theme.cardTheme.color,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Row(
             children: [
-              const Icon(Icons.account_balance_wallet, color: Colors.blueAccent),
+              const Icon(
+                Icons.account_balance_wallet,
+                color: Colors.blueAccent,
+              ),
               const SizedBox(width: 8),
-              Text('Set Monthly Budget', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Set Monthly Budget',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Enter your target monthly budget limit. Leave blank or 0 to dynamically use your total monthly income.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+              const Text(
+                'Enter your target monthly budget limit. Leave blank or 0 to dynamically use your total monthly income.',
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: controller,
@@ -290,130 +542,94 @@ class ExpenseScreen extends ConsumerWidget {
                 decoration: InputDecoration(
                   labelText: 'Amount (৳)',
                   prefixIcon: const Icon(Icons.money),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
-                  fillColor: theme.brightness == Brightness.dark ? Colors.black12 : Colors.grey[100],
+                  fillColor: theme.brightness == Brightness.dark
+                      ? Colors.black12
+                      : Colors.grey[100],
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: Colors.white,
               ),
               onPressed: () async {
                 final amount = double.tryParse(controller.text) ?? 0.0;
-                await ref.read(settingsRepositoryProvider).saveSettings(monthlyBudget: amount);
-                ref.invalidate(dashboardSummaryProvider); // Refresh dashboard with new budget
+                await ref
+                    .read(settingsRepositoryProvider)
+                    .saveSettings(monthlyBudget: amount);
+                ref.invalidate(
+                  dashboardSummaryProvider,
+                ); // Refresh dashboard with new budget
                 if (ctx.mounted) Navigator.pop(ctx);
               },
               child: const Text('Save'),
             ),
           ],
         );
-      }
+      },
     );
   }
 
-  Widget _buildDonutChart(BuildContext context, List<Transaction> transactions, bool isDark, ThemeData theme) {
-    final expenses = transactions.where((t) => t.type == 'expense').toList();
-    if (expenses.isEmpty) return const SizedBox.shrink();
+  String _shortDate(String monthDay) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final parts = monthDay.split('-');
+    final month = int.tryParse(parts[0]) ?? 0;
+    final day = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
+    if (month < 1 || month > 12 || day == 0) return monthDay;
+    return '$day ${months[month - 1]}';
+  }
 
-    final categoryTotals = <String, double>{};
-    final categoryColors = <String, Color>{};
-
-    for (var tx in expenses) {
-      final catName = tx.category?.name ?? 'General';
-      categoryTotals[catName] = (categoryTotals[catName] ?? 0) + tx.amount;
-      if (tx.category?.colorHex != null && !categoryColors.containsKey(catName)) {
-        categoryColors[catName] = Color(int.parse(tx.category!.colorHex!.replaceFirst('#', '0xff')));
-      }
-    }
-
-    if (categoryTotals.isEmpty) return const SizedBox.shrink();
-
-    final List<PieChartSectionData> sections = [];
-    int i = 0;
-    final defaultColors = [Colors.redAccent, Colors.blueAccent, Colors.greenAccent, Colors.orangeAccent, Colors.purpleAccent, Colors.tealAccent];
-    
-    categoryTotals.forEach((name, total) {
-      final color = categoryColors[name] ?? defaultColors[i % defaultColors.length];
-      sections.add(
-        PieChartSectionData(
-          color: color,
-          value: total,
-          title: '${((total / expenses.fold(0.0, (sum, item) => sum + item.amount)) * 100).toStringAsFixed(1)}%',
-          radius: 50,
-          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+  Widget _buildBarChart(
+    BuildContext context,
+    List<Map<String, dynamic>> data,
+    bool isDark,
+  ) {
+    if (data.isEmpty)
+      return const SizedBox(
+        height: 200,
+        child: Center(
+          child: Text('No chart data', style: TextStyle(color: Colors.grey)),
         ),
       );
-      i++;
-    });
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 15, offset: const Offset(0, 8))
-        ]
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Category-wise spending', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                sectionsSpace: 2,
-                centerSpaceRadius: 40,
-                sections: sections,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...categoryTotals.entries.map((e) {
-            final color = categoryColors[e.key] ?? defaultColors[categoryTotals.keys.toList().indexOf(e.key) % defaultColors.length];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                children: [
-                  CircleAvatar(backgroundColor: color.withOpacity(0.2), radius: 12, child: Icon(Icons.circle, size: 12, color: color)),
-                  const SizedBox(width: 12),
-                  Text(e.key, style: theme.textTheme.bodyMedium),
-                  const Spacer(),
-                  Text('৳ ${e.value.toStringAsFixed(0)}', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBarChart(BuildContext context, List<Map<String, dynamic>> data, bool isDark) {
-    if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No chart data', style: TextStyle(color: Colors.grey))));
 
     double maxVal = 1000;
-    
+
     // Group data by date
     final groupedData = <String, Map<String, double>>{};
     for (var row in data) {
       final date = row['transaction_date'].toString().substring(5, 10); // MM-DD
       final type = row['type'] as String;
       final total = double.tryParse(row['total'].toString()) ?? 0.0;
-      
+
       if (total > maxVal) maxVal = total;
-      
+
       if (!groupedData.containsKey(date)) {
         groupedData[date] = {'income': 0, 'expense': 0};
       }
@@ -423,7 +639,7 @@ class ExpenseScreen extends ConsumerWidget {
     final sortedDates = groupedData.keys.toList()..sort();
     List<BarChartGroupData> barGroups = [];
     int x = 0;
-    
+
     for (var date in sortedDates) {
       final inc = groupedData[date]!['income']!;
       final exp = groupedData[date]!['expense']!;
@@ -431,10 +647,20 @@ class ExpenseScreen extends ConsumerWidget {
         BarChartGroupData(
           x: x,
           barRods: [
-            BarChartRodData(toY: inc, color: Colors.greenAccent, width: 8, borderRadius: BorderRadius.circular(4)),
-            BarChartRodData(toY: exp, color: Colors.redAccent, width: 8, borderRadius: BorderRadius.circular(4)),
+            BarChartRodData(
+              toY: inc,
+              color: Colors.greenAccent,
+              width: 8,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            BarChartRodData(
+              toY: exp,
+              color: Colors.redAccent,
+              width: 8,
+              borderRadius: BorderRadius.circular(4),
+            ),
           ],
-        )
+        ),
       );
       x++;
     }
@@ -447,8 +673,12 @@ class ExpenseScreen extends ConsumerWidget {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 15, offset: const Offset(0, 8))
-        ]
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,7 +686,10 @@ class ExpenseScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Income vs Expense', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text(
+                'Income vs Expense',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
               Row(
                 children: [
                   _buildLegendItem(Colors.greenAccent, 'Income', isDark),
@@ -475,29 +708,44 @@ class ExpenseScreen extends ConsumerWidget {
                 barTouchData: BarTouchData(
                   enabled: true,
                   touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (group) => isDark ? Colors.white : Colors.black87,
+                    getTooltipColor: (group) =>
+                        isDark ? Colors.white : Colors.black87,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
-                        '৳ ${rod.toY.toStringAsFixed(0)}',
-                        TextStyle(color: isDark ? Colors.black : Colors.white, fontWeight: FontWeight.bold),
+                        formatMoney(rod.toY),
+                        TextStyle(
+                          color: isDark ? Colors.black : Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       );
                     },
                   ),
                 ),
                 titlesData: FlTitlesData(
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 40,
                       getTitlesWidget: (value, meta) {
-                        if (value == 0) return const SizedBox.shrink();
+                        // Skip 0 and the padded top value, which collided with the label below it.
+                        if (value == 0 || value == meta.max)
+                          return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: Text(
-                            value >= 1000 ? '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}k' : value.toStringAsFixed(0),
-                            style: const TextStyle(fontSize: 10, color: Colors.grey),
+                            value >= 1000
+                                ? '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}k'
+                                : value.toStringAsFixed(0),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
+                            ),
                             textAlign: TextAlign.right,
                           ),
                         );
@@ -508,10 +756,17 @@ class ExpenseScreen extends ConsumerWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= 0 && value.toInt() < sortedDates.length) {
+                        if (value.toInt() >= 0 &&
+                            value.toInt() < sortedDates.length) {
                           return Padding(
-                            padding: const EdgeInsets.only(top: 8), 
-                            child: Text(sortedDates[value.toInt()], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10))
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              _shortDate(sortedDates[value.toInt()]),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                              ),
+                            ),
                           );
                         }
                         return const SizedBox.shrink();
@@ -541,9 +796,19 @@ class ExpenseScreen extends ConsumerWidget {
   Widget _buildLegendItem(Color color, String text, bool isDark) {
     return Row(
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[700])),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.grey[400] : Colors.grey[700],
+          ),
+        ),
       ],
     );
   }

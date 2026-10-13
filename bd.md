@@ -1,42 +1,48 @@
-No, you aren't using a database service. The app uses **SQLite**, a database stored as a single local file: [lifeflow-api/database/database.sqlite](lifeflow-api/database/database.sqlite), currently 147 KB. Uploaded avatars are also stored on your disk, in `lifeflow-api/storage/app/public/avatars/`.
+# Database: what LifeFlow uses and what to use online
 
-That's fine while the app runs only on your computer. It stops working once you put the app online, because free hosting services usually wipe their disk on every restart or redeploy. Your users, tasks and photos would vanish each time.
+## Today: SQLite (local file)
 
-## What I recommend: Supabase (free)
+LifeFlow doesn't use a hosted database service. The API stores everything in **SQLite**, a database kept in a single file: `lifeflow-api/database/database.sqlite`. Profile photos are stored on disk in `lifeflow-api/storage/app/public/avatars/`. The automated tests use a separate in-memory SQLite database, so they never touch your data.
 
-Your [PROJECT_BLUEPRINT.md](PROJECT_BLUEPRINT.md) already planned for "Supabase PostgreSQL" and "Supabase Storage", so it fits what you intended. One free account gives you:
+That's ideal on your own computer. It stops working once the app is online, because free hosting services wipe their disk on every restart or redeploy, so users, tasks and photos would vanish.
 
-- **A PostgreSQL database.** Laravel supports it out of the box, and your existing migrations should run without changes.
-- **File storage for avatars.** Laravel can upload to it like Amazon S3, so photos survive restarts.
-- **No credit card needed.**
+## Online: Neon PostgreSQL (free, recommended)
 
-**Free-tier catches**, as of my last information (free tiers change, so check before signing up):
+**Neon** gives you a free PostgreSQL database that **pauses when idle and wakes up automatically** on the next request. You never have to un-pause it by hand, which makes it the best "free and permanent" choice.
 
-- About 500 MB of database space and 1 GB of file storage, plenty for a personal or student project.
-- A project with no activity for about a week gets paused. You can resume it from the Supabase dashboard.
+- Laravel supports PostgreSQL out of the box; the existing migrations run unchanged.
+- The app already handles PostgreSQL's habit of returning money amounts as text.
+- Catches (free tiers change, so check before signing up): about 0.5 GB of storage, and a short delay on the first query after it has been idle.
 
-## The full free setup, if you deploy
+**Alternatives**
+- **Supabase**: PostgreSQL plus file storage, but free projects **pause after about a week without activity** and must be resumed by hand from the dashboard.
+- **Aiven**: free MySQL or PostgreSQL.
 
+## Profile photos online
 
-| Part              | Free option                                                       | Catch                                                          |
-| ----------------- | ----------------------------------------------------------------- | -------------------------------------------------------------- |
-| Database + photos | **Supabase**                                                      | Pauses when inactive                                           |
-| Laravel API       | **Render** (free web service)                                     | Sleeps when idle; the first request after that takes ~30–60 s |
-| Flutter web app   | **Netlify**, **Vercel**, **Cloudflare Pages** or **GitHub Pages** | None that matters                                              |
-| Weather           | Open-Meteo + BigDataCloud (already done)                          | None                                                           |
+Photos are now resized to 512px (tens of KB each), so they're small enough to store **in the database itself**. That avoids needing a separate file-storage service. Alternatively, use **Cloudinary**'s free plan. Either way needs a small code change in `ProfileController`.
 
-Alternatives to Supabase are **Neon** (free PostgreSQL only) or **Aiven** (free MySQL or PostgreSQL). They have no file storage, though, so you'd still need somewhere else for avatars.
+## The full free setup
+
+| Part | Free option | Catch |
+|---|---|---|
+| Database | **Neon** | Short wake-up delay after idling |
+| Laravel API | **Render** (free web service) | Sleeps when idle; first request after that takes ~30–60 s (UptimeRobot pings can keep it awake) |
+| Flutter web app | **Cloudflare Pages**, Netlify, Vercel or GitHub Pages | None that matters |
+| Weather | Open-Meteo + BigDataCloud (already done) | None |
+| Tests on every push | GitHub Actions (already set up) | None |
 
 ## What switching takes
 
-1. Create a free Supabase project and copy its database connection string.
+1. Create a free Neon project and copy its connection string.
 2. Install PHP's PostgreSQL extension: `sudo apt install php8.3-pgsql`
-3. Change `lifeflow-api/.env`:
+3. In `lifeflow-api/.env` (on the server, or locally to try it):
    ```
    DB_CONNECTION=pgsql
-   DB_URL=postgresql://postgres.xxxx:PASSWORD@aws-0-xx.pooler.supabase.com:5432/postgres
+   DB_URL=postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require
    ```
 4. Run `php artisan migrate`.
-5. Optionally, point avatar uploads at Supabase Storage. That needs a small code change, which I'd make.
 
-Keep using SQLite for development on your laptop and switch to Supabase when you put the app online. Do you want me to set this up once you've created the Supabase project? Paste the connection string into `.env` yourself rather than into this chat, since it contains your database password.
+Keep using SQLite on your laptop for development. The connection string contains your database password, so keep it in `.env` (which git ignores) and never commit it or paste it anywhere public.
+
+Full deployment steps are in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md).

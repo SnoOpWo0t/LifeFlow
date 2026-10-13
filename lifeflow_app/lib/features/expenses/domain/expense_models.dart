@@ -4,7 +4,12 @@ class ExpenseCategory {
   final String type;
   final String? colorHex;
 
-  ExpenseCategory({required this.id, required this.name, required this.type, this.colorHex});
+  ExpenseCategory({
+    required this.id,
+    required this.name,
+    required this.type,
+    this.colorHex,
+  });
 
   factory ExpenseCategory.fromJson(Map<String, dynamic> json) {
     return ExpenseCategory(
@@ -15,7 +20,11 @@ class ExpenseCategory {
     );
   }
 
-  Map<String, dynamic> toJson() => {'name': name, 'type': type, 'color_hex': colorHex};
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'type': type,
+    'color_hex': colorHex,
+  };
 }
 
 class Transaction {
@@ -38,8 +47,11 @@ class Transaction {
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
       id: json['id'],
-      category: json['category'] != null ? ExpenseCategory.fromJson(json['category']) : null,
-      amount: (json['amount'] as num).toDouble(),
+      category: json['category'] != null
+          ? ExpenseCategory.fromJson(json['category'])
+          : null,
+      // PostgreSQL returns decimals as strings, SQLite as numbers.
+      amount: double.parse(json['amount'].toString()),
       type: json['type'],
       transactionDate: DateTime.parse(json['transaction_date']),
       note: json['note'],

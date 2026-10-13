@@ -17,7 +17,10 @@ class TaskRepository {
   }
 
   Future<Task> updateTask(Task task) async {
-    final response = await _apiClient.dio.put('/tasks/${task.id}', data: task.toJson());
+    final response = await _apiClient.dio.put(
+      '/tasks/${task.id}',
+      data: task.toJson(),
+    );
     return Task.fromJson(response.data);
   }
 

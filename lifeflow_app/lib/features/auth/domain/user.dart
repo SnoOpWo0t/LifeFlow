@@ -20,7 +20,9 @@ class User {
       name: json['name'],
       email: json['email'],
       avatarUrl: json['avatar_url'],
-      preferences: preferences is Map ? Map<String, dynamic>.from(preferences) : null,
+      preferences: preferences is Map
+          ? Map<String, dynamic>.from(preferences)
+          : null,
     );
   }
 

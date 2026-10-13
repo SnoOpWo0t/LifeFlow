@@ -3,10 +3,11 @@
 
 # LifeFlow 🌱
 
-**Your Intelligent All-In-One Mobile-First Life Management Platform** 📱✨
+**Your All-In-One Life Management Platform for Phone and Desktop** 📱💻
 
 [![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
-[![Laravel Version](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![Laravel Version](https://img.shields.io/badge/Laravel-13.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![CI](https://img.shields.io/github/actions/workflow/status/SnoOpWo0t/LifeFlow/ci.yml?style=for-the-badge&label=CI)](https://github.com/SnoOpWo0t/LifeFlow/actions)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 </div>
@@ -14,7 +15,7 @@
 <br />
 
 <div align="center">
-  <i>LifeFlow brings your tasks, finances, and habits under one roof with a stunning glassmorphism interface, backed by a powerful AI assistant. 🤖💎</i>
+  <i>LifeFlow brings your tasks, money and habits under one roof: one Flutter app for web, Android and iOS, backed by a secure Laravel API.</i>
 </div>
 
 ---
@@ -23,13 +24,12 @@
 
 - [About the Project](#-about-the-project)
 - [Key Features](#-key-features)
-- [Visuals &amp; Demos](#-visuals--demos)
-  - [Screenshots](#screenshots)
-  - [Video Walkthrough](#video-walkthrough)
-- [Architecture &amp; Code Structure](#-architecture--code-structure)
+- [Visuals & Demos](#-visuals--demos)
+- [Architecture & Code Structure](#️-architecture--code-structure)
 - [Tech Stack](#-tech-stack)
-- [Future Roadmap](#-future-roadmap)
-- [Getting Started](#-getting-started)
+- [Quality & Security](#-quality--security)
+- [Roadmap](#️-roadmap)
+- [Getting Started](#️-getting-started)
 - [License](#-license)
 - [Contact](#-contact)
 
@@ -37,187 +37,194 @@
 
 ## 🚀 About the Project
 
-In today's fast-paced world, managing tasks, tracking habits, and budgeting finances often requires juggling multiple disjointed apps. **LifeFlow** is designed to solve this by providing a single, unified ecosystem.
+Managing tasks, tracking habits and budgeting usually means juggling several apps that don't talk to each other. **LifeFlow** puts all three in one place.
 
-Designed with a **mobile-first approach**, LifeFlow delivers a premium, native-app feel across all devices. The UI is fully responsive, working seamlessly across both PC Web browsers and Mobile devices. Featuring rich glassmorphism elements, dynamic charts, and micro-animations, it offers a seamless user experience. Furthermore, an integrated AI Assistant helps you analyze your spending habits and prioritize your day.
+The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a-time Kanban board and thumb-reachable buttons. Desktops get a side navigation rail, multi-column layouts and side-by-side charts. Everything is stored per user on the server, so your data and settings follow you to any device.
 
 ---
 
 ## ✨ Key Features
 
-- **📊 Comprehensive Dashboard:** Real-time budget overviews, dynamic productivity scores, weather integrations, and a live recent activity feed—all at a glance.
-- **📋 Kanban Task Manager:** Effortlessly organize your work with intuitive *To-Do*, *In Progress*, and *Done* lanes. Includes task priorities and due dates.
-- **💰 Smart Expense Tracker:** Track income and expenses, set strict monthly budgets (with alerts), and visualize your spending patterns with interactive Donut and Bar charts.
-- **🔥 Habit Tracker:** Build lasting routines with a visual streak system, daily check-ins, and weekly progress overviews.
-- **📈 Weekly Analytics:** A dedicated analytics page featuring interactive line charts for task tracking and grouped bar charts for income vs. expense tracking.
-- **🤖 Integrated AI Assistant:** Receive intelligent, data-driven suggestions on your financial health and task prioritization (Coming soon).
-- **🔐 Secure & Persistent Auth:** Robust token-based authentication with seamless session persistence and profile image uploads.
+- **📊 Dashboard:** live weather, a productivity score, **today's tasks** (due today, overdue, or finished today), habit progress, a monthly budget overview with overspend warnings, and a recent-activity feed. Two columns on desktop, one on phones.
+- **📋 Kanban Task Manager:** *To Do*, *In Progress* and *Done* lanes with priorities and due dates. Drag and drop on desktop; a lane switcher and a "Move to…" menu on phones. Deleting asks for confirmation.
+- **💰 Expense Tracker:** income and expenses with custom categories, a monthly budget, and an income-vs-expense bar chart. **Tap any transaction to edit or delete it.** Amounts are shown with thousands separators (`৳ 124,123`).
+- **🔥 Habit Tracker:** daily check-ins, a 7-day view and streaks **calculated from your check-in history**, so they're always accurate. Rename or delete habits from the card menu.
+- **📈 Weekly Analytics:** an income-vs-expenses line chart and a daily productivity bar chart, with clean round-number axes.
+- **🌦️ Live Weather:** search any city, or tap **"Use my current location"**. Powered by free, key-less APIs (Open-Meteo, BigDataCloud).
+- **🔐 Accounts & Settings:** token login with server-side logout, profile photos (automatically resized before upload), and settings (dark mode, budget, weather city) saved to your account.
 
 ---
 
 ## 📱 Visuals & Demos
 
-### Screenshots
+### Phone
 
 <div align="center">
-  <img src="Screenshots/home%20Dark.png" alt="Dashboard Dark" width="30%">
-   
-  <img src="Screenshots/Expense%20Manager.png" alt="Expense Manager" width="30%">
-   
-  <img src="Screenshots/Habit%20Tracker.png" alt="Habits Tracker" width="30%">
+  <img src="Screenshots/phone-dashboard.png" alt="Dashboard on a phone" width="24%">
+  <img src="Screenshots/phone-tasks.png" alt="Task manager on a phone" width="24%">
+  <img src="Screenshots/phone-expenses.png" alt="Expenses on a phone" width="24%">
+  <img src="Screenshots/phone-habits.png" alt="Habits on a phone" width="24%">
 </div>
 
-<br>
+### Desktop
 
 <div align="center">
-  <img src="Screenshots/Task%20manager.png" alt="Task Manager" width="30%">
-   
-  <img src="Screenshots/Weekly%20analytics.png" alt="Weekly Analytics" width="30%">
-   
-  <img src="Screenshots/Home%20Light.png" alt="Dashboard Light Mode" width="30%">
+  <img src="Screenshots/desktop-dashboard.png" alt="Dashboard on desktop" width="49%">
+  <img src="Screenshots/desktop-tasks.png" alt="Task manager on desktop" width="49%">
+  <img src="Screenshots/desktop-expenses.png" alt="Expenses on desktop" width="49%">
+  <img src="Screenshots/desktop-analytics.png" alt="Analytics on desktop" width="49%">
+</div>
+
+### Sign in
+
+<div align="center">
+  <img src="Screenshots/shot-1280.png" alt="Sign-in page" width="70%">
 </div>
 
 ### Video Walkthrough
 
-Watch the full 1080p deep-dive walkthrough on YouTube!
+Watch the walkthrough on YouTube:
 
 [![LifeFlow YouTube Demo](https://img.youtube.com/vi/EQXaW4yCKzU/0.jpg)](https://www.youtube.com/shorts/EQXaW4yCKzU)
 
-*Or watch the quick highlight reel below:*
+*Or the quick highlight reel (recorded on an earlier version of the UI):*
 
 <div align="center">
   <img src="Life%20Flow%20github.gif" alt="App Demo GIF" width="80%" style="border-radius: 12px;">
 </div>
 
+---
+
 ## 🏗️ Architecture & Code Structure
 
-LifeFlow utilizes **Clean Architecture** to ensure the codebase remains maintainable, testable, and highly scalable.
+The project is split into two apps that talk over HTTP: a **Laravel REST API** and a **Flutter client**.
 
-### Why Two Separate Folders?
-
-You will notice the project is split into two main directories: `lifeflow-api` and `lifeflow_app`. This is a professional industry standard known as **Frontend/Backend Decoupling (or Headless Architecture)**.
-
-* 🛡️ **Security:** The database and business logic (Laravel) live in the API folder. The Flutter app never talks to the database directly, preventing malicious attacks.
-* 🚀 **Scalability:** You can host the Laravel API on a powerful cloud server (like AWS or DigitalOcean) while the Flutter app can be compiled to Web, iOS, and Android seamlessly.
-* 🔄 **Reusability:** If you ever want to build a React website or a desktop app in the future, they can all securely connect to the exact same `lifeflow-api` without rewriting any logic!
+* 🛡️ **Security:** the database and business rules (validation, ownership checks, streak calculation) live on the server. The Flutter app never touches the database directly.
+* 🚀 **Scalability:** the API and the web app can be hosted separately; the same Flutter code builds for web, Android and iOS.
+* 🔄 **Reusability:** any future client (another website, a desktop app) can use the same API.
 
 ```text
 LifeFlow/
-├── lifeflow-api/                  # Backend REST API
-│   ├── app/Http/Controllers/      # API Controllers (Dashboard, Expenses, Tasks)
-│   ├── app/Models/                # Eloquent Models
-│   ├── routes/api.php             # API routing
-│   └── database/migrations/       # Database schemas
+├── .github/workflows/ci.yml       # Automatic tests on every push (GitHub Actions)
+├── lifeflow-api/                  # Backend REST API (Laravel)
+│   ├── app/Http/Controllers/      # Auth, Dashboard, Tasks, Expenses, Habits, Analytics, Profile
+│   ├── app/Policies/              # "Only the owner may edit/delete" rules
+│   ├── app/Models/                # Eloquent models
+│   ├── routes/api.php             # 26 endpoints under /api/v1
+│   ├── database/migrations/       # Database schema
+│   └── tests/Feature/ApiTest.php  # API tests
 │
-└── lifeflow_app/                  # Frontend Application
-    └── lib/
-        ├── core/                  # Network client, theme, storage
-        ├── features/              # Feature-based folder structure
-        │   ├── auth/              # Authentication UI & Logic
-        │   ├── dashboard/         # Dashboard & Summary API Logic
-        │   ├── analytics/         # Weekly Analytics & Charts
-        │   ├── expenses/          # Transaction tracking & Charts
-        │   ├── habits/            # Habit trackers & logs
-        │   ├── tasks/             # Task manager & Kanban board
-        │   └── settings/          # User preferences & Profile
-        └── main.dart              # App entry point
+└── lifeflow_app/                  # Frontend (Flutter)
+    ├── lib/
+    │   ├── core/                  # API client, storage, theme, formatters
+    │   ├── features/              # One folder per feature: data / domain / presentation
+    │   │   ├── auth/              # Sign in / sign up
+    │   │   ├── dashboard/         # Summary + live weather
+    │   │   ├── tasks/             # Kanban board
+    │   │   ├── expenses/          # Transactions, categories, budget
+    │   │   ├── habits/            # Habit cards and streaks
+    │   │   ├── analytics/         # Weekly charts
+    │   │   └── settings/          # Profile, preferences, weather location
+    │   ├── main.dart              # App entry point
+    │   └── main_screen.dart       # Responsive navigation (bottom bar / side rail)
+    └── test/app_test.dart         # Flutter unit and widget tests
 ```
+
+More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJECT_BLUEPRINT.md).
 
 ---
 
 ## 💻 Tech Stack
 
-**Frontend (Mobile & Web)**
+**Frontend (web, Android, iOS)**
 
-- **Framework:** [Flutter 3.x](https://flutter.dev/)
-- **State Management:** [Riverpod](https://riverpod.dev/)
+- **Framework:** [Flutter](https://flutter.dev/) (Dart 3)
+- **State management:** [Riverpod](https://riverpod.dev/)
 - **Networking:** Dio
-- **Data Visualization:** FL Chart
+- **Charts:** fl_chart
+- **Other:** google_fonts, image_picker, geolocator, shared_preferences
 
 **Backend (REST API)**
 
-- **Framework:** [Laravel 11.x](https://laravel.com/)
-- **Language:** PHP 8.2+
-- **Authentication:** Laravel Sanctum
+- **Framework:** [Laravel 13](https://laravel.com/) on PHP 8.3+
+- **Authentication:** Laravel Sanctum (revocable API tokens)
 
 **Database**
 
-- **Development:** SQLite
-- **Production:** MySQL / PostgreSQL
+- **Development:** SQLite (a single local file)
+- **Production:** PostgreSQL (e.g. Neon's free tier); see [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md)
+
+**Free external APIs (no keys needed)**
+
+- [Open-Meteo](https://open-meteo.com/): weather forecasts and city search
+- [BigDataCloud](https://www.bigdatacloud.com/): turning your location into a city name
 
 ---
 
-## 🛣️ Future Roadmap
+## ✅ Quality & Security
 
-- [ ]  **Dark/Light Mode Toggle:** User-customizable UI themes.
-- [ ]  **Push Notifications:** Reminders for habits and overdue tasks.
-- [ ]  **Data Export:** Export expense reports to CSV/PDF.
-- [ ]  **Multi-Currency Support:** For international users.
-- [ ]  **Proactive AI Chatbot:** Conversational AI interface for adding tasks via natural language.
+- **Automated tests:** 19 backend tests (PHPUnit) and 6 Flutter tests, run on every push by GitHub Actions.
+- **Data isolation:** every write goes through Laravel Policies; users can't read or change each other's data (covered by tests).
+- **Login protection:** passwords are hashed, login/register are limited to 10 attempts per minute, logout revokes the token on the server, and an expired session returns you to the sign-in screen.
+- **Validation:** on the server for every request, and in the forms before anything is sent.
+
+---
+
+## 🛣️ Roadmap
+
+- [x] Dark / light mode toggle
+- [x] Live weather with city search and geolocation
+- [x] Edit and delete transactions; rename and delete habits
+- [x] Responsive layouts for phone and desktop
+- [x] Automated tests and CI
+- [ ] Reminders / push notifications for habits and overdue tasks
+- [ ] Sign in with Google
+- [ ] Data export (CSV / PDF)
+- [ ] Multi-currency support
+- [ ] AI assistant for adding tasks in plain language
+- [ ] Public deployment (free hosting)
+
+The full prioritised list, all of it doable for free, is in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md).
 
 ---
 
 ## 🛠️ Getting Started
 
-Follow these instructions to set up the LifeFlow development environment locally.
+Step-by-step instructions for **Linux and Windows**, including troubleshooting, are in **[HOW_TO_RUN.md](HOW_TO_RUN.md)**. Short version:
 
 ### Prerequisites
 
-- [PHP 8.2+](https://www.php.net/) & [Composer](https://getcomposer.org/)
-- [Flutter SDK](https://docs.flutter.dev/get-started/install)
-- SQLite (or your preferred SQL database)
+- PHP 8.3+ with the `mbstring`, `xml`, `curl`, `sqlite3`, `zip`, `bcmath` and `intl` extensions
+- [Composer](https://getcomposer.org/) (a copy is included at `php/composer.phar`)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (stable channel)
 
-### 1. Backend Setup (Laravel)
-
-Navigate to the API directory:
+### 1. Backend (Laravel)
 
 ```bash
 cd lifeflow-api
-```
-
-Install dependencies and copy environment variables:
-
-```bash
-composer install
+composer install                      # or: php ../php/composer.phar install
 cp .env.example .env
 php artisan key:generate
-```
-
-Run database migrations to build the tables:
-
-```bash
+touch database/database.sqlite
 php artisan migrate
+php artisan storage:link
+php artisan serve                     # → http://127.0.0.1:8000
 ```
 
-Start the local server:
-
-```bash
-php artisan serve
-```
-
-*The API will run securely at `http://localhost:8000`.*
-
-### 2. Frontend Setup (Flutter)
-
-In a new terminal window, navigate to the Flutter app directory:
+### 2. Frontend (Flutter)
 
 ```bash
 cd lifeflow_app
-```
-
-Install packages:
-
-```bash
 flutter pub get
+flutter run -d web-server --web-port 8080     # → http://localhost:8080
 ```
 
-Run the application (for Web):
+### 3. Run the tests
 
 ```bash
-flutter run -d web-server --web-port 8080
+cd lifeflow-api && php artisan test
+cd lifeflow_app && flutter analyze && flutter test
 ```
-
-*The application will be accessible at `http://localhost:8080`.*
 
 ---
 
@@ -229,7 +236,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📬 Contact
 
-**Afrin Sultana Akhi**Creator & Lead Developer
+**Afrin Sultana Akhi**, Creator & Lead Developer
 
 - **Portfolio:** [afrinsultana-akhi.vercel.app](https://afrinsultana-akhi.vercel.app/)
 - **LinkedIn:** [afrin-sultana-akhi](https://www.linkedin.com/in/afrin-sultana-akhi-1ab3a4422/)
