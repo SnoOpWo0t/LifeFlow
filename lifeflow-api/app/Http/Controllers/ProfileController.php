@@ -31,6 +31,26 @@ class ProfileController extends Controller
         return response()->json(['avatar_url' => $user->avatar_url]);
     }
 
+    /**
+     * Permanently delete the account. Every user-owned table cascades on
+     * delete, so tasks, habits, categories and transactions go with it.
+     */
+    public function destroy(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => 'required|current_password',
+        ]);
+
+        $user = $request->user();
+        if ($user->avatar_url) {
+            Storage::disk('public')->delete('avatars/' . basename($user->avatar_url));
+        }
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json(null, 204);
+    }
+
     public function updateSettings(Request $request): JsonResponse
     {
         $validated = $request->validate([

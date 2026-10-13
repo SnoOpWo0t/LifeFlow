@@ -41,19 +41,50 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ),
         data: (summary) {
-          final greeting = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          final initials = (user?.name ?? '')
+              .trim()
+              .split(RegExp(r'\s+'))
+              .where((part) => part.isNotEmpty)
+              .take(2)
+              .map((part) => part[0].toUpperCase())
+              .join();
+          final avatarUrl = user?.avatarUrl;
+          final greeting = Row(
             children: [
-              Text(
-                'Welcome back,',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.grey,
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                foregroundImage: avatarUrl != null
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                // Shown until the photo loads, or if there isn't one.
+                child: Text(
+                  initials.isEmpty ? '?' : initials,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
                 ),
               ),
-              Text(
-                user?.name ?? 'Guest',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome back,',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.grey,
+                      ),
+                    ),
+                    Text(
+                      user?.name ?? 'Guest',
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

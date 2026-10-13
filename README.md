@@ -47,11 +47,11 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
 
 - **📊 Dashboard:** live weather, a productivity score, **today's tasks** (due today, overdue, or finished today), habit progress, a monthly budget overview with overspend warnings, and a recent-activity feed. Two columns on desktop, one on phones.
 - **📋 Kanban Task Manager:** *To Do*, *In Progress* and *Done* lanes with priorities and due dates. Drag and drop on desktop; a lane switcher and a "Move to…" menu on phones. Deleting asks for confirmation.
-- **💰 Expense Tracker:** income and expenses with custom categories, a monthly budget, and an income-vs-expense bar chart. **Tap any transaction to edit or delete it.** Amounts are shown with thousands separators (`৳ 124,123`).
-- **🔥 Habit Tracker:** daily check-ins, a 7-day view and streaks **calculated from your check-in history**, so they're always accurate. Rename or delete habits from the card menu.
+- **💰 Expense Tracker:** income and expenses with colour-coded categories (create, edit, delete), a monthly budget, an income-vs-expense bar chart and a **spending-by-category donut** for the month. **Tap any transaction to edit or delete it.** Amounts are shown with thousands separators (`৳ 124,123`).
+- **🔥 Habit Tracker:** daily check-ins with a small animation (and a vibration on phones), a 7-day view and streaks **calculated from your check-in history**, so they're always accurate. Rename or delete habits from the card menu.
 - **📈 Weekly Analytics:** an income-vs-expenses line chart and a daily productivity bar chart, with clean round-number axes.
 - **🌦️ Live Weather:** search any city, or tap **"Use my current location"**. Powered by free, key-less APIs (Open-Meteo, BigDataCloud).
-- **🔐 Accounts & Settings:** token login with server-side logout, profile photos (automatically resized before upload), and settings (dark mode, budget, weather city) saved to your account.
+- **🔐 Accounts & Settings:** token login with server-side logout, profile photos (automatically resized before upload, shown on the dashboard), **appearance that follows your device** or a fixed Light/Dark choice, settings saved to your account, and **Delete account** (password-confirmed, removes all data).
 
 ---
 
@@ -73,6 +73,14 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
   <img src="Screenshots/desktop-tasks.png" alt="Task manager on desktop" width="49%">
   <img src="Screenshots/desktop-expenses.png" alt="Expenses on desktop" width="49%">
   <img src="Screenshots/desktop-analytics.png" alt="Analytics on desktop" width="49%">
+</div>
+
+### Dark mode
+
+<div align="center">
+  <img src="Screenshots/phone-dashboard-dark.png" alt="Dashboard in dark mode on a phone" width="24%">
+  <img src="Screenshots/phone-habits-dark.png" alt="Habits in dark mode on a phone" width="24%">
+  <img src="Screenshots/desktop-dashboard-dark.png" alt="Dashboard in dark mode on desktop" width="49%">
 </div>
 
 ### Sign in
@@ -110,7 +118,7 @@ LifeFlow/
 │   ├── app/Http/Controllers/      # Auth, Dashboard, Tasks, Expenses, Habits, Analytics, Profile
 │   ├── app/Policies/              # "Only the owner may edit/delete" rules
 │   ├── app/Models/                # Eloquent models
-│   ├── routes/api.php             # 26 endpoints under /api/v1
+│   ├── routes/api.php             # 29 endpoints under /api/v1
 │   ├── database/migrations/       # Database schema
 │   └── tests/Feature/ApiTest.php  # API tests
 │
@@ -163,7 +171,7 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 
 ## ✅ Quality & Security
 
-- **Automated tests:** 19 backend tests (PHPUnit) and 6 Flutter tests, run on every push by GitHub Actions.
+- **Automated tests:** 21 backend tests (PHPUnit) and 10 Flutter tests, run on every push by GitHub Actions.
 - **Data isolation:** every write goes through Laravel Policies; users can't read or change each other's data (covered by tests).
 - **Login protection:** passwords are hashed, login/register are limited to 10 attempts per minute, logout revokes the token on the server, and an expired session returns you to the sign-in screen.
 - **Validation:** on the server for every request, and in the forms before anything is sent.
@@ -172,9 +180,11 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 
 ## 🛣️ Roadmap
 
-- [x] Dark / light mode toggle
+- [x] Appearance: follow the device, or always Light / Dark
 - [x] Live weather with city search and geolocation
-- [x] Edit and delete transactions; rename and delete habits
+- [x] Edit and delete transactions and categories; rename and delete habits
+- [x] Spending-by-category chart
+- [x] Delete account (with all data)
 - [x] Responsive layouts for phone and desktop
 - [x] Automated tests and CI
 - [ ] Reminders / push notifications for habits and overdue tasks

@@ -42,6 +42,18 @@ class ExpenseRepository {
     return ExpenseCategory.fromJson(response.data);
   }
 
+  Future<ExpenseCategory> updateCategory(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _apiClient.dio.put('/categories/$id', data: data);
+    return ExpenseCategory.fromJson(response.data);
+  }
+
+  Future<void> deleteCategory(int id) async {
+    await _apiClient.dio.delete('/categories/$id');
+  }
+
   Future<List<Map<String, dynamic>>> fetchChartData() async {
     final response = await _apiClient.dio.get('/transactions/chart');
     return List<Map<String, dynamic>>.from(response.data);

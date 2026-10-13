@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lifeflow_app/core/network/api_client.dart';
+import 'package:lifeflow_app/core/storage/storage_service.dart';
 import 'package:lifeflow_app/core/utils/formatters.dart';
+import 'package:lifeflow_app/features/expenses/presentation/screens/category_management_dialog.dart';
+import 'package:lifeflow_app/features/settings/data/settings_repository.dart';
 import 'package:lifeflow_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:lifeflow_app/features/auth/presentation/screens/auth_screen.dart';
 import 'package:lifeflow_app/features/dashboard/presentation/providers/weather_provider.dart';
@@ -86,5 +90,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Full name'), findsOneWidget);
     expect(find.text('Create your account'), findsOneWidget);
+  });
+
+  group('appearance setting', () {
+    Future<SettingsRepository> repoWith(Map<String, Object> saved) async {
+      SharedPreferences.setMockInitialValues(saved);
+      final prefs = await SharedPreferences.getInstance();
+      return SettingsRepository(ApiClient(StorageService(prefs)), prefs);
+    }
+
+    test('follows the device by default', () async {
+      expect((await repoWith({})).themeMode, ThemeMode.system);
+    });
+
+    test('keeps the old on/off dark-mode choice', () async {
+      expect(
+        (await repoWith({'is_dark_mode': true})).themeMode,
+        ThemeMode.dark,
+      );
+    });
+
+    test('uses the new System/Light/Dark choice when present', () async {
+      final repo = await repoWith({
+        'is_dark_mode': true,
+        'theme_mode': 'light',
+      });
+      expect(repo.themeMode, ThemeMode.light);
+    });
+  });
+
+  test('category colours parse safely', () {
+    expect(categoryColor('#22C55E'), const Color(0xFF22C55E));
+    expect(categoryColor('#'), Colors.grey); // what the old dialog used to save
+    expect(categoryColor('#zzzzzz'), Colors.grey);
+    expect(categoryColor(null), Colors.grey);
   });
 }

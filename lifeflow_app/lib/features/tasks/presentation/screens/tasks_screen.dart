@@ -74,6 +74,43 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           List<Task> inLane(String status) =>
               tasks.where((t) => t.status == status).toList();
 
+          if (tasks.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.view_kanban_outlined,
+                      size: 56,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Plan your first task',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Add what you need to do, then move it from To Do to Done.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: () => _showAddTaskDialog(context, ref, theme),
+                      icon: const Icon(Icons.add),
+                      label: const Text('New task'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
           if (isPhone) {
             final lane = _lanes.firstWhere((l) => l.status == _phoneLane);
             return Column(

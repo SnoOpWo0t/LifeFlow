@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/habit_models.dart';
 import '../providers/habit_provider.dart';
@@ -369,15 +370,11 @@ class HabitScreen extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
+        // Plain surface + a thin colour strip: the old full-card tint made
+        // text hard to read on the brighter habit colours.
+        color:
             theme.cardTheme.color ??
-                (isDark ? const Color(0xFF1E293B) : Colors.white),
-            habitColor.withValues(alpha: isDark ? 0.15 : 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+            (isDark ? const Color(0xFF1E293B) : Colors.white),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -386,215 +383,248 @@ class HabitScreen extends ConsumerWidget {
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(color: habitColor.withValues(alpha: 0.3), width: 1),
+        border: Border.all(color: habitColor.withValues(alpha: 0.18), width: 1),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          Container(height: 4, color: habitColor),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        habit.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isTodayCompleted
-                            ? 'Done for today. Nice!'
-                            : habit.currentStreak > 0
-                            ? 'Check in today to keep your ${habit.currentStreak}-day streak'
-                            : habit.longestStreak > 0
-                            ? 'Best streak: ${habit.longestStreak} days. Start a new one today'
-                            : 'Start your streak today',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [habitColor.withValues(alpha: 0.8), habitColor],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: habitColor.withValues(alpha: 0.4),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.local_fire_department,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${habit.currentStreak}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  tooltip: 'Habit actions',
-                  icon: const Icon(Icons.more_vert, color: Colors.grey),
-                  onSelected: (action) => action == 'rename'
-                      ? _showRenameDialog(context, ref, habit)
-                      : _confirmDelete(context, ref, habit),
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: 'rename',
-                      child: Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.edit_outlined, size: 18),
-                          SizedBox(width: 12),
-                          Text('Rename'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.delete_outline,
-                            size: 18,
-                            color: Colors.redAccent,
-                          ),
-                          SizedBox(width: 12),
                           Text(
-                            'Delete',
-                            style: TextStyle(color: Colors.redAccent),
+                            habit.name,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isTodayCompleted
+                                ? 'Done for today. Nice!'
+                                : habit.currentStreak > 0
+                                ? 'Check in today to keep your ${habit.currentStreak}-day streak'
+                                : habit.longestStreak > 0
+                                ? 'Best streak: ${habit.longestStreak} days. Start a new one today'
+                                : 'Start your streak today',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            habitColor.withValues(alpha: 0.8),
+                            habitColor,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: habitColor.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.local_fire_department,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${habit.currentStreak}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      tooltip: 'Habit actions',
+                      icon: const Icon(Icons.more_vert, color: Colors.grey),
+                      onSelected: (action) => action == 'rename'
+                          ? _showRenameDialog(context, ref, habit)
+                          : _confirmDelete(context, ref, habit),
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(
+                          value: 'rename',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_outlined, size: 18),
+                              SizedBox(width: 12),
+                              Text('Rename'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: Colors.redAccent,
+                              ),
+                              SizedBox(width: 12),
+                              Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: last7Days.map((dayData) {
-                final date = dayData['date'] as DateTime;
-                final isCompleted = dayData['completed'] as bool;
-                final isToday = dayData['dateStr'] == todayStr;
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: last7Days.map((dayData) {
+                    final date = dayData['date'] as DateTime;
+                    final isCompleted = dayData['completed'] as bool;
+                    final isToday = dayData['dateStr'] == todayStr;
 
-                return Column(
+                    return Column(
+                      children: [
+                        Text(
+                          _getWeekday(date.weekday),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isToday ? habitColor : Colors.grey,
+                            fontWeight: isToday
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        GestureDetector(
+                          onTap: isToday
+                              ? () {
+                                  HapticFeedback.lightImpact();
+                                  ref
+                                      .read(habitsProvider.notifier)
+                                      .toggleHabit(habit.id);
+                                }
+                              : null,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: isCompleted
+                                  ? habitColor
+                                  : (isDark
+                                        ? Colors.white12
+                                        : Colors.grey[200]),
+                              border: isToday && !isCompleted
+                                  ? Border.all(color: habitColor, width: 2)
+                                  : null,
+                              boxShadow: isCompleted
+                                  ? [
+                                      BoxShadow(
+                                        color: habitColor.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            // The tick pops in when a day is checked.
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 250),
+                              transitionBuilder: (child, animation) =>
+                                  ScaleTransition(
+                                    scale: CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.elasticOut,
+                                    ),
+                                    child: child,
+                                  ),
+                              child: isCompleted
+                                  ? const Icon(
+                                      Icons.check_rounded,
+                                      key: ValueKey('done'),
+                                      color: Colors.white,
+                                      size: 24,
+                                    )
+                                  : const SizedBox.shrink(
+                                      key: ValueKey('open'),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      _getWeekday(date.weekday),
+                    const Text(
+                      'Weekly Progress',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isToday ? habitColor : Colors.grey,
-                        fontWeight: isToday
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: isToday
-                          ? () => ref
-                                .read(habitsProvider.notifier)
-                                .toggleHabit(habit.id)
-                          : null,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: isCompleted
-                              ? habitColor
-                              : (isDark ? Colors.white12 : Colors.grey[200]),
-                          border: isToday && !isCompleted
-                              ? Border.all(color: habitColor, width: 2)
-                              : null,
-                          boxShadow: isCompleted
-                              ? [
-                                  BoxShadow(
-                                    color: habitColor.withValues(alpha: 0.4),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: isCompleted
-                            ? const Icon(
-                                Icons.check_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              )
-                            : null,
+                    Text(
+                      '$completedThisWeek/7 Days',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: habitColor,
                       ),
                     ),
                   ],
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Weekly Progress',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
-                Text(
-                  '$completedThisWeek/7 Days',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: habitColor,
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: completedThisWeek / 7,
+                    backgroundColor: isDark ? Colors.white12 : Colors.grey[200],
+                    valueColor: AlwaysStoppedAnimation<Color>(habitColor),
+                    minHeight: 8,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: completedThisWeek / 7,
-                backgroundColor: isDark ? Colors.white12 : Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(habitColor),
-                minHeight: 8,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

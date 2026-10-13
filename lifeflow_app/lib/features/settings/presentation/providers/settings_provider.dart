@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/location_service.dart';
@@ -21,19 +22,20 @@ final _signedInUserIdProvider = Provider<int?>((ref) {
   return ref.watch(authProvider.select((auth) => auth.value?.id));
 });
 
-final themeModeProvider = NotifierProvider<ThemeModeNotifier, bool>(
+final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
   ThemeModeNotifier.new,
 );
 
-class ThemeModeNotifier extends Notifier<bool> {
+class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
-  bool build() {
+  ThemeMode build() {
     ref.watch(_signedInUserIdProvider);
-    return ref.watch(settingsRepositoryProvider).isDarkMode;
+    return ref.watch(settingsRepositoryProvider).themeMode;
   }
 
-  void setMode(bool isDark) {
-    state = isDark;
+  Future<void> setMode(ThemeMode mode) async {
+    state = mode;
+    await ref.read(settingsRepositoryProvider).saveSettings(themeMode: mode);
   }
 }
 

@@ -3,7 +3,8 @@ import '../../../../core/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/expense_provider.dart';
-import 'category_management_dialog.dart';
+import 'category_management_dialog.dart'
+    show CategoryManagementDialog, categoryColor;
 import '../../domain/expense_models.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
@@ -60,7 +61,7 @@ class ExpenseScreen extends ConsumerWidget {
             await ref.read(transactionsProvider.future);
           }
 
-          final chart = chartDataAsync.when(
+          final barChart = chartDataAsync.when(
             loading: () => const SizedBox(
               height: 250,
               child: Center(child: CircularProgressIndicator()),
@@ -70,6 +71,13 @@ class ExpenseScreen extends ConsumerWidget {
               child: Center(child: Text("Couldn't load the chart.")),
             ),
             data: (chartData) => _buildBarChart(context, chartData, isDark),
+          );
+          final chart = Column(
+            children: [
+              barChart,
+              if (transactionsAsync.value case final transactions?)
+                _buildCategoryBreakdown(context, transactions, isDark),
+            ],
           );
           final transactionSlivers = <Widget>[
             SliverToBoxAdapter(
@@ -102,12 +110,16 @@ class ExpenseScreen extends ConsumerWidget {
               ),
               data: (transactions) {
                 if (transactions.isEmpty) {
-                  return const SliverFillRemaining(
-                    child: Center(
-                      child: Text(
-                        'No transactions yet.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _EmptyState(
+                      icon: Icons.account_balance_wallet_outlined,
+                      title: 'No transactions yet',
+                      message:
+                          'Add your income and spending to see where your money goes.',
+                      actionLabel: 'Add transaction',
+                      onAction: () =>
+                          _showTransactionDialog(context, ref, theme),
                     ),
                   );
                 }
@@ -793,6 +805,167 @@ class ExpenseScreen extends ConsumerWidget {
     );
   }
 
+  /// Donut of this month's spending per category (the largest five, plus "Other").
+  Widget _buildCategoryBreakdown(
+    BuildContext context,
+    List<Transaction> transactions,
+    bool isDark,
+  ) {
+    final now = DateTime.now();
+    final totals = <String, ({double amount, Color color})>{};
+    for (final tx in transactions) {
+      final d = tx.transactionDate;
+      if (tx.type != 'expense' || d.year != now.year || d.month != now.month) {
+        continue;
+      }
+      final name = tx.category?.name ?? 'Uncategorised';
+      final color = tx.category == null
+          ? Colors.blueGrey
+          : categoryColor(tx.category!.colorHex);
+      final previous = totals[name]?.amount ?? 0;
+      totals[name] = (amount: previous + tx.amount, color: color);
+    }
+    if (totals.isEmpty) return const SizedBox.shrink();
+
+    final sorted = totals.entries.toList()
+      ..sort((a, b) => b.value.amount.compareTo(a.value.amount));
+    final slices = sorted.take(5).toList();
+    final otherTotal = sorted
+        .skip(5)
+        .fold<double>(0, (sum, e) => sum + e.value.amount);
+    if (otherTotal > 0) {
+      slices.add(MapEntry('Other', (amount: otherTotal, color: Colors.grey)));
+    }
+    final total = slices.fold<double>(0, (sum, e) => sum + e.value.amount);
+    // Categories saved before colours worked are grey; give those distinct hues.
+    const fallbackHues = [
+      Colors.orange,
+      Colors.blue,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+    ];
+    var fallback = 0;
+    final colored = [
+      for (final e in slices)
+        (
+          name: e.key,
+          amount: e.value.amount,
+          color: e.value.color == Colors.grey && e.key != 'Other'
+              ? fallbackHues[fallback++ % fallbackHues.length]
+              : e.value.color,
+        ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Spending by category (this month)',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              SizedBox(
+                width: 140,
+                height: 140,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    PieChart(
+                      PieChartData(
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 44,
+                        sections: [
+                          for (final slice in colored)
+                            PieChartSectionData(
+                              value: slice.amount,
+                              color: slice.color,
+                              radius: 22,
+                              showTitle: false,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Total',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                        Text(
+                          formatMoney(total),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final slice in colored)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: slice.color,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                slice.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              '${(slice.amount / total * 100).round()}%',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLegendItem(Color color, String text, bool isDark) {
     return Row(
       children: [
@@ -810,6 +983,58 @@ class ExpenseScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Friendly placeholder for an empty list, with one obvious next step.
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 56, color: theme.colorScheme.primary),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: onAction,
+              icon: const Icon(Icons.add),
+              label: Text(actionLabel),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

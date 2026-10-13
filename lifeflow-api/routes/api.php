@@ -41,6 +41,8 @@ Route::prefix('v1')->group(function () {
         
         Route::get('/categories', [ExpenseController::class, 'getCategories']);
         Route::post('/categories', [ExpenseController::class, 'storeCategory']);
+        Route::put('/categories/{category}', [ExpenseController::class, 'updateCategory']);
+        Route::delete('/categories/{category}', [ExpenseController::class, 'destroyCategory']);
         Route::get('/transactions', [ExpenseController::class, 'getTransactions']);
         Route::post('/transactions', [ExpenseController::class, 'storeTransaction']);
         Route::put('/transactions/{transaction}', [ExpenseController::class, 'updateTransaction']);
@@ -53,5 +55,6 @@ Route::prefix('v1')->group(function () {
         // Profile & Settings Routes
         Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar']);
         Route::put('/profile/settings', [ProfileController::class, 'updateSettings']);
+        Route::delete('/profile', [ProfileController::class, 'destroy']);
     });
 });

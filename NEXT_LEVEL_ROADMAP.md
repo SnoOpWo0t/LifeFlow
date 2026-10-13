@@ -33,10 +33,17 @@ A prioritised list of what's done and what to improve next. Everything here can 
 | Habits checked after midnight were logged on the previous day (UTC) | `APP_TIMEZONE=Asia/Dhaka` |
 | The Flutter test file referenced a non-existent `MyApp` | Replaced with real tests |
 | `notification_service.dart` didn't compile (package never installed) | Removed; reminders will be rebuilt properly (see below) |
+| **Category colours were never saved** (the dialog always sent `"#"`) | The picked colour is saved; malformed colours fall back to grey |
 
 ### Features & quality
 - Login page redesign with the LifeFlow logo and brand colours
-- **Edit and delete transactions** (tap a transaction); **rename and delete habits** (card menu)
+- **Edit and delete transactions** (tap a transaction); **rename and delete habits** (card menu); **edit and delete categories** (with colour picker)
+- **Delete account** in Settings: password-confirmed, removes all of the user's data
+- **Appearance: System / Light / Dark**. Follows the device by default; older "dark mode on" settings carry over
+- **Spending-by-category donut** for the current month on the Expenses page
+- Avatar (or initials) next to the greeting on the dashboard
+- **Empty states** with a clear next step for tasks, transactions and habits
+- Calmer habit cards (plain surface + colour strip), a pop-in tick and a vibration (phones) when checking in
 - **Responsive UI:** one-lane Kanban with "Move to…" on phones; two-column dashboard, side-by-side charts, habit grid and expense layout on desktop
 - Pull-to-refresh on every list; Retry buttons on error screens; confirmation before deletes
 - Money with thousands separators; chart axes in round numbers; chart dates like "7 Oct"
@@ -45,7 +52,7 @@ A prioritised list of what's done and what to improve next. Everything here can 
 - Login/register rate limit (10/min per IP); Laravel **Policies** for every edit/delete
 - Database indexes for dashboard and analytics queries
 - Configurable API address (`--dart-define=API_BASE_URL=...`)
-- **19 backend tests + 6 Flutter tests**, run on every push by **GitHub Actions** (`.github/workflows/ci.yml`)
+- **21 backend tests + 10 Flutter tests**, run on every push by **GitHub Actions** (`.github/workflows/ci.yml`)
 - Dead code removed (old login screen, unused donut chart, deprecated `withOpacity`)
 
 ---
@@ -102,11 +109,10 @@ The goal is a public link that keeps working without paying or babysitting it.
 | 2 | Inline `$request->validate()` in controllers | Move to **Form Requests** (auth already uses them), for consistency | 🟢 | ⭐ |
 | 3 | Raw models returned as JSON | **API Resources**: a consistent shape that never leaks fields | 🟡 | ⭐⭐ |
 | 4 | Transaction list isn't paginated | `->paginate(30)` + infinite scroll | 🟡 | ⭐⭐ |
-| 5 | Categories can't be edited or deleted | Add `PUT`/`DELETE /categories/{id}` with a policy | 🟢 | ⭐⭐ |
-| 6 | No account deletion or data export | "Delete my account" + "Export my data (CSV)", good privacy practice | 🟡 | ⭐⭐ |
-| 7 | Web build stores the token in `localStorage` | For web, use Sanctum's cookie-based SPA auth | 🔴 | ⭐⭐ (security) |
-| 8 | Avatar images are public to anyone with the exact URL | Signed URLs, or serve them through an authenticated route | 🟡 | ⭐ |
-| 9 | Habit "longest streak" counts only the history still stored | Fine for now; keep logs forever, or store a best-ever value alongside | 🟢 | ⭐ |
+| 5 | No data export | "Export my data" (CSV / JSON) in Settings, good privacy practice | 🟡 | ⭐⭐ |
+| 6 | Web build stores the token in `localStorage` | For web, use Sanctum's cookie-based SPA auth | 🔴 | ⭐⭐ (security) |
+| 7 | Avatar images are public to anyone with the exact URL | Signed URLs, or serve them through an authenticated route | 🟡 | ⭐ |
+| 8 | Habit "longest streak" counts only the history still stored | Fine for now; keep logs forever, or store a best-ever value alongside | 🟢 | ⭐ |
 
 ---
 
@@ -115,24 +121,19 @@ The goal is a public link that keeps working without paying or babysitting it.
 | # | Change | Effort | Impact |
 |---|---|---|---|
 | A1 | **One design system.** The login page uses navy + cyan→violet (from the logo); the rest of the app uses an indigo theme with ad-hoc colours. Create `AppColors`/`AppSpacing` tokens and use them everywhere | 🟡 | ⭐⭐⭐ |
-| A2 | Theme follows the device by default (`ThemeMode.system`), with the toggle as an override | 🟢 | ⭐⭐ |
-| A3 | Show the user's avatar in the dashboard header | 🟢 | ⭐ |
-| C1 | Spending **by category** donut chart on the expense page | 🟢 | ⭐⭐ |
-| C2 | Tap a chart bar to see that day's transactions | 🟡 | ⭐⭐ |
-| D1 | **Empty states** with an "Add your first…" button for tasks and transactions (habits already have one) | 🟢 | ⭐⭐⭐ |
+| C1 | Tap a chart bar to see that day's transactions | 🟡 | ⭐⭐ |
 | D2 | Skeleton loaders instead of spinners | 🟡 | ⭐⭐ |
 | D3 | **Undo** snackbar after delete or habit uncheck | 🟡 | ⭐⭐ |
-| E1 | Habit cards: tone down the saturated gradients for better contrast | 🟡 | ⭐⭐ |
-| E2 | Tooltips/semantic labels on remaining icon-only buttons; 48×48 tap targets on habit day squares | 🟢 | ⭐ |
-| E3 | "Install app" hint in Settings (icons and manifest are ready) | 🟢 | ⭐⭐ |
-| E4 | Micro-interactions: haptic tick + small animation on habit check; celebration on a 7-day streak | 🟢 | ⭐⭐ |
-| E5 | Keep each tab's state when switching (`IndexedStack`), so screens don't reload | 🟢 | ⭐⭐ |
+| E1 | Semantic labels for screen readers on the remaining icon-only controls (charts, habit day squares) | 🟢 | ⭐ |
+| E2 | "Install app" hint in Settings (icons and manifest are ready) | 🟢 | ⭐⭐ |
+| E3 | Celebration on a 7-day streak (confetti) | 🟢 | ⭐⭐ |
+| E4 | Keep each tab's state when switching (`IndexedStack`), so screens don't reload | 🟢 | ⭐⭐ |
 
 ---
 
 ## 5. Suggested order
 
-1. **Next:** D1 empty states, #5 edit/delete categories, A2 system theme, E5 keep tab state. All quick and visible.
-2. **Then:** reminders (section 2), A1 design tokens, E1 habit card colours.
+1. **Next:** E4 keep tab state, D3 undo after delete, #5 data export. All quick and visible.
+2. **Then:** reminders (section 2), A1 design tokens, D2 skeleton loaders.
 3. **Deploy:** section 1 (Neon + Render + Cloudflare Pages + UptimeRobot). **A live link on your CV beats any single feature.**
 4. **Stand-out features:** Google sign-in, AI assistant (Gemini free tier), multi-currency.

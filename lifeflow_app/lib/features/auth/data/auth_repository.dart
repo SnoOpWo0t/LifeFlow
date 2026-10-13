@@ -33,6 +33,11 @@ class AuthRepository {
     await _storageService.deleteToken();
   }
 
+  Future<void> deleteAccount(String password) async {
+    await _dataSource.deleteAccount(password);
+    await _storageService.deleteToken();
+  }
+
   Future<User?> getUser() async {
     try {
       final token = _storageService.getToken();

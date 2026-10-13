@@ -23,20 +23,21 @@ Every fact below comes from the actual codebase, so you can defend each one.
 *Personal project · Sole developer* · [github.com/SnoOpWo0t/LifeFlow](https://github.com/SnoOpWo0t/LifeFlow)
 
 - Designed and built a full-stack, cross-platform app (web, Android, iOS) from one **Flutter** codebase, combining task management, expense tracking, habit tracking and analytics.
-- Built a versioned **Laravel REST API** with **26 endpoints**, secured by **Sanctum** token authentication, **Laravel Policies** for ownership checks, and rate limiting on login.
-- Wrote **19 backend tests (PHPUnit)** and **6 Flutter tests**, run automatically on every push with **GitHub Actions** CI. They cover authentication, data isolation between users, streak logic and validation.
+- Built a versioned **Laravel REST API** with **29 endpoints**, secured by **Sanctum** token authentication, **Laravel Policies** for ownership checks, and rate limiting on login.
+- Wrote **21 backend tests (PHPUnit)** and **10 Flutter tests**, run automatically on every push with **GitHub Actions** CI. They cover authentication, data isolation between users, account deletion, streak logic and validation.
 - Modelled a relational schema with **9 migrations**: cascading foreign keys, enum-constrained fields, a composite unique index that prevents duplicate daily habit check-ins, and indexes on the dashboard's hot queries.
 - Built a **Kanban task board** with drag-and-drop on desktop and a lane switcher on phones, and a **habit tracker** whose streaks are recalculated on the server from the check-in history.
-- Built an **expense tracker** with custom categories, editable transactions, monthly budgets with over-budget warnings, and **fl_chart** bar and line charts.
+- Built an **expense tracker** with editable, colour-coded categories and transactions, monthly budgets with over-budget warnings, and **fl_chart** bar, line and donut (spending-by-category) charts.
 - Combined data from every module into one dashboard endpoint: a **productivity score**, today's tasks, a budget overview and a recent-activity feed.
 - Integrated free, key-less APIs (**Open-Meteo**, **BigDataCloud**) for live weather, with city search and device geolocation.
-- Made the UI responsive: bottom navigation and single-column layouts on phones; a navigation rail and multi-column layouts on desktop; light and dark themes.
+- Made the UI responsive: bottom navigation and single-column layouts on phones; a navigation rail and multi-column layouts on desktop; a theme that follows the device (or a fixed Light/Dark choice).
+- Added privacy controls: server-side logout that revokes the token, and password-confirmed **account deletion** that cascades through all user data.
 
 ### Option B: Shorter version (when space is tight, 3–4 bullets)
 
-- Built a cross-platform productivity app in **Flutter** (web/Android/iOS) with a **Laravel REST API** (26 endpoints), **Sanctum** auth and **Policies** for per-user data isolation.
+- Built a cross-platform productivity app in **Flutter** (web/Android/iOS) with a **Laravel REST API** (29 endpoints), **Sanctum** auth and **Policies** for per-user data isolation.
 - Built Kanban tasks, expense tracking with charts and budgets, and habit streaks derived from check-in history; responsive phone and desktop layouts.
-- Added **19 PHPUnit + 6 Flutter tests** with **GitHub Actions** CI; found and fixed a dashboard crash and a cross-user data leak through tests.
+- Added **21 PHPUnit + 10 Flutter tests** with **GitHub Actions** CI; found and fixed a dashboard crash and a cross-user data leak through tests.
 - Integrated free public APIs for live weather with city search and geolocation.
 
 ### How to write good bullets (the formula)
@@ -47,12 +48,12 @@ Every fact below comes from the actual codebase, so you can defend each one.
 |---|---|
 | "Made a to-do app" | "Built a Kanban task board with priorities and due dates in Flutter, backed by a Laravel REST API" |
 | "Used Laravel" | "Secured the API with Sanctum token auth and Laravel Policies so users can only modify their own records" |
-| "Wrote some tests" | "Added 19 PHPUnit tests in GitHub Actions CI, which caught a dashboard crash for users without transactions" |
+| "Wrote some tests" | "Added 21 PHPUnit tests in GitHub Actions CI, which caught a dashboard crash for users without transactions" |
 
 **Strong verbs:** Designed, Built, Engineered, Implemented, Integrated, Architected, Optimised, Secured, Modelled, Diagnosed, Tested, Deployed.
 
 **Rules:**
-- **Never invent numbers.** "26 endpoints", "9 migrations" and "19 tests" are real, so use them. Don't write "10,000 users" or "40% faster" unless you measured it.
+- **Never invent numbers.** "29 endpoints", "9 migrations" and "21 tests" are real, so use them. Don't write "10,000 users" or "40% faster" unless you measured it.
 - **Add real metrics later** if you can: users after deployment, Lighthouse score, API response time, test coverage %.
 - **Always include links:** GitHub repo, live demo (once deployed), and the demo video.
 - **Put it high on the CV** if you're a student or junior. A complete, tested full-stack project is a strong signal.
@@ -75,10 +76,10 @@ Every fact below comes from the actual codebase, so you can defend each one.
 | Frontend | Flutter (Dart 3), Riverpod 3, Dio, fl_chart, google_fonts, image_picker, geolocator |
 | Backend | Laravel 13 (PHP 8.3+), Laravel Sanctum, Policies |
 | Database | SQLite in development; PostgreSQL for production |
-| API | 26 endpoints under `/api/v1` |
+| API | 29 endpoints under `/api/v1` |
 | Tables | users, tasks, habits, habit_logs, expense_categories, transactions, personal_access_tokens (+ Laravel cache/jobs/sessions) |
 | Migrations | 9 |
-| Tests | 19 backend (PHPUnit) + 6 Flutter; GitHub Actions on every push |
+| Tests | 21 backend (PHPUnit) + 10 Flutter; GitHub Actions on every push |
 | Size | ~6,400 lines of Dart, ~1,400 lines of PHP (app code, routes, migrations) |
 | Modules | Auth, Dashboard, Tasks, Expenses, Habits, Analytics, Settings/Profile |
 | Platforms | Web, Android, iOS (plus desktop scaffolding) |
@@ -102,6 +103,7 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 > - **A crash only some users hit.** While writing tests, the dashboard returned a 500 for a user with completed tasks but no transactions. An empty Eloquent collection's `merge()` expects models, and I was merging plain arrays into it. I converted it with `toBase()` first and kept the test so it can't come back.
 > - **A cross-user data leak.** Transaction validation used `exists:expense_categories,id`, which accepts *any* user's category ID. So a request could attach someone else's category and see its name. I scoped the rule to the current user and added a test.
 > - **Habit streaks drifting.** Streaks were counters incremented on each check-in, so missing a day or unchecking left them wrong. I made the server recalculate them from the check-in history. The data was already there; I just stopped duplicating it.
+> - **A setting that silently did nothing.** Picking a colour for a category never saved: the dialog always sent `"#"`. Nothing crashed, so nobody noticed until I built a donut chart that uses those colours. Lesson: build features that *use* your data, and bugs in how it's stored show up.
 > - **Profile photos failing "randomly".** Small images worked and large ones didn't. PHP's default `upload_max_filesize` is 2 MB and the app sent full-resolution photos while ignoring the error. I resized to 512px on the client and showed the real error.
 
 **Q4. What would you do differently?**
@@ -160,7 +162,7 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 
 ### E. Security
 
-**Q20. What security measures did you take?**
+**Q20. What security and privacy measures did you take?**
 > - bcrypt password hashing
 > - revocable Sanctum tokens with server-side logout
 > - **rate limiting** on login and register (10 per minute per IP)
@@ -168,6 +170,7 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 > - server-side validation on every request
 > - no database credentials in the client
 > - the auth token is never sent to third-party APIs
+> - password-confirmed account deletion that removes all of the user's data
 
 **Q21. Any security weaknesses you know of?**
 > Admitting these shows maturity:
@@ -178,7 +181,7 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 ### F. Testing & quality
 
 **Q22. How did you test it?**
-> "There are 19 backend tests in PHPUnit using an in-memory SQLite database and `Sanctum::actingAs()`. They cover registration and login, the rate limit, token revocation on logout, cross-user access returning 403, scoped category validation, habit streak derivation and the dashboard's task counts. The 6 Flutter tests cover formatting, the weather models and a widget test of the sign-in form's validation. GitHub Actions runs all of them, plus `flutter analyze` and a web build, on every push. The tests paid off immediately: they found a dashboard crash for users with no transactions."
+> "There are 21 backend tests in PHPUnit using an in-memory SQLite database and `Sanctum::actingAs()`. They cover registration and login, the rate limit, token revocation on logout, account deletion, cross-user access returning 403 for tasks, habits, transactions and categories, scoped category validation, habit streak derivation and the dashboard's task counts. The 10 Flutter tests cover money formatting, the weather models, colour parsing, the appearance setting's migration from the old on/off switch, and a widget test of the sign-in form's validation. GitHub Actions runs all of them, plus `flutter analyze` and a web build, on every push. The tests paid off immediately: they found a dashboard crash for users with no transactions."
 
 ### G. Deployment & scaling
 
@@ -209,11 +212,10 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 | Reminders | Not implemented yet (shown as "Coming soon") | "Planned with local notifications on mobile and FCM for server push" |
 | Timezone | One server-wide zone (`APP_TIMEZONE`) | "Store each user's timezone and use it for 'today'" |
 | Web auth | Token in `localStorage` | "Switch to Sanctum's cookie-based SPA auth on web" |
-| Categories | Can be created but not edited or deleted | "Add update/delete endpoints with a policy" |
 | Pagination | Transaction list loads everything | "Paginate with infinite scroll" |
-| Accounts | No password reset, email verification or account deletion | "Add with Laravel's built-ins and a free email provider" |
+| Accounts | No password reset, email verification or data export | "Add with Laravel's built-ins, a free email provider, and a CSV/JSON export" |
 
-Fixing one or two of these before an interview gives you extra stories. Category edit/delete and the empty states are quick wins.
+Fixing one or two of these before an interview gives you extra stories. Pagination and data export are quick wins.
 
 ---
 

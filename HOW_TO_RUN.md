@@ -122,8 +122,8 @@ They don't start automatically after a reboot; run the two `systemd-run` lines a
 ## 3. Run the tests
 
 ```bash
-cd lifeflow-api && php artisan test                  # 19 backend tests
-cd lifeflow_app && flutter analyze && flutter test   # static checks + 6 Flutter tests
+cd lifeflow-api && php artisan test                  # 21 backend tests
+cd lifeflow_app && flutter analyze && flutter test   # static checks + 10 Flutter tests
 ```
 
 The same checks run automatically on GitHub for every push (`.github/workflows/ci.yml`).
@@ -154,4 +154,4 @@ Free hosting options are covered in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.m
 | Servers or the compiler **stop on their own** (Linux) | The machine ran out of memory. Check with `journalctl -k \| grep -i "out of memory"`. Use Option B or C and close unused apps |
 | `flutter run -d chrome` can't find Chrome (Flatpak Chrome on Linux) | Use `-d web-server` and open the link yourself, or create a wrapper: `printf '#!/bin/sh\nexec flatpak run com.google.Chrome "$@"\n' > ~/.local/bin/chrome && chmod +x ~/.local/bin/chrome && export CHROME_EXECUTABLE=~/.local/bin/chrome` |
 | Profile photo upload fails | Run `php artisan storage:link`. Photos are resized to 512px before upload, so PHP's 2 MB limit isn't an issue |
-| Old icon or title in the browser tab | Hard reload with **Ctrl+Shift+R** |
+| Old version of the app, icon or title after rebuilding | The release build caches itself in the browser (a Flutter service worker). Hard reload with **Ctrl+Shift+R**, or close and reopen the tab |

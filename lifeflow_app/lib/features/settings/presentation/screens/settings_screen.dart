@@ -71,8 +71,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).value;
-    final isDark = ref.watch(themeModeProvider);
-    final repo = ref.read(settingsRepositoryProvider);
+    final themeMode = ref.watch(themeModeProvider);
     final location = ref.watch(weatherLocationProvider);
     final avatarUrl = _avatarFailedToLoad ? null : user?.avatarUrl;
     final initials = _initials(user?.name);
@@ -171,14 +170,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const Divider(),
-            SwitchListTile(
-              title: const Text('Dark Mode'),
-              secondary: const Icon(Icons.dark_mode),
-              value: isDark,
-              onChanged: (val) {
-                ref.read(themeModeProvider.notifier).setMode(val);
-                repo.saveSettings(isDarkMode: val);
-              },
+            ListTile(
+              leading: const Icon(Icons.dark_mode_outlined),
+              title: const Text('Appearance'),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: SegmentedButton<ThemeMode>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(
+                      value: ThemeMode.system,
+                      label: Text('System'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      label: Text('Light'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.dark,
+                      label: Text('Dark'),
+                    ),
+                  ],
+                  selected: {themeMode},
+                  onSelectionChanged: (selection) => ref
+                      .read(themeModeProvider.notifier)
+                      .setMode(selection.first),
+                ),
+              ),
             ),
             // Reminders aren't implemented yet; a working-looking switch that
             // did nothing was misleading, so it's shown as disabled for now.
@@ -244,10 +262,108 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               onTap: _confirmLogout,
             ),
+            ListTile(
+              leading: const Icon(
+                Icons.delete_forever_outlined,
+                color: Colors.redAccent,
+              ),
+              title: const Text(
+                'Delete account',
+                style: TextStyle(color: Colors.redAccent),
+              ),
+              subtitle: const Text(
+                'Permanently removes your account and all its data',
+              ),
+              onTap: _confirmDeleteAccount,
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final passwordCtrl = TextEditingController();
+    String? error;
+    var busy = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          Future<void> submit() async {
+            if (passwordCtrl.text.isEmpty) {
+              setDialogState(() => error = 'Enter your password');
+              return;
+            }
+            setDialogState(() {
+              busy = true;
+              error = null;
+            });
+            final message = await ref
+                .read(authProvider.notifier)
+                .deleteAccount(passwordCtrl.text);
+            if (!ctx.mounted) return;
+            if (message == null) {
+              Navigator.pop(ctx);
+            } else {
+              setDialogState(() {
+                busy = false;
+                error = message;
+              });
+            }
+          }
+
+          return AlertDialog(
+            title: const Text('Delete your account?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'This permanently deletes your tasks, habits, transactions, '
+                  'categories and settings. It cannot be undone.',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordCtrl,
+                  obscureText: true,
+                  autofocus: true,
+                  onSubmitted: (_) => busy ? null : submit(),
+                  decoration: InputDecoration(
+                    labelText: 'Confirm with your password',
+                    errorText: error,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: busy ? null : () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+                onPressed: busy ? null : submit,
+                child: busy
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Delete forever'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    passwordCtrl.dispose();
   }
 
   Future<void> _confirmLogout() async {

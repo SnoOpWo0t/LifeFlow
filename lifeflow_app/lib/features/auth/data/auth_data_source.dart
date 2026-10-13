@@ -35,6 +35,10 @@ class AuthDataSource {
     return response.data;
   }
 
+  Future<void> deleteAccount(String password) async {
+    await _apiClient.dio.delete('/profile', data: {'password': password});
+  }
+
   Future<void> logout() async {
     await _apiClient.dio.post(ApiConstants.logout);
   }

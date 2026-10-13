@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/weather_location.dart';
@@ -17,13 +18,28 @@ class SettingsRepository {
 
   SettingsRepository(this._apiClient, this._prefs);
 
-  static const _darkModeKey = 'is_dark_mode';
+  static const _themeKey = 'theme_mode'; // 'system' | 'light' | 'dark'
+  static const _legacyDarkModeKey = 'is_dark_mode'; // older on/off setting
   static const _pushKey = 'push_notifications';
   static const _cityKey = 'default_city';
   static const _locationKey = 'weather_location';
   static const _budgetKey = 'monthly_budget';
 
-  bool get isDarkMode => _prefs.getBool(_darkModeKey) ?? false;
+  /// Follows the device unless the user picked Light or Dark. Accounts that
+  /// only have the old on/off setting keep their choice.
+  ThemeMode get themeMode {
+    final saved = _prefs.getString(_themeKey);
+    if (saved != null) return _parseThemeMode(saved);
+    return (_prefs.getBool(_legacyDarkModeKey) ?? false)
+        ? ThemeMode.dark
+        : ThemeMode.system;
+  }
+
+  static ThemeMode _parseThemeMode(String value) => switch (value) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
   bool get pushNotifications => _prefs.getBool(_pushKey) ?? true;
   String get defaultCity => weatherLocation.name;
   double get monthlyBudget => _prefs.getDouble(_budgetKey) ?? 0.0;
@@ -39,13 +55,13 @@ class SettingsRepository {
   }
 
   Future<void> saveSettings({
-    bool? isDarkMode,
+    ThemeMode? themeMode,
     bool? pushNotifications,
     WeatherLocation? weatherLocation,
     double? monthlyBudget,
   }) async {
     // 1. Save locally for instant UI update
-    if (isDarkMode != null) await _prefs.setBool(_darkModeKey, isDarkMode);
+    if (themeMode != null) await _prefs.setString(_themeKey, themeMode.name);
     if (pushNotifications != null) {
       await _prefs.setBool(_pushKey, pushNotifications);
     }
@@ -65,7 +81,7 @@ class SettingsRepository {
         '/profile/settings',
         data: {
           'preferences': {
-            if (isDarkMode != null) _darkModeKey: isDarkMode,
+            if (themeMode != null) _themeKey: themeMode.name,
             if (pushNotifications != null) _pushKey: pushNotifications,
             if (weatherLocation != null) ...{
               _cityKey: weatherLocation.name,
@@ -86,7 +102,7 @@ class SettingsRepository {
   Future<void> applyRemote(Map<String, dynamic>? remote) async {
     if (remote == null || remote.isEmpty) {
       await saveSettings(
-        isDarkMode: isDarkMode,
+        themeMode: themeMode,
         pushNotifications: pushNotifications,
         weatherLocation: weatherLocation,
         monthlyBudget: monthlyBudget,
@@ -94,8 +110,16 @@ class SettingsRepository {
       return;
     }
 
-    final dark = remote[_darkModeKey];
-    if (dark is bool) await _prefs.setBool(_darkModeKey, dark);
+    final theme = remote[_themeKey];
+    final legacyDark = remote[_legacyDarkModeKey];
+    if (theme is String) {
+      await _prefs.setString(_themeKey, _parseThemeMode(theme).name);
+    } else if (legacyDark is bool) {
+      await _prefs.setString(
+        _themeKey,
+        legacyDark ? ThemeMode.dark.name : ThemeMode.system.name,
+      );
+    }
     final push = remote[_pushKey];
     if (push is bool) await _prefs.setBool(_pushKey, push);
     final budget = remote[_budgetKey];
@@ -110,7 +134,8 @@ class SettingsRepository {
   /// Forget the signed-out user's preferences so the next account starts clean.
   Future<void> clearLocal() async {
     for (final key in [
-      _darkModeKey,
+      _themeKey,
+      _legacyDarkModeKey,
       _pushKey,
       _cityKey,
       _locationKey,

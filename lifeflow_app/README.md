@@ -29,7 +29,7 @@ flutter build web --release --dart-define=API_BASE_URL=https://your-api.example.
 
 ```bash
 flutter analyze
-flutter test        # 6 tests in test/app_test.dart
+flutter test        # 10 tests in test/app_test.dart
 ```
 
 ## Structure

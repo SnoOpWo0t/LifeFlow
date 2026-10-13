@@ -30,6 +30,31 @@ class ExpenseController extends Controller
         return response()->json($cat, 201);
     }
 
+    public function updateCategory(Request $request, ExpenseCategory $category): JsonResponse
+    {
+        Gate::authorize('update', $category);
+
+        $category->update($request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'type' => 'sometimes|required|in:income,expense',
+            'color_hex' => 'nullable|string|max:7',
+        ]));
+
+        return response()->json($category);
+    }
+
+    /**
+     * Transactions keep their amounts; their category becomes empty
+     * (the foreign key is ON DELETE SET NULL).
+     */
+    public function destroyCategory(Request $request, ExpenseCategory $category): JsonResponse
+    {
+        Gate::authorize('delete', $category);
+
+        $category->delete();
+        return response()->json(null, 204);
+    }
+
     public function getTransactions(Request $request): JsonResponse
     {
         $transactions = Transaction::with('category')

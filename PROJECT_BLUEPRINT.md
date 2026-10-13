@@ -13,7 +13,7 @@ Laravel Eloquent on **SQLite** in development and **PostgreSQL** in production. 
 `id`, `name`, `email` (unique), `password` (hashed), `avatar_url`, `preferences` (JSON), `provider`, `provider_id` (reserved for Google sign-in), `email_verified_at`, timestamps
 
 `preferences` holds per-user settings that follow the account across devices:
-`is_dark_mode`, `push_notifications`, `monthly_budget`, `default_city`, `weather_location` (`name`, `region`, `country`, `latitude`, `longitude`).
+`theme_mode` (`system` | `light` | `dark`; older accounts may still have the previous on/off `is_dark_mode`, which the app converts), `push_notifications`, `monthly_budget`, `default_city`, `weather_location` (`name`, `region`, `country`, `latitude`, `longitude`).
 
 ### tasks
 `id`, `user_id`, `title`, `description`, `status` (`todo` | `in_progress` | `done`), `priority` (`low` | `medium` | `high`), `due_date`, `recurrence_rule` (`daily` | `weekly` | `monthly`; when a recurring task is marked done, its due date moves forward and it returns to `todo`), timestamps
@@ -42,7 +42,7 @@ Index: `(user_id, transaction_date)`
 ## 2. API endpoints
 
 All under `/api/v1`. Everything except register, login and avatar images needs a `Authorization: Bearer <token>` header (Laravel Sanctum).
-**26 endpoints** in total.
+**29 endpoints** in total.
 
 ### Authentication
 | Method | Path | What it does |
@@ -57,6 +57,7 @@ All under `/api/v1`. Everything except register, login and avatar images needs a
 |---|---|---|
 | POST | `/profile/avatar` | Upload a profile photo (image, max 5 MB; the app resizes to 512px first) |
 | PUT | `/profile/settings` | Merge new values into `preferences` |
+| DELETE | `/profile` | Permanently delete the account and all its data (requires the current `password`) |
 | GET | `/avatar/{filename}` | Serve a profile photo (public, CORS-enabled) |
 
 ### Dashboard & analytics
@@ -88,6 +89,8 @@ All under `/api/v1`. Everything except register, login and avatar images needs a
 |---|---|---|
 | GET | `/categories` | Your categories |
 | POST | `/categories` | Create a category |
+| PUT | `/categories/{id}` | Rename / recolour / change type |
+| DELETE | `/categories/{id}` | Delete; its transactions are kept without a category |
 | GET | `/transactions` | Your transactions, newest first |
 | POST | `/transactions` | Create (the category must be yours) |
 | PUT | `/transactions/{id}` | Edit |
@@ -116,10 +119,10 @@ lifeflow_app/lib/
 │   ├── auth/           # Sign in / sign up screen, AuthNotifier (loads account settings on sign-in)
 │   ├── dashboard/      # Summary screen, live weather provider (Open-Meteo)
 │   ├── tasks/          # Kanban board (lanes on desktop, lane switcher on phones)
-│   ├── expenses/       # Transactions (add/edit/delete), categories, budget, chart
+│   ├── expenses/       # Transactions and categories (add/edit/delete), budget, bar + category charts
 │   ├── habits/         # Habit cards, check-ins, rename/delete
 │   ├── analytics/      # Weekly charts
-│   └── settings/       # Profile photo, preferences, weather location picker
+│   └── settings/       # Profile photo, appearance (System/Light/Dark), weather location, delete account
 ├── main.dart           # Providers, theme, signed-in vs signed-out routing
 └── main_screen.dart    # Bottom navigation (phones) / navigation rail (≥800px)
 ```
@@ -143,4 +146,4 @@ These were in the original plan or came up later. See [NEXT_LEVEL_ROADMAP.md](NE
 - Calendar and events
 - Multi-currency
 - AI assistant (natural-language task entry, spending insights)
-- Account deletion and data export
+- Data export (CSV / JSON)

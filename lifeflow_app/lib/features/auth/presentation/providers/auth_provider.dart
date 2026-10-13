@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/api_client.dart';
@@ -81,6 +82,21 @@ class AuthNotifier extends AsyncNotifier<User?> {
     } catch (e, st) {
       state = AsyncError(e, st);
     }
+  }
+
+  /// Permanently deletes the account. Returns an error message to show, or
+  /// null on success (the user is then signed out).
+  Future<String?> deleteAccount(String password) async {
+    try {
+      await ref.read(authRepositoryProvider).deleteAccount(password);
+    } on DioException catch (e) {
+      return e.response?.statusCode == 422
+          ? 'That password is incorrect.'
+          : "Couldn't delete the account. Check your connection and try again.";
+    }
+    await ref.read(settingsRepositoryProvider).clearLocal();
+    state = const AsyncData(null);
+    return null;
   }
 
   /// The server rejected our token: drop it and show the sign-in screen.

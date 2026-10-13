@@ -259,4 +259,46 @@ class ApiTest extends TestCase
             ->assertJsonPath('tasks_today.total', 3)
             ->assertJsonPath('tasks_today.completed', 1);
     }
+
+    public function test_categories_can_be_edited_and_deleted_by_their_owner_only(): void
+    {
+        $owner = User::factory()->create();
+        $category = $owner->expenseCategories()->create(['name' => 'Food', 'type' => 'expense']);
+        $tx = Transaction::create([
+            'user_id' => $owner->id, 'category_id' => $category->id, 'amount' => 50,
+            'type' => 'expense', 'transaction_date' => now()->toDateString(),
+        ]);
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->putJson("/api/v1/categories/{$category->id}", ['name' => 'Mine now'])->assertForbidden();
+        $this->deleteJson("/api/v1/categories/{$category->id}")->assertForbidden();
+
+        Sanctum::actingAs($owner);
+        $this->putJson("/api/v1/categories/{$category->id}", ['name' => 'Groceries', 'color_hex' => '#22C55E'])
+            ->assertOk()
+            ->assertJsonPath('name', 'Groceries')
+            ->assertJsonPath('color_hex', '#22C55E');
+
+        $this->deleteJson("/api/v1/categories/{$category->id}")->assertNoContent();
+        // The transaction survives without a category.
+        $this->assertDatabaseHas('transactions', ['id' => $tx->id, 'category_id' => null]);
+    }
+
+    public function test_account_deletion_requires_the_password_and_removes_all_data(): void
+    {
+        $user = User::factory()->create(['password' => 'correct-password']);
+        $user->tasks()->create(['title' => 'Mine', 'status' => 'todo', 'priority' => 'low']);
+        $user->habits()->create(['name' => 'Read']);
+        Sanctum::actingAs($user);
+
+        $this->deleteJson('/api/v1/profile', ['password' => 'wrong'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['password']);
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+
+        $this->deleteJson('/api/v1/profile', ['password' => 'correct-password'])->assertNoContent();
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('tasks', ['user_id' => $user->id]);
+        $this->assertDatabaseMissing('habits', ['user_id' => $user->id]);
+    }
 }
