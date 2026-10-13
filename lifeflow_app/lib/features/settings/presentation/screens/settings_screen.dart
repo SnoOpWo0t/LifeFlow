@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/files/file_saver.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -182,14 +183,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       value: ThemeMode.system,
                       label: Text('System'),
                     ),
-                    ButtonSegment(
-                      value: ThemeMode.light,
-                      label: Text('Light'),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.dark,
-                      label: Text('Dark'),
-                    ),
+                    ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+                    ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
                   ],
                   selected: {themeMode},
                   onSelectionChanged: (selection) => ref
@@ -253,6 +248,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 );
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.download_outlined),
+              title: const Text('Export my data'),
+              subtitle: const Text(
+                'Download everything (JSON) or your transactions (CSV)',
+              ),
+              onTap: _exportData,
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
@@ -280,6 +283,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _exportData() async {
+    final format = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Export my data'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, 'json'),
+            child: const ListTile(
+              leading: Icon(Icons.data_object),
+              title: Text('Everything (JSON)'),
+              subtitle: Text(
+                'Profile, settings, tasks, habits, categories, transactions',
+              ),
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, 'csv'),
+            child: const ListTile(
+              leading: Icon(Icons.table_chart_outlined),
+              title: Text('Transactions (CSV)'),
+              subtitle: Text('Opens in Excel or Google Sheets'),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (format == null) return;
+
+    try {
+      final export = await ref
+          .read(settingsRepositoryProvider)
+          .exportData(format);
+      final savedTo = await saveBytes(
+        export.bytes,
+        export.filename,
+        export.mimeType,
+      );
+      _showMessage(
+        savedTo == null
+            ? 'Download started: ${export.filename}'
+            : 'Saved to $savedTo',
+      );
+    } catch (_) {
+      _showMessage("Couldn't export your data. Try again.", isError: true);
+    }
   }
 
   Future<void> _confirmDeleteAccount() async {

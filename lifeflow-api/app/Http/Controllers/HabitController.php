@@ -2,60 +2,58 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Habits\StoreHabitRequest;
+use App\Http\Requests\Habits\UpdateHabitRequest;
+use App\Http\Resources\HabitResource;
 use App\Models\Habit;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 
 class HabitController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
+        $today = $request->user()->localNow()->startOfDay();
         $habits = Habit::where('user_id', $request->user()->id)->get();
 
         // Streaks go stale when a day is missed without any toggle, so refresh
         // them from the logs before returning.
-        $habits->each(fn (Habit $habit) => $this->recalculateStreaks($habit));
+        $habits->each(fn (Habit $habit) => $this->recalculateStreaks($habit, $today));
 
-        $sevenDaysAgo = Carbon::now()->subDays(6)->toDateString();
+        $sevenDaysAgo = $today->copy()->subDays(6)->toDateString();
         $habits->load(['logs' => function ($query) use ($sevenDaysAgo) {
             $query->where('completed_date', '>=', $sevenDaysAgo)
                   ->orderBy('completed_date', 'asc');
         }]);
 
-        return response()->json($habits);
+        return HabitResource::collection($habits);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreHabitRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'color_hex' => 'nullable|string|max:7',
-        ]);
+        $habit = $request->user()->habits()->create($request->validated());
 
-        $habit = Habit::create(array_merge($validated, ['user_id' => $request->user()->id]));
-        return response()->json($habit->load('logs'), 201);
+        return (new HabitResource($habit->load('logs')))->response()->setStatusCode(201);
     }
 
-    public function update(Request $request, Habit $habit): JsonResponse
+    public function update(UpdateHabitRequest $request, Habit $habit): HabitResource
     {
         Gate::authorize('update', $habit);
 
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'color_hex' => 'nullable|string|max:7',
-        ]);
+        $habit->update($request->validated());
 
-        $habit->update($validated);
-        return response()->json($habit->load('logs'));
+        return new HabitResource($habit->load('logs'));
     }
 
-    public function toggle(Request $request, Habit $habit): JsonResponse
+    public function toggle(Request $request, Habit $habit): HabitResource
     {
         Gate::authorize('update', $habit);
 
-        $today = Carbon::now()->toDateString();
+        $localToday = $request->user()->localNow()->startOfDay();
+        $today = $localToday->toDateString();
         $existingLog = $habit->logs()->whereDate('completed_date', $today)->first();
 
         if ($existingLog) {
@@ -64,12 +62,12 @@ class HabitController extends Controller
             $habit->logs()->create(['completed_date' => $today]);
         }
 
-        $this->recalculateStreaks($habit);
+        $this->recalculateStreaks($habit, $localToday);
 
-        return response()->json($habit->load('logs'));
+        return new HabitResource($habit->load('logs'));
     }
 
-    public function destroy(Request $request, Habit $habit): JsonResponse
+    public function destroy(Habit $habit): JsonResponse
     {
         Gate::authorize('delete', $habit);
 
@@ -84,7 +82,7 @@ class HabitController extends Controller
      * current_streak: consecutive days ending today, or ending yesterday if
      * today isn't checked yet (the streak is still alive until midnight).
      */
-    private function recalculateStreaks(Habit $habit): void
+    private function recalculateStreaks(Habit $habit, Carbon $today): void
     {
         $days = $habit->logs()
             ->orderBy('completed_date')
@@ -105,7 +103,7 @@ class HabitController extends Controller
         }
 
         $logged = $days->flip();
-        $cursor = Carbon::today();
+        $cursor = $today->copy();
         if (! $logged->has($cursor->toDateString())) {
             $cursor->subDay();
         }

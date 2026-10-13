@@ -6,10 +6,18 @@ class ExpenseRepository {
 
   ExpenseRepository(this._apiClient);
 
-  Future<List<Transaction>> fetchTransactions() async {
-    final response = await _apiClient.dio.get('/transactions');
-    return (response.data as List)
-        .map((json) => Transaction.fromJson(json))
+  Future<TransactionPage> fetchTransactions({int page = 1}) async {
+    final response = await _apiClient.dio.get(
+      '/transactions',
+      queryParameters: {'page': page},
+    );
+    return TransactionPage.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<CategorySpending>> fetchSpendingByCategory() async {
+    final response = await _apiClient.dio.get('/transactions/by-category');
+    return (response.data['categories'] as List)
+        .map((json) => CategorySpending.fromJson(json))
         .toList();
   }
 

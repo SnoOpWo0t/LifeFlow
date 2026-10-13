@@ -2,76 +2,70 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Tasks\StoreTaskRequest;
+use App\Http\Requests\Tasks\UpdateTaskRequest;
+use App\Http\Resources\TaskResource;
 use App\Models\Task;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 
 class TaskController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $tasks = $request->user()->tasks()->orderBy('due_date', 'asc')->get();
-        return response()->json($tasks);
+        return TaskResource::collection(
+            $request->user()->tasks()->orderBy('due_date', 'asc')->get()
+        );
     }
 
-    public function store(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status' => 'required|in:todo,in_progress,done',
-            'priority' => 'required|in:low,medium,high',
-            'due_date' => 'nullable|date',
-            'recurrence_rule' => 'nullable|in:daily,weekly,monthly',
-        ]);
-
-        $task = $request->user()->tasks()->create($validated);
-        return response()->json($task, 201);
-    }
-
-    public function update(Request $request, Task $task): JsonResponse
+    public function show(Task $task): TaskResource
     {
         Gate::authorize('update', $task);
 
-        $validated = $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'status' => 'sometimes|in:todo,in_progress,done',
-            'priority' => 'sometimes|in:low,medium,high',
-            'due_date' => 'nullable|date',
-            'recurrence_rule' => 'nullable|in:daily,weekly,monthly',
-        ]);
+        return new TaskResource($task);
+    }
 
-        // Handle recurring task logic: If marked as done and it's recurring, roll date forward
-        if (isset($validated['status']) && $validated['status'] === 'done' && $task->recurrence_rule) {
-            $currentDate = $task->due_date ? Carbon::parse($task->due_date) : Carbon::now();
-            
-            switch ($task->recurrence_rule) {
-                case 'daily':
-                    $validated['due_date'] = $currentDate->addDay();
-                    break;
-                case 'weekly':
-                    $validated['due_date'] = $currentDate->addWeek();
-                    break;
-                case 'monthly':
-                    $validated['due_date'] = $currentDate->addMonth();
-                    break;
-            }
-            // Reset status back to todo for the next recurrence
+    public function store(StoreTaskRequest $request): JsonResponse
+    {
+        $task = $request->user()->tasks()->create($request->validated());
+
+        return (new TaskResource($task))->response()->setStatusCode(201);
+    }
+
+    public function update(UpdateTaskRequest $request, Task $task): TaskResource
+    {
+        Gate::authorize('update', $task);
+
+        $validated = $request->validated();
+
+        // A recurring task marked done rolls its due date forward and goes back to "todo".
+        if (($validated['status'] ?? null) === 'done' && $task->recurrence_rule) {
+            $currentDate = $task->due_date
+                ? Carbon::parse($task->due_date)
+                : $request->user()->localNow();
+
+            $validated['due_date'] = match ($task->recurrence_rule) {
+                'daily' => $currentDate->addDay(),
+                'weekly' => $currentDate->addWeek(),
+                'monthly' => $currentDate->addMonth(),
+            };
             $validated['status'] = 'todo';
         }
 
         $task->update($validated);
-        return response()->json($task);
+
+        return new TaskResource($task);
     }
 
-    public function destroy(Request $request, Task $task): JsonResponse
+    public function destroy(Task $task): JsonResponse
     {
         Gate::authorize('delete', $task);
 
         $task->delete();
+
         return response()->json(null, 204);
     }
 }

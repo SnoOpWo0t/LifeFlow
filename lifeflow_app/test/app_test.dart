@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lifeflow_app/core/network/api_client.dart';
 import 'package:lifeflow_app/core/storage/storage_service.dart';
 import 'package:lifeflow_app/core/utils/formatters.dart';
+import 'package:lifeflow_app/features/calendar/domain/calendar_models.dart';
+import 'package:lifeflow_app/features/expenses/domain/expense_models.dart';
 import 'package:lifeflow_app/features/expenses/presentation/screens/category_management_dialog.dart';
 import 'package:lifeflow_app/features/settings/data/settings_repository.dart';
 import 'package:lifeflow_app/features/auth/presentation/providers/auth_provider.dart';
@@ -124,5 +126,74 @@ void main() {
     expect(categoryColor('#'), Colors.grey); // what the old dialog used to save
     expect(categoryColor('#zzzzzz'), Colors.grey);
     expect(categoryColor(null), Colors.grey);
+  });
+
+  group('paginated transactions', () {
+    Map<String, dynamic> page(int current, int last) => {
+      'data': [
+        {
+          'id': 1,
+          'amount': '760.00', // PostgreSQL sends decimals as text
+          'type': 'expense',
+          'transaction_date': '2026-10-13',
+          'category': {
+            'id': 2,
+            'name': 'Food',
+            'type': 'expense',
+            'color_hex': '#F97316',
+          },
+        },
+      ],
+      'meta': {'current_page': current, 'last_page': last},
+    };
+
+    test('knows when more pages exist', () {
+      final first = TransactionPage.fromJson(page(1, 3));
+      expect(first.items.single.amount, 760);
+      expect(first.items.single.category?.name, 'Food');
+      expect(first.hasMore, isTrue);
+      expect(TransactionPage.fromJson(page(3, 3)).hasMore, isFalse);
+    });
+
+    test('category totals parse numbers sent as text', () {
+      final spending = CategorySpending.fromJson({
+        'name': 'Food',
+        'color_hex': '#F97316',
+        'total': '1250.5',
+      });
+      expect(spending.total, 1250.5);
+    });
+  });
+
+  group('calendar', () {
+    test('month grid is 6 full weeks starting on a Monday', () {
+      final grid = monthGrid(DateTime(2026, 10));
+      expect(grid.length, 42);
+      expect(grid.first.weekday, DateTime.monday);
+      expect(grid.first, DateTime(2026, 9, 28)); // 1 Oct 2026 is a Thursday
+      expect(grid.contains(DateTime(2026, 10, 31)), isTrue);
+    });
+
+    test('reads the month summary keyed by date', () {
+      final month = CalendarMonth.fromJson({
+        'month': '2026-10',
+        'habits_total': 2,
+        'days': [
+          {
+            'date': '2026-10-14',
+            'tasks_due': 2,
+            'tasks_done': 1,
+            'habits_done': 2,
+            'spent': '760.5',
+            'earned': 0,
+          },
+        ],
+      });
+      final day = month.days[dateKey(DateTime(2026, 10, 14))]!;
+      expect(month.habitsTotal, 2);
+      expect(day.tasksDue, 2);
+      expect(day.spent, 760.5);
+      expect(month.days[dateKey(DateTime(2026, 10, 15))], isNull);
+    });
   });
 }

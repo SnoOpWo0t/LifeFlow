@@ -3,13 +3,12 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\HabitController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Response;
 
 Route::prefix('v1')->group(function () {
     // 10 attempts per minute per IP slows down password guessing.
@@ -18,23 +17,17 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
     });
 
-    Route::get('/avatar/{filename}', function ($filename) {
-        $path = storage_path('app/public/avatars/' . $filename);
-        if (!File::exists($path)) {
-            abort(404);
-        }
-        $file = File::get($path);
-        $type = File::mimeType($path);
-        $response = Response::make($file, 200);
-        $response->header("Content-Type", $type);
-        $response->header("Access-Control-Allow-Origin", "*");
-        return $response;
-    });
+    // Profile photos: only reachable through signed, expiring links.
+    Route::get('/avatar/{filename}', [ProfileController::class, 'showAvatar'])
+        ->middleware('signed')
+        ->name('avatar.show');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/user', [AuthController::class, 'user']);
         Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
+        Route::get('/calendar', [CalendarController::class, 'month']);
+        Route::get('/calendar/day', [CalendarController::class, 'day']);
         Route::get('/analytics/weekly', [App\Http\Controllers\AnalyticsController::class, 'weekly']);
         
         Route::apiResource('tasks', TaskController::class);
@@ -48,6 +41,7 @@ Route::prefix('v1')->group(function () {
         Route::put('/transactions/{transaction}', [ExpenseController::class, 'updateTransaction']);
         Route::delete('/transactions/{transaction}', [ExpenseController::class, 'destroyTransaction']);
         Route::get('/transactions/chart', [ExpenseController::class, 'getChartData']);
+        Route::get('/transactions/by-category', [ExpenseController::class, 'spendingByCategory']);
         
         Route::apiResource('habits', HabitController::class)->except(['show']);
         Route::post('/habits/{habit}/toggle', [HabitController::class, 'toggle']);
@@ -56,5 +50,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar']);
         Route::put('/profile/settings', [ProfileController::class, 'updateSettings']);
         Route::delete('/profile', [ProfileController::class, 'destroy']);
+        Route::get('/profile/export', [ProfileController::class, 'export']);
     });
 });

@@ -58,7 +58,16 @@ class ExpenseScreen extends ConsumerWidget {
           Future<void> refresh() async {
             ref.invalidate(transactionsProvider);
             ref.invalidate(chartDataProvider);
+            ref.invalidate(spendingByCategoryProvider);
             await ref.read(transactionsProvider.future);
+          }
+
+          // Infinite scroll: fetch the next page shortly before the end.
+          bool onScroll(ScrollNotification notification) {
+            if (notification.metrics.extentAfter < 600) {
+              ref.read(transactionsProvider.notifier).loadMore();
+            }
+            return false;
           }
 
           final barChart = chartDataAsync.when(
@@ -75,8 +84,9 @@ class ExpenseScreen extends ConsumerWidget {
           final chart = Column(
             children: [
               barChart,
-              if (transactionsAsync.value case final transactions?)
-                _buildCategoryBreakdown(context, transactions, isDark),
+              if (ref.watch(spendingByCategoryProvider).value
+                  case final spending?)
+                _buildCategoryBreakdown(context, spending, isDark),
             ],
           );
           final transactionSlivers = <Widget>[
@@ -108,7 +118,8 @@ class ExpenseScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              data: (transactions) {
+              data: (feed) {
+                final transactions = feed.items;
                 if (transactions.isEmpty) {
                   return SliverFillRemaining(
                     hasScrollBody: false,
@@ -130,6 +141,13 @@ class ExpenseScreen extends ConsumerWidget {
                   ),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
+                      if (index == transactions.length) {
+                        // Next page is on its way.
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
                       final tx = transactions[index];
                       final isIncome = tx.type == 'income';
                       return Container(
@@ -198,7 +216,7 @@ class ExpenseScreen extends ConsumerWidget {
                           ),
                         ),
                       );
-                    }, childCount: transactions.length),
+                    }, childCount: transactions.length + (feed.hasMore ? 1 : 0)),
                   ),
                 );
               },
@@ -218,12 +236,15 @@ class ExpenseScreen extends ConsumerWidget {
                   flex: 6,
                   child: RefreshIndicator(
                     onRefresh: refresh,
-                    child: CustomScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      slivers: [
-                        const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                        ...transactionSlivers,
-                      ],
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: onScroll,
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                          ...transactionSlivers,
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -232,12 +253,15 @@ class ExpenseScreen extends ConsumerWidget {
           }
           return RefreshIndicator(
             onRefresh: refresh,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(child: chart),
-                ...transactionSlivers,
-              ],
+            child: NotificationListener<ScrollNotification>(
+              onNotification: onScroll,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(child: chart),
+                  ...transactionSlivers,
+                ],
+              ),
             ),
           );
         },
@@ -275,6 +299,7 @@ class ExpenseScreen extends ConsumerWidget {
     void refreshMoneyViews() {
       ref.invalidate(transactionsProvider);
       ref.invalidate(chartDataProvider);
+      ref.invalidate(spendingByCategoryProvider);
       ref.invalidate(dashboardSummaryProvider);
     }
 
@@ -808,31 +833,24 @@ class ExpenseScreen extends ConsumerWidget {
   /// Donut of this month's spending per category (the largest five, plus "Other").
   Widget _buildCategoryBreakdown(
     BuildContext context,
-    List<Transaction> transactions,
+    List<CategorySpending> spending,
     bool isDark,
   ) {
-    final now = DateTime.now();
-    final totals = <String, ({double amount, Color color})>{};
-    for (final tx in transactions) {
-      final d = tx.transactionDate;
-      if (tx.type != 'expense' || d.year != now.year || d.month != now.month) {
-        continue;
-      }
-      final name = tx.category?.name ?? 'Uncategorised';
-      final color = tx.category == null
-          ? Colors.blueGrey
-          : categoryColor(tx.category!.colorHex);
-      final previous = totals[name]?.amount ?? 0;
-      totals[name] = (amount: previous + tx.amount, color: color);
-    }
-    if (totals.isEmpty) return const SizedBox.shrink();
+    if (spending.isEmpty) return const SizedBox.shrink();
 
-    final sorted = totals.entries.toList()
-      ..sort((a, b) => b.value.amount.compareTo(a.value.amount));
-    final slices = sorted.take(5).toList();
-    final otherTotal = sorted
+    // The server returns categories largest first; keep five, group the rest.
+    final slices = [
+      for (final c in spending.take(5))
+        MapEntry(c.name, (
+          amount: c.total,
+          color: c.name == 'Uncategorised'
+              ? Colors.blueGrey
+              : categoryColor(c.colorHex),
+        )),
+    ];
+    final otherTotal = spending
         .skip(5)
-        .fold<double>(0, (sum, e) => sum + e.value.amount);
+        .fold<double>(0, (sum, c) => sum + c.total);
     if (otherTotal > 0) {
       slices.add(MapEntry('Other', (amount: otherTotal, color: Colors.grey)));
     }

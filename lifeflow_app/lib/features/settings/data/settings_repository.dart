@@ -145,6 +145,25 @@ class SettingsRepository {
     }
   }
 
+  /// Download all account data. [format]: 'json' (everything) or 'csv'
+  /// (transactions only).
+  Future<({List<int> bytes, String filename, String mimeType})> exportData(
+    String format,
+  ) async {
+    final response = await _apiClient.dio.get<List<int>>(
+      '/profile/export',
+      queryParameters: {'format': format},
+      options: Options(responseType: ResponseType.bytes),
+    );
+    final disposition = response.headers.value('content-disposition') ?? '';
+    final match = RegExp(r'filename="?([^";]+)"?').firstMatch(disposition);
+    return (
+      bytes: response.data ?? const [],
+      filename: match?.group(1) ?? 'lifeflow-export.$format',
+      mimeType: format == 'csv' ? 'text/csv' : 'application/json',
+    );
+  }
+
   Future<String> uploadAvatar(List<int> bytes, String filename) async {
     final formData = FormData.fromMap({
       'avatar': MultipartFile.fromBytes(bytes, filename: filename),

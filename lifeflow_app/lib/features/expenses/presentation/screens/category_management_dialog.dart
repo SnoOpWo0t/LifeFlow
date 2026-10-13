@@ -71,6 +71,7 @@ class _CategoryManagementDialogState
   void _refreshMoneyViews() {
     ref.invalidate(categoriesProvider);
     ref.invalidate(transactionsProvider);
+    ref.invalidate(spendingByCategoryProvider);
     ref.invalidate(dashboardSummaryProvider);
   }
 

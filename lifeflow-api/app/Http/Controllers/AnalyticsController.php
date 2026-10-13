@@ -15,15 +15,19 @@ class AnalyticsController extends Controller
     {
         $user = $request->user();
         
-        $startDate = Carbon::now()->subDays(6)->startOfDay();
-        $endDate = Carbon::now()->endOfDay();
+        // Days are the user's local days; timestamps are stored in server time.
+        $now = $user->localNow();
+        $serverTz = config('app.timezone');
+        $startDate = $now->copy()->subDays(6)->startOfDay();
+        $endDate = $now->copy()->endOfDay();
 
         // Initialize 7 days array
         $days = [];
         for ($i = 0; $i < 7; $i++) {
-            $dateStr = Carbon::now()->subDays(6 - $i)->format('Y-m-d');
+            $day = $now->copy()->subDays(6 - $i);
+            $dateStr = $day->format('Y-m-d');
             $days[$dateStr] = [
-                'day_name' => Carbon::now()->subDays(6 - $i)->format('D'),
+                'day_name' => $day->format('D'),
                 'tasks_completed' => 0,
                 'habits_completed' => 0,
                 'expenses' => 0,
@@ -35,12 +39,12 @@ class AnalyticsController extends Controller
         // 1. Fetch Tasks Completed
         $tasks = Task::where('user_id', $user->id)
             ->where('status', 'done')
-            ->where('updated_at', '>=', $startDate->startOfDay())
-            ->where('updated_at', '<=', $endDate->endOfDay())
+            ->where('updated_at', '>=', $startDate->copy()->setTimezone($serverTz))
+            ->where('updated_at', '<=', $endDate->copy()->setTimezone($serverTz))
             ->get();
 
         foreach ($tasks as $task) {
-            $date = $task->updated_at->format('Y-m-d');
+            $date = $task->updated_at->copy()->setTimezone($now->getTimezone())->format('Y-m-d');
             if (isset($days[$date])) {
                 $days[$date]['tasks_completed'] += 1;
                 $days[$date]['productivity_score'] += 1;

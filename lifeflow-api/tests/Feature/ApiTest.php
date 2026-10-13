@@ -7,6 +7,7 @@ use App\Models\Task;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -300,5 +301,186 @@ class ApiTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $user->id]);
         $this->assertDatabaseMissing('tasks', ['user_id' => $user->id]);
         $this->assertDatabaseMissing('habits', ['user_id' => $user->id]);
+    }
+
+    public function test_the_app_timezone_decides_what_today_is(): void
+    {
+        // UTC+14: when it's still "yesterday" on the server, it's already tomorrow here.
+        $user = User::factory()->create();
+        $habit = $user->habits()->create(['name' => 'Read']);
+        Sanctum::actingAs($user);
+
+        $this->withHeader('X-Timezone', 'Pacific/Kiritimati')
+            ->postJson("/api/v1/habits/{$habit->id}/toggle")
+            ->assertOk()
+            ->assertJsonPath('logs.0.completed_date', now('Pacific/Kiritimati')->toDateString());
+
+        $this->assertSame('Pacific/Kiritimati', $user->fresh()->timezone);
+    }
+
+    public function test_invalid_timezones_are_ignored(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->withHeader('X-Timezone', 'Not/AZone')->getJson('/api/v1/user')->assertOk();
+
+        $this->assertNull($user->fresh()->timezone);
+    }
+
+    public function test_user_responses_do_not_leak_internal_fields(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $json = $this->getJson('/api/v1/user')->assertOk()->json();
+
+        $this->assertSame(
+            ['id', 'name', 'email', 'avatar_url', 'preferences', 'timezone', 'created_at'],
+            array_keys($json),
+        );
+    }
+
+    public function test_tasks_can_be_fetched_individually_by_their_owner_only(): void
+    {
+        $owner = User::factory()->create();
+        $task = $owner->tasks()->create(['title' => 'Mine', 'status' => 'todo', 'priority' => 'low']);
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->getJson("/api/v1/tasks/{$task->id}")->assertForbidden();
+
+        Sanctum::actingAs($owner);
+        $this->getJson("/api/v1/tasks/{$task->id}")->assertOk()->assertJsonPath('title', 'Mine');
+    }
+
+    public function test_transactions_are_paginated(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        foreach (range(1, 35) as $i) {
+            Transaction::create([
+                'user_id' => $user->id, 'amount' => $i, 'type' => 'expense',
+                'transaction_date' => now()->subDays($i)->toDateString(),
+            ]);
+        }
+
+        $this->getJson('/api/v1/transactions')
+            ->assertOk()
+            ->assertJsonCount(30, 'data')
+            ->assertJsonPath('meta.last_page', 2);
+
+        $this->getJson('/api/v1/transactions?page=2')->assertOk()->assertJsonCount(5, 'data');
+    }
+
+    public function test_spending_by_category_covers_this_month_only(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $food = $user->expenseCategories()->create(['name' => 'Food', 'type' => 'expense', 'color_hex' => '#F97316']);
+        $add = fn ($amount, $date, $category = null) => Transaction::create([
+            'user_id' => $user->id, 'category_id' => $category?->id, 'amount' => $amount,
+            'type' => 'expense', 'transaction_date' => $date,
+        ]);
+        $add(100, now()->startOfMonth()->toDateString(), $food);
+        $add(50, now()->toDateString(), $food);
+        $add(20, now()->toDateString());
+        $add(999, now()->subMonthNoOverflow()->startOfMonth()->toDateString(), $food); // last month
+
+        $this->getJson('/api/v1/transactions/by-category')
+            ->assertOk()
+            ->assertJsonPath('categories.0.name', 'Food')
+            ->assertJsonPath('categories.0.total', 150)
+            ->assertJsonPath('categories.1.name', 'Uncategorised');
+    }
+
+    public function test_data_export_includes_everything_and_offers_csv(): void
+    {
+        $user = User::factory()->create();
+        $user->tasks()->create(['title' => 'Export me', 'status' => 'todo', 'priority' => 'low']);
+        Transaction::create([
+            'user_id' => $user->id, 'amount' => 42, 'type' => 'income',
+            'transaction_date' => now()->toDateString(), 'note' => 'Gift',
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/profile/export')
+            ->assertOk()
+            ->assertHeader('Content-Disposition')
+            ->assertJsonPath('profile.email', $user->email)
+            ->assertJsonPath('tasks.0.title', 'Export me')
+            ->assertJsonPath('transactions.0.note', 'Gift');
+
+        $csv = $this->get('/api/v1/profile/export?format=csv')->assertOk()->streamedContent();
+        $this->assertStringStartsWith('date,type,amount,category,note', $csv);
+        $this->assertStringContainsString('income,42', $csv);
+    }
+
+    public function test_avatars_are_only_served_through_signed_links(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('avatars/me.png', 'fake-image-bytes');
+        $user = User::factory()->create();
+        $user->forceFill(['avatar_path' => 'me.png'])->save();
+        Sanctum::actingAs($user);
+
+        $signedUrl = $this->getJson('/api/v1/user')->json('avatar_url');
+        $this->assertStringContainsString('signature=', $signedUrl);
+
+        $this->get($signedUrl)->assertOk();
+        $this->get('/api/v1/avatar/me.png')->assertForbidden(); // no signature
+    }
+
+    public function test_calendar_month_summarises_each_day(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $habit = $user->habits()->create(['name' => 'Run']);
+        $user->habits()->create(['name' => 'Read']);
+
+        $user->tasks()->create(['title' => 'A', 'status' => 'done', 'priority' => 'low', 'due_date' => '2026-03-10']);
+        $user->tasks()->create(['title' => 'B', 'status' => 'todo', 'priority' => 'low', 'due_date' => '2026-03-10']);
+        $user->tasks()->create(['title' => 'Next month', 'status' => 'todo', 'priority' => 'low', 'due_date' => '2026-04-01']);
+        $habit->logs()->create(['completed_date' => '2026-03-10']);
+        Transaction::create(['user_id' => $user->id, 'amount' => 300, 'type' => 'expense', 'transaction_date' => '2026-03-12']);
+        Transaction::create(['user_id' => $user->id, 'amount' => 900, 'type' => 'income', 'transaction_date' => '2026-03-12']);
+
+        $this->getJson('/api/v1/calendar?month=2026-03')
+            ->assertOk()
+            ->assertJsonPath('month', '2026-03')
+            ->assertJsonPath('habits_total', 2)
+            ->assertJsonCount(2, 'days')
+            ->assertJsonPath('days.0.date', '2026-03-10')
+            ->assertJsonPath('days.0.tasks_due', 2)
+            ->assertJsonPath('days.0.tasks_done', 1)
+            ->assertJsonPath('days.0.habits_done', 1)
+            ->assertJsonPath('days.1.date', '2026-03-12')
+            ->assertJsonPath('days.1.spent', 300)
+            ->assertJsonPath('days.1.earned', 900);
+    }
+
+    public function test_calendar_day_lists_only_your_own_things(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $habit = $user->habits()->create(['name' => 'Run']);
+        $habit->logs()->create(['completed_date' => '2026-03-10']);
+        $user->tasks()->create(['title' => 'Mine', 'status' => 'todo', 'priority' => 'low', 'due_date' => '2026-03-10']);
+        $other->tasks()->create(['title' => 'Not mine', 'status' => 'todo', 'priority' => 'low', 'due_date' => '2026-03-10']);
+        Transaction::create(['user_id' => $other->id, 'amount' => 5, 'type' => 'expense', 'transaction_date' => '2026-03-10']);
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/calendar/day?date=2026-03-10')
+            ->assertOk()
+            ->assertJsonCount(1, 'tasks')
+            ->assertJsonPath('tasks.0.title', 'Mine')
+            ->assertJsonPath('habits.0.done', true)
+            ->assertJsonCount(0, 'transactions');
+    }
+
+    public function test_calendar_rejects_malformed_months(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->getJson('/api/v1/calendar?month=March')->assertStatus(422);
+        $this->getJson('/api/v1/calendar/day')->assertStatus(422);
     }
 }

@@ -14,20 +14,23 @@ class DashboardController extends Controller
     public function summary(Request $request): JsonResponse
     {
         $user = $request->user();
-        $today = now()->startOfDay();
-        $startOfMonth = now()->startOfMonth();
+        // The user's local day, converted to server time for timestamp columns.
+        $localNow = $user->localNow();
+        $startOfMonth = $localNow->copy()->startOfMonth()->toDateString();
+        $dayStart = $localNow->copy()->startOfDay()->setTimezone(config('app.timezone'));
+        $dayEnd = $localNow->copy()->endOfDay()->setTimezone(config('app.timezone'));
         
         // Today's tasks: due today, overdue and still open, or finished today.
         // (This used to count every task the user had ever created.)
-        $todayDate = now()->toDateString();
+        $todayDate = $localNow->toDateString();
         $tasksToday = Task::where('user_id', $user->id)
-            ->where(function ($query) use ($todayDate) {
+            ->where(function ($query) use ($todayDate, $dayStart, $dayEnd) {
                 $query->whereDate('due_date', $todayDate)
                     ->orWhere(function ($overdue) use ($todayDate) {
                         $overdue->whereDate('due_date', '<', $todayDate)->where('status', '!=', 'done');
                     })
-                    ->orWhere(function ($finished) use ($todayDate) {
-                        $finished->where('status', 'done')->whereDate('updated_at', $todayDate);
+                    ->orWhere(function ($finished) use ($dayStart, $dayEnd) {
+                        $finished->where('status', 'done')->whereBetween('updated_at', [$dayStart, $dayEnd]);
                     });
             })
             ->get();
@@ -40,7 +43,7 @@ class DashboardController extends Controller
         $habitsTotal = $habits->count();
         
         $habitsCompleted = HabitLog::whereIn('habit_id', $habits->pluck('id'))
-            ->whereDate('completed_date', '=', now()->toDateString())
+            ->whereDate('completed_date', '=', $todayDate)
             ->count();
 
         // Monthly Expenses

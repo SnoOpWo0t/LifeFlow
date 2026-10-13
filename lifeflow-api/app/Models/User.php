@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -44,5 +45,14 @@ class User extends Authenticatable
     public function expenseCategories()
     {
         return $this->hasMany(ExpenseCategory::class);
+    }
+
+    /**
+     * "Now" in the user's own timezone (falls back to APP_TIMEZONE). Use this,
+     * not now(), for anything that depends on which day it is for the user.
+     */
+    public function localNow(): Carbon
+    {
+        return Carbon::now($this->timezone ?: config('app.timezone'));
     }
 }

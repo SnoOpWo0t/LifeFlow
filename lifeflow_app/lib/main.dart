@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/network/api_client.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
@@ -10,6 +12,12 @@ import 'main_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+  try {
+    ApiClient.deviceTimezone =
+        (await FlutterTimezone.getLocalTimezone()).identifier;
+  } catch (_) {
+    // Unknown: the server falls back to its default timezone.
+  }
 
   runApp(
     ProviderScope(

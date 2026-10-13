@@ -5,6 +5,8 @@ import '../providers/weather_provider.dart';
 import 'dart:ui';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
+import '../../../calendar/presentation/providers/calendar_provider.dart';
+import '../../../calendar/presentation/widgets/dashboard_calendar.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../settings/presentation/widgets/city_picker.dart';
 
@@ -533,11 +535,20 @@ class DashboardScreen extends ConsumerWidget {
           const gap = SizedBox(height: 16);
 
           return RefreshIndicator(
-            onRefresh: () => ref.refresh(dashboardSummaryProvider.future),
+            onRefresh: () {
+              ref.invalidate(calendarMonthProvider);
+              ref.invalidate(calendarDayProvider);
+              return ref.refresh(dashboardSummaryProvider.future);
+            },
             child: LayoutBuilder(
               builder: (context, constraints) {
                 // Two columns once there's room, so everything fits above the fold on desktop.
                 final wide = constraints.maxWidth >= 960;
+                final calendar = _buildGlassCard(
+                  context,
+                  isDark: isDark,
+                  child: DashboardCalendar(compact: !wide),
+                );
                 return ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -558,6 +569,8 @@ class DashboardScreen extends ConsumerWidget {
                                     productivity,
                                     gap,
                                     stats,
+                                    gap,
+                                    calendar,
                                   ],
                                 ),
                               ),
@@ -584,6 +597,8 @@ class DashboardScreen extends ConsumerWidget {
                           productivity,
                           gap,
                           stats,
+                          gap,
+                          calendar,
                           gap,
                           budgetCard,
                           const SizedBox(height: 32),
