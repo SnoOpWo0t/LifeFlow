@@ -10,7 +10,7 @@ Ideas that aren't built yet are listed separately at the end, under [Planned](#4
 Laravel Eloquent on **SQLite** in development and **PostgreSQL** in production. Every user-owned table has a `user_id` foreign key with `ON DELETE CASCADE`, so deleting a user removes all their data.
 
 ### users
-`id`, `name`, `email` (unique), `password` (hashed), `avatar_url`, `preferences` (JSON), `provider`, `provider_id` (reserved for Google sign-in), `email_verified_at`, timestamps
+`id`, `name`, `email` (unique), `password` (hashed), `avatar_path` (file name only; the API hands out signed, expiring links), `preferences` (JSON), `timezone` (IANA name reported by the app, e.g. `Asia/Dhaka`), `provider`, `provider_id` (reserved for Google sign-in), `email_verified_at`, timestamps
 
 `preferences` holds per-user settings that follow the account across devices:
 `theme_mode` (`system` | `light` | `dark`; older accounts may still have the previous on/off `is_dark_mode`, which the app converts), `push_notifications`, `monthly_budget`, `default_city`, `weather_location` (`name`, `region`, `country`, `latitude`, `longitude`).
@@ -31,8 +31,11 @@ Streaks are **recalculated from these logs**, not incremented, so they can't dri
 `id`, `user_id`, `name`, `type` (`income` | `expense`), `color_hex`, timestamps
 
 ### transactions
-`id`, `user_id`, `category_id` (nullable, `ON DELETE SET NULL`), `amount` (decimal 12,2), `type` (`income` | `expense`), `transaction_date`, `note`, timestamps
+`id`, `user_id`, `category_id` (nullable, `ON DELETE SET NULL`), `amount` (decimal 12,2), `type` (`income` | `expense`), `account` (`cash` | `bkash` | `nagad` | `bank`), `transaction_date`, `note`, timestamps
 Index: `(user_id, transaction_date)`
+
+### wishlist_items
+`id`, `user_id` (foreign key, `ON DELETE CASCADE`), `title`, `note` (nullable), `estimated_price` (decimal 12,2, nullable), `priority` (`low` | `normal` | `high`), `category` (string 60, nullable), `is_purchased` (boolean), `link` (nullable), `sort_order` (integer), timestamps
 
 ### Framework tables
 `personal_access_tokens` (Sanctum API tokens), `sessions`, `cache`, `jobs`, `password_reset_tokens`
@@ -41,8 +44,8 @@ Index: `(user_id, transaction_date)`
 
 ## 2. API endpoints
 
-All under `/api/v1`. Everything except register, login and avatar images needs a `Authorization: Bearer <token>` header (Laravel Sanctum).
-**29 endpoints** in total.
+All under `/api/v1`. Everything except register, login and (signed) avatar links needs an `Authorization: Bearer <token>` header (Laravel Sanctum). The app also sends `X-Timezone: <IANA name>`, which the server stores on the user.
+**39 endpoints** in total. Responses are built by API Resources (`app/Http/Resources/`); single objects are returned unwrapped.
 
 ### Authentication
 | Method | Path | What it does |
@@ -50,7 +53,7 @@ All under `/api/v1`. Everything except register, login and avatar images needs a
 | POST | `/register` | Create an account, returns a token. Rate-limited to 10/min per IP |
 | POST | `/login` | Returns a token. Rate-limited to 10/min per IP |
 | POST | `/logout` | Revokes the current token on the server |
-| GET | `/user` | The signed-in user, including `preferences` |
+| GET | `/user` | The signed-in user: `id`, `name`, `email`, `avatar_url` (signed link), `preferences`, `timezone`, `created_at` |
 
 ### Profile
 | Method | Path | What it does |
@@ -58,11 +61,14 @@ All under `/api/v1`. Everything except register, login and avatar images needs a
 | POST | `/profile/avatar` | Upload a profile photo (image, max 5 MB; the app resizes to 512px first) |
 | PUT | `/profile/settings` | Merge new values into `preferences` |
 | DELETE | `/profile` | Permanently delete the account and all its data (requires the current `password`) |
-| GET | `/avatar/{filename}` | Serve a profile photo (public, CORS-enabled) |
+| GET | `/profile/export` | Download all account data: `?format=json` (default; everything) or `?format=csv` (transactions) |
+| GET | `/avatar/{filename}` | Serve a profile photo. Requires a valid signature (links come from `/user`; they expire after about a week) |
 
 ### Dashboard & analytics
 | Method | Path | What it does |
 |---|---|---|
+| GET | `/calendar?month=YYYY-MM` | Per-day activity for a month (defaults to the user's current month): `tasks_due`, `tasks_done`, `habits_done`, `spent`, `earned`, plus `habits_total`. Only days with activity are listed |
+| GET | `/calendar/day?date=YYYY-MM-DD` | Everything on one day: tasks due, each habit with `done`, and transactions |
 | GET | `/dashboard/summary` | Today's tasks (due today, overdue and open, or finished today), today's habits, this month's income/spending/budget, productivity score, recent activity |
 | GET | `/analytics/weekly` | Last 7 days: income, expenses and productivity per day, weekly savings, best day |
 
@@ -71,7 +77,7 @@ All under `/api/v1`. Everything except register, login and avatar images needs a
 |---|---|---|
 | GET | `/tasks` | Your tasks, ordered by due date |
 | POST | `/tasks` | Create |
-| GET | `/tasks/{id}` | One task |
+| GET | `/tasks/{id}` | One task (owner only; this route existed before but crashed) |
 | PUT/PATCH | `/tasks/{id}` | Update (status, priority, etc.) |
 | DELETE | `/tasks/{id}` | Delete |
 
@@ -91,16 +97,27 @@ All under `/api/v1`. Everything except register, login and avatar images needs a
 | POST | `/categories` | Create a category |
 | PUT | `/categories/{id}` | Rename / recolour / change type |
 | DELETE | `/categories/{id}` | Delete; its transactions are kept without a category |
-| GET | `/transactions` | Your transactions, newest first |
+| GET | `/transactions` | Your transactions, newest first, **30 per page** (`?page=2`…): `{"data": [...], "links": {...}, "meta": {"current_page", "last_page", "total", …}}` |
 | POST | `/transactions` | Create (the category must be yours) |
 | PUT | `/transactions/{id}` | Edit |
 | DELETE | `/transactions/{id}` | Delete |
-| GET | `/transactions/chart` | Daily income/expense totals for the chart |
+| GET | `/transactions/chart` | Daily income/expense totals for the last 7 days (bar chart) |
+| GET | `/transactions/by-category` | This month's spending per category, largest first (donut chart) |
+
+### Wishlist
+| Method | Path | What it does |
+|---|---|---|
+| GET | `/wishlist` | Your wishlist items (optional `?category=...` query filter; unpurchased first, then by sort order and creation date) |
+| POST | `/wishlist` | Create item (`title`, `estimated_price`, `priority`, `category`, `note`, `link`) |
+| GET | `/wishlist/{id}` | Single item |
+| PUT | `/wishlist/{id}` | Edit item (change details/category or toggle `is_purchased`) |
+| DELETE | `/wishlist/{id}` | Delete item |
+| POST | `/wishlist/reorder` | Bulk reorder (`{"order": [id1, id2, ...]}`) |
 
 ### Rules that apply everywhere
 - **Ownership:** updates and deletes go through Laravel Policies (`app/Policies/`). Another user's record returns **403**. Lists only ever query the signed-in user's rows.
-- **Validation:** every write is validated on the server; failures return **422** with per-field messages, which the app shows under the matching field.
-- **Time zone:** "today" uses `APP_TIMEZONE` from `.env`.
+- **Validation:** every write is validated on the server by a Form Request (one class per action, `app/Http/Requests/`); failures return **422** with per-field messages, which the app shows under the matching field.
+- **Time zone:** "today", "this week" and "this month" use the user's own timezone (`User::localNow()`), falling back to `APP_TIMEZONE` from `.env`. Timestamps are stored in `APP_TIMEZONE`.
 
 ---
 
@@ -111,15 +128,18 @@ Organised by feature. Each feature has `data/` (API calls), `domain/` (models) a
 ```text
 lifeflow_app/lib/
 ├── core/
-│   ├── network/        # Dio client: adds the token, signs out on 401; API base URL (--dart-define)
+│   ├── files/          # Save downloaded files (browser download on web, Downloads folder on mobile)
+│   ├── network/        # Dio client: adds the token and X-Timezone, signs out on 401; API base URL (--dart-define)
 │   ├── storage/        # Token storage (SharedPreferences)
 │   ├── theme/          # Material 3 light/dark themes (Outfit font)
 │   └── utils/          # formatMoney() etc.
 ├── features/
 │   ├── auth/           # Sign in / sign up screen, AuthNotifier (loads account settings on sign-in)
 │   ├── dashboard/      # Summary screen, live weather provider (Open-Meteo)
+│   ├── calendar/       # Dashboard calendar: month grid / week strip, dots per day, day details
 │   ├── tasks/          # Kanban board (lanes on desktop, lane switcher on phones)
 │   ├── expenses/       # Transactions and categories (add/edit/delete), budget, bar + category charts
+│   ├── wishlist/       # Dream & plan purchases: targets, priorities, custom reordering, convert to expense
 │   ├── habits/         # Habit cards, check-ins, rename/delete
 │   ├── analytics/      # Weekly charts
 │   └── settings/       # Profile photo, appearance (System/Light/Dark), weather location, delete account
@@ -140,10 +160,9 @@ These were in the original plan or came up later. See [NEXT_LEVEL_ROADMAP.md](NE
 - Reminders / push notifications (the setting is shown as "Coming soon")
 - Sign in with Google (`provider` columns already exist)
 - Password reset and email verification
-- CSV / PDF export of transactions
+- PDF reports of transactions (CSV/JSON export already exists)
 - Receipt photos on transactions
-- Payment methods (cash / card / bank)
-- Calendar and events
+- Custom/unlimited user-created wallet accounts (standard Cash/bKash/Nagad/Bank already built)
+- Your own calendar events and reminders (the dashboard calendar currently shows tasks, habits and money)
 - Multi-currency
 - AI assistant (natural-language task entry, spending insights)
-- Data export (CSV / JSON)

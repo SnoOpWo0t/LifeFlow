@@ -11,6 +11,7 @@ use App\Http\Resources\HabitResource;
 use App\Http\Resources\TaskResource;
 use App\Http\Resources\TransactionResource;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\WishlistItemResource;
 use App\Models\Transaction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
@@ -107,6 +108,7 @@ class ProfileController extends Controller
             'transactions' => TransactionResource::collection(
                 Transaction::with('category')->where('user_id', $user->id)->orderBy('transaction_date')->get()
             ),
+            'wishlist' => WishlistItemResource::collection($user->wishlistItems()->get()),
         ];
 
         return response()->json($data, 200, [

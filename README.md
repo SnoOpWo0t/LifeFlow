@@ -45,13 +45,16 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
 
 ## ✨ Key Features
 
-- **📊 Dashboard:** live weather, a productivity score, **today's tasks** (due today, overdue, or finished today), habit progress, a monthly budget overview with overspend warnings, and a recent-activity feed. Two columns on desktop, one on phones.
+- **📊 Dashboard:** live weather, a productivity score, **today's tasks** (due today, overdue, or finished today), habit progress, monthly budget overview positioned above live **multi-wallet accounts** (Cash, bKash, Nagad, Bank), Wishlist targets preview, and a recent-activity feed. Two columns on desktop, one on phones.
+- **📅 Calendar:** your month at a glance on the dashboard. Each day shows dots for tasks due, habits checked (all or some) and money spent; tap a day to see its tasks, habit check-ins and transactions. A full month grid on desktop; a one-week strip you can expand on phones.
 - **📋 Kanban Task Manager:** *To Do*, *In Progress* and *Done* lanes with priorities and due dates. Drag and drop on desktop; a lane switcher and a "Move to…" menu on phones. Deleting asks for confirmation.
-- **💰 Expense Tracker:** income and expenses with colour-coded categories (create, edit, delete), a monthly budget, an income-vs-expense bar chart and a **spending-by-category donut** for the month. **Tap any transaction to edit or delete it.** Amounts are shown with thousands separators (`৳ 124,123`).
+- **💰 Expense Tracker:** income and expenses with multi-wallet account tags (`cash`, `bkash`, `nagad`, `bank`), colour-coded categories (create, edit, delete), a monthly budget, an income-vs-expense bar chart and a **spending-by-category donut** for the month. **Tap any transaction to edit or delete it.** The list loads 30 at a time as you scroll. Amounts are shown with thousands separators (`৳ 124,123`).
+- **🎁 Wishlist & Target Purchases:** track dream purchases with **customizable categories** (e.g. Perfume, Tech, Fashion, Books, etc.), set estimated prices, assign priorities (Low, Normal, High), store store links, reorder with custom sorting, filter by category or status, and seamlessly convert acquired items into wallet expense transactions with a single tap!
 - **🔥 Habit Tracker:** daily check-ins with a small animation (and a vibration on phones), a 7-day view and streaks **calculated from your check-in history**, so they're always accurate. Rename or delete habits from the card menu.
 - **📈 Weekly Analytics:** an income-vs-expenses line chart and a daily productivity bar chart, with clean round-number axes.
 - **🌦️ Live Weather:** search any city, or tap **"Use my current location"**. Powered by free, key-less APIs (Open-Meteo, BigDataCloud).
-- **🔐 Accounts & Settings:** token login with server-side logout, profile photos (automatically resized before upload, shown on the dashboard), **appearance that follows your device** or a fixed Light/Dark choice, settings saved to your account, and **Delete account** (password-confirmed, removes all data).
+- **🔐 Accounts & Settings:** token login with server-side logout, profile photos (automatically resized before upload, shown on the dashboard), **appearance that follows your device** or a fixed Light/Dark choice, settings saved to your account, **Export my data** (everything as JSON, or transactions as CSV for spreadsheets) and **Delete account** (password-confirmed, removes all data).
+- **🕒 Your own "today":** the app sends your device's timezone, so habits, today's tasks and weekly charts roll over at *your* midnight, wherever you are.
 
 ---
 
@@ -91,7 +94,7 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
 
 ### Video Walkthrough
 
-Watch the walkthrough on YouTube:
+Watch the walkthrough on YouTube (OLD video hasnt been updated) :
 
 [![LifeFlow YouTube Demo](https://img.youtube.com/vi/EQXaW4yCKzU/0.jpg)](https://www.youtube.com/shorts/EQXaW4yCKzU)
 
@@ -115,12 +118,15 @@ The project is split into two apps that talk over HTTP: a **Laravel REST API** a
 LifeFlow/
 ├── .github/workflows/ci.yml       # Automatic tests on every push (GitHub Actions)
 ├── lifeflow-api/                  # Backend REST API (Laravel)
-│   ├── app/Http/Controllers/      # Auth, Dashboard, Tasks, Expenses, Habits, Analytics, Profile
+│   ├── app/Http/Controllers/      # Auth, Dashboard, Calendar, Tasks, Expenses, Wishlist, Habits, Analytics, Profile
+│   ├── app/Http/Requests/         # Validation rules, one class per action (Form Requests)
+│   ├── app/Http/Resources/        # The exact JSON shape returned for each model (API Resources)
+│   ├── app/Http/Middleware/       # Remembers each user's timezone (X-Timezone header)
 │   ├── app/Policies/              # "Only the owner may edit/delete" rules
 │   ├── app/Models/                # Eloquent models
-│   ├── routes/api.php             # 29 endpoints under /api/v1
-│   ├── database/migrations/       # Database schema
-│   └── tests/Feature/ApiTest.php  # API tests
+│   ├── routes/api.php             # 39 endpoints under /api/v1
+│   ├── database/migrations/       # Database schema (13 migrations)
+│   └── tests/Feature/             # Feature & API tests (ApiTest.php, WishlistTest.php)
 │
 └── lifeflow_app/                  # Frontend (Flutter)
     ├── lib/
@@ -128,14 +134,16 @@ LifeFlow/
     │   ├── features/              # One folder per feature: data / domain / presentation
     │   │   ├── auth/              # Sign in / sign up
     │   │   ├── dashboard/         # Summary + live weather
+    │   │   ├── calendar/          # Month-at-a-glance calendar + day details
     │   │   ├── tasks/             # Kanban board
-    │   │   ├── expenses/          # Transactions, categories, budget
+    │   │   ├── expenses/          # Transactions, categories, budget, multi-wallet
+    │   │   ├── wishlist/          # Target purchases with custom categories & expense conversion
     │   │   ├── habits/            # Habit cards and streaks
     │   │   ├── analytics/         # Weekly charts
     │   │   └── settings/          # Profile, preferences, weather location
     │   ├── main.dart              # App entry point
-    │   └── main_screen.dart       # Responsive navigation (bottom bar / side rail)
-    └── test/app_test.dart         # Flutter unit and widget tests
+    │   └── main_screen.dart       # Responsive navigation (6-destination bar with modal sheet / side rail)
+    └── test/app_test.dart         # Flutter unit and widget tests (19 tests)
 ```
 
 More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJECT_BLUEPRINT.md).
@@ -150,7 +158,7 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 - **State management:** [Riverpod](https://riverpod.dev/)
 - **Networking:** Dio
 - **Charts:** fl_chart
-- **Other:** google_fonts, image_picker, geolocator, shared_preferences
+- **Other:** google_fonts, image_picker, geolocator, flutter_timezone, shared_preferences
 
 **Backend (REST API)**
 
@@ -171,28 +179,35 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 
 ## ✅ Quality & Security
 
-- **Automated tests:** 21 backend tests (PHPUnit) and 10 Flutter tests, run on every push by GitHub Actions.
-- **Data isolation:** every write goes through Laravel Policies; users can't read or change each other's data (covered by tests).
+- **Automated tests:** 44 backend tests (PHPUnit) and 19 Flutter tests, run on every push by GitHub Actions.
+- **Data isolation:** every edit and delete goes through Laravel Policies, and lists and new records are always scoped to the signed-in user, so nobody can read or change anyone else's data (covered by tests).
 - **Login protection:** passwords are hashed, login/register are limited to 10 attempts per minute, logout revokes the token on the server, and an expired session returns you to the sign-in screen.
-- **Validation:** on the server for every request, and in the forms before anything is sent.
+- **Validation:** on the server for every request (Laravel Form Requests), and in the forms before anything is sent.
+- **No data leaks in responses:** API Resources return only the fields the app needs (never internal columns such as `user_id` or `provider`).
+- **Private profile photos:** served only through signed links that expire, not a permanent public URL.
+- **Your data is yours:** export everything at any time, or delete the account and all its data.
 
 ---
 
 ## 🛣️ Roadmap
 
-- [x] Appearance: follow the device, or always Light / Dark
-- [x] Live weather with city search and geolocation
-- [x] Edit and delete transactions and categories; rename and delete habits
-- [x] Spending-by-category chart
-- [x] Delete account (with all data)
-- [x] Responsive layouts for phone and desktop
-- [x] Automated tests and CI
-- [ ] Reminders / push notifications for habits and overdue tasks
-- [ ] Sign in with Google
-- [ ] Data export (CSV / PDF)
-- [ ] Multi-currency support
-- [ ] AI assistant for adding tasks in plain language
-- [ ] Public deployment (free hosting)
+- [X]  Appearance: follow the device, or always Light / Dark
+- [X]  Live weather with city search and geolocation
+- [X]  Edit and delete transactions and categories; rename and delete habits
+- [X]  Spending-by-category chart
+- [X]  Dashboard calendar (month at a glance + day details)
+- [X]  Delete account (with all data) and export my data (JSON / CSV)
+- [X]  Per-user timezone, paginated transactions, private profile photos
+- [X]  Responsive layouts for phone and desktop
+- [X]  Automated tests and CI
+- [X]  Wishlist & target purchases (custom categories, priority, drag-and-drop sort, store link, 1-tap expense conversion)
+- [X]  Multi-wallet accounting (Cash, bKash, Nagad, Bank balances per transaction and dashboard card)
+- [X]  Decluttered bottom navigation with IndexedStack tab state preservation
+- [ ]  Reminders / push notifications for habits and overdue tasks
+- [ ]  Sign in with Google
+- [ ]  Multi-currency support
+- [ ]  AI assistant for adding tasks in plain language
+- [ ]  Public deployment (free hosting)
 
 The full prioritised list, all of it doable for free, is in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md).
 

@@ -52,7 +52,9 @@ php artisan migrate
 php artisan storage:link          # needed for profile photos
 ```
 
-`.env` contains `APP_TIMEZONE=Asia/Dhaka`. It decides when "today" starts for habits and the dashboard. Change it if you live elsewhere.
+`.env` contains `APP_TIMEZONE=Asia/Dhaka`. Each user's "today" normally follows the timezone their device reports (the app sends it automatically); `APP_TIMEZONE` is only the fallback until it does.
+
+After pulling new code, run `php artisan migrate` again: new versions can add database columns.
 
 ### Set up the Flutter app
 
@@ -122,8 +124,8 @@ They don't start automatically after a reboot; run the two `systemd-run` lines a
 ## 3. Run the tests
 
 ```bash
-cd lifeflow-api && php artisan test                  # 21 backend tests
-cd lifeflow_app && flutter analyze && flutter test   # static checks + 10 Flutter tests
+cd lifeflow-api && php artisan test                  # 44 backend tests
+cd lifeflow_app && flutter analyze && flutter test   # static checks + 19 Flutter tests
 ```
 
 The same checks run automatically on GitHub for every push (`.github/workflows/ci.yml`).

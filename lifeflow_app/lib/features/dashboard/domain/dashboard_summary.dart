@@ -42,6 +42,7 @@ class DashboardSummary {
   final double monthlyBudget;
   final int productivityScore;
   final List<RecentActivity> recentActivity;
+  final Map<String, double> accountBalances;
 
   DashboardSummary({
     required this.tasksCompleted,
@@ -53,6 +54,7 @@ class DashboardSummary {
     required this.monthlyBudget,
     required this.productivityScore,
     required this.recentActivity,
+    required this.accountBalances,
   });
 
   factory DashboardSummary.fromJson(Map<String, dynamic> json) {
@@ -60,6 +62,11 @@ class DashboardSummary {
     List<RecentActivity> activities = list
         .map((i) => RecentActivity.fromJson(i))
         .toList();
+
+    final rawBalances = json['account_balances'] as Map<String, dynamic>? ?? {};
+    final accountBalances = rawBalances.map(
+      (k, v) => MapEntry(k, (v as num).toDouble()),
+    );
 
     return DashboardSummary(
       tasksCompleted: json['tasks_today']['completed'],
@@ -73,6 +80,7 @@ class DashboardSummary {
           : 0.0,
       productivityScore: json['productivity_score'],
       recentActivity: activities,
+      accountBalances: accountBalances,
     );
   }
 }

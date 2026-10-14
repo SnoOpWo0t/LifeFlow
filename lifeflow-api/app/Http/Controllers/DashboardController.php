@@ -115,6 +115,21 @@ class DashboardController extends Controller
             ->take(5)
             ->values();
 
+        // Per-account net balance (income − expense) for each wallet type.
+        $accounts = ['cash', 'bkash', 'nagad', 'bank'];
+        $accountBalances = [];
+        foreach ($accounts as $acc) {
+            $income = Transaction::where('user_id', $user->id)
+                ->where('account', $acc)
+                ->where('type', 'income')
+                ->sum('amount');
+            $expense = Transaction::where('user_id', $user->id)
+                ->where('account', $acc)
+                ->where('type', 'expense')
+                ->sum('amount');
+            $accountBalances[$acc] = (float) ($income - $expense);
+        }
+
         // Budget from preferences
         $monthlyBudget = isset($user->preferences['monthly_budget']) ? (float) $user->preferences['monthly_budget'] : 0;
 
@@ -131,7 +146,8 @@ class DashboardController extends Controller
             'monthly_income' => (float) $monthlyIncome,
             'monthly_budget' => $monthlyBudget,
             'productivity_score' => (int) round($productivityScore),
-            'recent_activity' => $recentActivity
+            'recent_activity' => $recentActivity,
+            'account_balances' => $accountBalances,
         ]);
     }
 }

@@ -23,6 +23,7 @@ class StoreTransactionRequest extends FormRequest
             ],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'type' => ['required', 'in:income,expense'],
+            'account' => ['nullable', 'in:cash,bkash,nagad,bank'],
             'transaction_date' => ['required', 'date'],
             'note' => ['nullable', 'string'],
         ];

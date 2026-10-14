@@ -9,12 +9,13 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\HabitController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WishlistController;
 
 Route::prefix('v1')->group(function () {
     // 10 attempts per minute per IP slows down password guessing.
     Route::middleware('throttle:10,1')->group(function () {
         Route::post('/register', [AuthController::class, 'register']);
-        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/login', [AuthController::class, 'login'])->name('login');
     });
 
     // Profile photos: only reachable through signed, expiring links.
@@ -45,6 +46,9 @@ Route::prefix('v1')->group(function () {
         
         Route::apiResource('habits', HabitController::class)->except(['show']);
         Route::post('/habits/{habit}/toggle', [HabitController::class, 'toggle']);
+
+        Route::apiResource('wishlist', WishlistController::class)->parameters(['wishlist' => 'wishlistItem']);
+        Route::post('/wishlist/reorder', [WishlistController::class, 'reorder']);
         
         // Profile & Settings Routes
         Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar']);

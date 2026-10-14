@@ -30,10 +30,11 @@ A prioritised list of what's done and what to improve next. Everything here can 
 | A malformed habit colour crashed the habit card | Safe parsing with a default colour |
 | Habits couldn't be deleted from the app | Delete (with confirmation) in the card menu |
 | Push Notifications switch did nothing | Shown honestly as "Reminders · Coming soon" until implemented |
-| Habits checked after midnight were logged on the previous day (UTC) | `APP_TIMEZONE=Asia/Dhaka` |
+| Habits checked after midnight were logged on the previous day (server used UTC) | Each user's own timezone, reported by the app (`APP_TIMEZONE` is only the fallback) |
 | The Flutter test file referenced a non-existent `MyApp` | Replaced with real tests |
 | `notification_service.dart` didn't compile (package never installed) | Removed; reminders will be rebuilt properly (see below) |
 | **Category colours were never saved** (the dialog always sent `"#"`) | The picked colour is saved; malformed colours fall back to grey |
+| `GET /tasks/{id}` was routed but the controller had no `show` method (crashed) | Implemented, owner-only |
 
 ### Features & quality
 - Login page redesign with the LifeFlow logo and brand colours
@@ -44,6 +45,16 @@ A prioritised list of what's done and what to improve next. Everything here can 
 - Avatar (or initials) next to the greeting on the dashboard
 - **Empty states** with a clear next step for tasks, transactions and habits
 - Calmer habit cards (plain surface + colour strip), a pop-in tick and a vibration (phones) when checking in
+- **Per-user timezone:** the app sends its IANA timezone (`X-Timezone`); "today", "this week" and "this month" follow each user's own midnight
+- **Form Requests** for every write and **API Resources** for every response (no internal fields leak)
+- **Paginated transactions** (30 per page) with infinite scroll; the category donut is totalled on the server
+- **Export my data:** everything as JSON, or transactions as CSV
+- **Private profile photos:** signed, expiring links instead of permanent public URLs
+- **Dashboard calendar:** month at a glance (dots for tasks due, habits checked, spending) with the selected day's details; month grid on desktop, expandable week strip on phones
+- **Wishlist & target purchases:** customizable categories (e.g. Perfume, Tech, Fashion, Books), priority tiers (Low, Normal, High), estimated costs, custom drag-and-drop reordering, store link copy, target savings summary banner, category filter chips with live counts, and 1-tap conversion to recorded wallet expenses
+- **Multi-wallet accounting:** support for account/wallet types (`cash`, `bkash`, `nagad`, `bank`) on transactions with live per-wallet balances on the dashboard
+- **Decluttered mobile navigation:** ergonomic 6-destination bottom bar with a Material 3 hamburger "More" bottom sheet housing Wishlist and Settings
+- **Tab state preservation across navigation:** views remain mounted and preserve scroll and form state via `IndexedStack`
 - **Responsive UI:** one-lane Kanban with "Move to…" on phones; two-column dashboard, side-by-side charts, habit grid and expense layout on desktop
 - Pull-to-refresh on every list; Retry buttons on error screens; confirmation before deletes
 - Money with thousands separators; chart axes in round numbers; chart dates like "7 Oct"
@@ -52,8 +63,8 @@ A prioritised list of what's done and what to improve next. Everything here can 
 - Login/register rate limit (10/min per IP); Laravel **Policies** for every edit/delete
 - Database indexes for dashboard and analytics queries
 - Configurable API address (`--dart-define=API_BASE_URL=...`)
-- **21 backend tests + 10 Flutter tests**, run on every push by **GitHub Actions** (`.github/workflows/ci.yml`)
-- Dead code removed (old login screen, unused donut chart, deprecated `withOpacity`)
+- **44 backend tests + 19 Flutter tests**, run on every push by **GitHub Actions** (`.github/workflows/ci.yml`)
+- Dead code removed (old login screen, an old unused chart function, deprecated `withOpacity`)
 
 ---
 
@@ -103,16 +114,12 @@ The goal is a public link that keeps working without paying or babysitting it.
 
 ## 3. Remaining code improvements
 
-| # | Item | Fix | Effort | Impact |
+| # | Item | Why it's still open | Effort | Impact |
 |---|---|---|---|---|
-| 1 | Timezone is one fixed zone for every user | Store a `timezone` per user (sent from the device) and use it for "today" | 🟡 | ⭐⭐ |
-| 2 | Inline `$request->validate()` in controllers | Move to **Form Requests** (auth already uses them), for consistency | 🟢 | ⭐ |
-| 3 | Raw models returned as JSON | **API Resources**: a consistent shape that never leaks fields | 🟡 | ⭐⭐ |
-| 4 | Transaction list isn't paginated | `->paginate(30)` + infinite scroll | 🟡 | ⭐⭐ |
-| 5 | No data export | "Export my data" (CSV / JSON) in Settings, good privacy practice | 🟡 | ⭐⭐ |
-| 6 | Web build stores the token in `localStorage` | For web, use Sanctum's cookie-based SPA auth | 🔴 | ⭐⭐ (security) |
-| 7 | Avatar images are public to anyone with the exact URL | Signed URLs, or serve them through an authenticated route | 🟡 | ⭐ |
-| 8 | Habit "longest streak" counts only the history still stored | Fine for now; keep logs forever, or store a best-ever value alongside | 🟢 | ⭐ |
+| 1 | Web build stores the login token in `localStorage` (readable by any XSS bug) | The fix, Sanctum's cookie-based SPA login, only works when the app and API share a site (e.g. `app.example.com` + `api.example.com`). The free hosting plan in section 1 puts them on different sites (`*.pages.dev` + `*.onrender.com`), where browsers block those cookies. Decide on hosting first, then switch. Until then, Flutter's renderer and the strict server-side validation keep the XSS risk low | 🔴 | ⭐⭐ (security) |
+
+**Resolved by design:** *habit "longest streak" counts only the stored history.* Check-ins are only ever removed by unchecking *today*, or by deleting the whole habit, so the stored history is the full history and the derived longest streak is exact. The data export also includes every check-in.
+
 
 ---
 
@@ -127,13 +134,13 @@ The goal is a public link that keeps working without paying or babysitting it.
 | E1 | Semantic labels for screen readers on the remaining icon-only controls (charts, habit day squares) | 🟢 | ⭐ |
 | E2 | "Install app" hint in Settings (icons and manifest are ready) | 🟢 | ⭐⭐ |
 | E3 | Celebration on a 7-day streak (confetti) | 🟢 | ⭐⭐ |
-| E4 | Keep each tab's state when switching (`IndexedStack`), so screens don't reload | 🟢 | ⭐⭐ |
+| E4 | ~~Keep each tab's state when switching (`IndexedStack`), so screens don't reload~~ ✅ *Implemented* | 🟢 | ⭐⭐ |
 
 ---
 
 ## 5. Suggested order
 
-1. **Next:** E4 keep tab state, D3 undo after delete, #5 data export. All quick and visible.
-2. **Then:** reminders (section 2), A1 design tokens, D2 skeleton loaders.
+1. **Next:** D3 undo after delete, D2 skeleton loaders. All quick and visible.
+2. **Then:** reminders (section 2), A1 design tokens; once hosting is decided, cookie-based login (section 3).
 3. **Deploy:** section 1 (Neon + Render + Cloudflare Pages + UptimeRobot). **A live link on your CV beats any single feature.**
 4. **Stand-out features:** Google sign-in, AI assistant (Gemini free tier), multi-currency.

@@ -32,6 +32,7 @@ class Transaction {
   final ExpenseCategory? category;
   final double amount;
   final String type;
+  final String account;
   final DateTime transactionDate;
   final String? note;
 
@@ -40,6 +41,7 @@ class Transaction {
     this.category,
     required this.amount,
     required this.type,
+    this.account = 'cash',
     required this.transactionDate,
     this.note,
   });
@@ -53,6 +55,7 @@ class Transaction {
       // PostgreSQL returns decimals as strings, SQLite as numbers.
       amount: double.parse(json['amount'].toString()),
       type: json['type'],
+      account: json['account'] as String? ?? 'cash',
       transactionDate: DateTime.parse(json['transaction_date']),
       note: json['note'],
     );

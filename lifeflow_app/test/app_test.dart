@@ -12,6 +12,9 @@ import 'package:lifeflow_app/features/auth/presentation/providers/auth_provider.
 import 'package:lifeflow_app/features/auth/presentation/screens/auth_screen.dart';
 import 'package:lifeflow_app/features/dashboard/presentation/providers/weather_provider.dart';
 import 'package:lifeflow_app/features/settings/domain/weather_location.dart';
+import 'package:lifeflow_app/features/wishlist/domain/wishlist_item.dart';
+import 'package:lifeflow_app/features/wishlist/domain/wishlist_category_utils.dart';
+import 'package:lifeflow_app/features/wishlist/presentation/providers/wishlist_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -196,4 +199,163 @@ void main() {
       expect(month.days[dateKey(DateTime(2026, 10, 15))], isNull);
     });
   });
+
+  group('wishlist', () {
+    test('WishlistItem parses PostgreSQL string numbers and SQLite numbers', () {
+      final fromPostgres = WishlistItem.fromJson({
+        'id': 1,
+        'title': 'Mechanical Keyboard',
+        'estimated_price': '150.75',
+        'priority': 'HIGH',
+        'is_purchased': 1,
+      });
+      expect(fromPostgres.estimatedPrice, 150.75);
+      expect(fromPostgres.priority, 'high');
+      expect(fromPostgres.isPurchased, isTrue);
+
+      final fromSqlite = WishlistItem.fromJson({
+        'id': 2,
+        'title': 'Coffee Beans',
+        'estimated_price': 20,
+        'is_purchased': false,
+      });
+      expect(fromSqlite.estimatedPrice, 20.0);
+      expect(fromSqlite.priority, 'normal');
+      expect(fromSqlite.isPurchased, isFalse);
+    });
+
+    test('WishlistStats calculates progress and totals accurately', () async {
+      final items = [
+        WishlistItem(
+          id: 1,
+          title: 'Laptop',
+          estimatedPrice: 1000,
+          isPurchased: true,
+        ),
+        WishlistItem(
+          id: 2,
+          title: 'Monitor',
+          estimatedPrice: 300,
+          isPurchased: false,
+        ),
+        WishlistItem(
+          id: 3,
+          title: 'Desk',
+          estimatedPrice: 200,
+          isPurchased: false,
+        ),
+      ];
+
+      final container = ProviderContainer(
+        overrides: [
+          wishlistProvider.overrideWith(() => _MockWishlistNotifier(items)),
+        ],
+      );
+
+      await container.read(wishlistProvider.future);
+      final stats = container.read(wishlistStatsProvider);
+      expect(stats.totalCount, 3);
+      expect(stats.wantedCount, 2);
+      expect(stats.purchasedCount, 1);
+      expect(stats.totalValue, 1500);
+      expect(stats.purchasedValue, 1000);
+      expect(stats.wantedValue, 500);
+      expect(stats.progress, closeTo(1 / 3, 0.001));
+    });
+
+    test('WishlistItem parses and serializes custom category properly', () {
+      final item = WishlistItem.fromJson({
+        'id': 10,
+        'title': 'Dior Sauvage Elixir',
+        'estimated_price': 160.0,
+        'category': 'Perfume',
+        'priority': 'high',
+      });
+
+      expect(item.category, 'Perfume');
+      expect(item.toJson()['category'], 'Perfume');
+
+      final updated = item.copyWith(category: 'Fragrance');
+      expect(updated.category, 'Fragrance');
+
+      final cleared = item.copyWith(clearCategory: true);
+      expect(cleared.category, isNull);
+      expect(cleared.toJson().containsKey('category'), isFalse);
+    });
+
+    test('WishlistCategoryUtils assigns appropriate icons and colors', () {
+      expect(WishlistCategoryUtils.getIcon('Perfume'), Icons.spa);
+      expect(WishlistCategoryUtils.getIcon('Tech'), Icons.devices);
+      expect(WishlistCategoryUtils.getIcon('Gaming'), Icons.sports_esports);
+      expect(WishlistCategoryUtils.getIcon('Books'), Icons.menu_book);
+
+      final perfumeColor = WishlistCategoryUtils.getColor('Perfume');
+      expect(perfumeColor, const Color(0xFFD946EF));
+
+      final techColor = WishlistCategoryUtils.getColor('Tech');
+      expect(techColor, const Color(0xFF0284C7));
+    });
+
+    test('Wishlist category filter and categories provider work accurately', () async {
+      final items = [
+        WishlistItem(id: 1, title: 'Perfume Bottle', category: 'Perfume'),
+        WishlistItem(id: 2, title: 'Mechanical Keyboard', category: 'Tech'),
+        WishlistItem(id: 3, title: 'Mystery Gift'),
+      ];
+
+      final container = ProviderContainer(
+        overrides: [
+          wishlistProvider.overrideWith(() => _MockWishlistNotifier(items)),
+        ],
+      );
+
+      await container.read(wishlistProvider.future);
+
+      final categories = container.read(wishlistCategoriesProvider);
+      expect(categories, ['Perfume', 'Tech']);
+
+      // Initial filter: all
+      expect(container.read(filteredWishlistProvider).length, 3);
+
+      // Filter by Perfume
+      container
+          .read(wishlistCategoryFilterProvider.notifier)
+          .setCategory('Perfume');
+      final perfumeItems = container.read(filteredWishlistProvider);
+      expect(perfumeItems.length, 1);
+      expect(perfumeItems.first.title, 'Perfume Bottle');
+
+      // Filter by Tech
+      container
+          .read(wishlistCategoryFilterProvider.notifier)
+          .setCategory('Tech');
+      final techItems = container.read(filteredWishlistProvider);
+      expect(techItems.length, 1);
+      expect(techItems.first.title, 'Mechanical Keyboard');
+    });
+  });
+}
+
+class _MockWishlistNotifier extends AsyncNotifier<List<WishlistItem>>
+    implements WishlistNotifier {
+  final List<WishlistItem> _initial;
+  _MockWishlistNotifier(this._initial);
+
+  @override
+  Future<List<WishlistItem>> build() async => _initial;
+
+  @override
+  Future<void> addItem(Map<String, dynamic> data) async {}
+
+  @override
+  Future<void> updateItem(int id, Map<String, dynamic> data) async {}
+
+  @override
+  Future<void> togglePurchased(WishlistItem item) async {}
+
+  @override
+  Future<void> deleteItem(int id) async {}
+
+  @override
+  Future<void> reorder(int oldIndex, int newIndex) async {}
 }

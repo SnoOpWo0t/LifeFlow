@@ -9,6 +9,8 @@ import '../../../calendar/presentation/providers/calendar_provider.dart';
 import '../../../calendar/presentation/widgets/dashboard_calendar.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../settings/presentation/widgets/city_picker.dart';
+import '../../../wishlist/presentation/providers/wishlist_provider.dart';
+import '../../../../main_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -549,6 +551,16 @@ class DashboardScreen extends ConsumerWidget {
                   isDark: isDark,
                   child: DashboardCalendar(compact: !wide),
                 );
+                final accountsCard = _buildAccountsCard(
+                  context,
+                  isDark: isDark,
+                  balances: summary.accountBalances,
+                );
+                final wishlistCard = _buildWishlistCard(
+                  context,
+                  ref,
+                  isDark: isDark,
+                );
                 return ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -582,6 +594,10 @@ class DashboardScreen extends ConsumerWidget {
                                   children: [
                                     budgetCard,
                                     const SizedBox(height: 24),
+                                    accountsCard,
+                                    const SizedBox(height: 24),
+                                    wishlistCard,
+                                    const SizedBox(height: 24),
                                     recent,
                                   ],
                                 ),
@@ -601,6 +617,10 @@ class DashboardScreen extends ConsumerWidget {
                           calendar,
                           gap,
                           budgetCard,
+                          gap,
+                          accountsCard,
+                          gap,
+                          wishlistCard,
                           const SizedBox(height: 32),
                           recent,
                         ],
@@ -726,6 +746,259 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ),
           child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountsCard(
+    BuildContext context, {
+    required bool isDark,
+    required Map<String, double> balances,
+  }) {
+    final theme = Theme.of(context);
+
+    const accounts = [
+      (
+        key: 'cash',
+        label: 'Cash',
+        icon: Icons.wallet,
+        color: Color(0xFF34D399),
+      ),
+      (
+        key: 'bkash',
+        label: 'bKash',
+        icon: Icons.phone_android,
+        color: Color(0xFFEC4899),
+      ),
+      (
+        key: 'nagad',
+        label: 'Nagad',
+        icon: Icons.flash_on,
+        color: Color(0xFFF59E0B),
+      ),
+      (
+        key: 'bank',
+        label: 'Bank',
+        icon: Icons.account_balance,
+        color: Color(0xFF60A5FA),
+      ),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'My Accounts',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 2.2,
+            children: accounts.map((acc) {
+              final balance = balances[acc.key] ?? 0.0;
+              final isNegative = balance < 0;
+              return Container(
+                decoration: BoxDecoration(
+                  color: acc.color.withValues(alpha: isDark ? 0.12 : 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: acc.color.withValues(alpha: isDark ? 0.3 : 0.2),
+                    width: 1,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: acc.color.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(acc.icon, color: acc.color, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            acc.label,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            formatMoney(balance),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isNegative
+                                  ? Colors.redAccent
+                                  : acc.color,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWishlistCard(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isDark,
+  }) {
+    final stats = ref.watch(wishlistStatsProvider);
+    final theme = Theme.of(context);
+    final percent = (stats.progress * 100).round();
+
+    return _buildGlassCard(
+      context,
+      isDark: isDark,
+      child: InkWell(
+        onTap: () {
+          ref.read(selectedTabProvider.notifier).selectTab(AppTab.wishlist);
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.card_giftcard,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Wishlist Target',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        stats.totalCount == 0
+                            ? 'Plan what you wish to acquire'
+                            : '${stats.wantedCount} wanted · ${stats.purchasedCount} acquired',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: Colors.grey[400],
+                ),
+              ],
+            ),
+            if (stats.totalCount > 0) ...[
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    formatMoney(stats.totalValue),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '$percent% acquired',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: stats.progress,
+                  minHeight: 6,
+                  backgroundColor: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.grey.withValues(alpha: 0.15),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFF10B981),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

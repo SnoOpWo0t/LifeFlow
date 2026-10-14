@@ -8,6 +8,7 @@ import 'category_management_dialog.dart'
 import '../../domain/expense_models.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
+import '../../../../main_screen.dart';
 
 class ExpenseScreen extends ConsumerWidget {
   const ExpenseScreen({super.key});
@@ -40,6 +41,13 @@ class ExpenseScreen extends ConsumerWidget {
                 context: context,
                 builder: (context) => const CategoryManagementDialog(),
               );
+            },
+          ),
+          IconButton(
+            tooltip: 'Wishlist',
+            icon: const Icon(Icons.card_giftcard),
+            onPressed: () {
+              ref.read(selectedTabProvider.notifier).selectTab(AppTab.wishlist);
             },
           ),
           if (isWide)
@@ -293,6 +301,7 @@ class ExpenseScreen extends ConsumerWidget {
     final noteController = TextEditingController(text: existing?.note ?? '');
     int? selectedCategoryId = existing?.category?.id;
     String type = existing?.type ?? 'expense';
+    String selectedAccount = existing?.account ?? 'cash';
     DateTime selectedDate = existing?.transactionDate ?? DateTime.now();
     String? amountError;
 
@@ -379,6 +388,14 @@ class ExpenseScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
+                        // Account selector
+                        _buildAccountPicker(
+                          theme: theme,
+                          selectedAccount: selectedAccount,
+                          onChanged: (val) =>
+                              setState(() => selectedAccount = val),
+                        ),
+                        const SizedBox(height: 12),
                         categoriesAsync.when(
                           loading: () => const CircularProgressIndicator(),
                           error: (e, s) => Text(
@@ -398,7 +415,7 @@ class ExpenseScreen extends ConsumerWidget {
                                     ? Colors.black12
                                     : Colors.grey[100],
                               ),
-                              value: selectedCategoryId,
+                              initialValue: selectedCategoryId,
                               items: categories
                                   .map(
                                     (c) => DropdownMenuItem(
@@ -508,6 +525,7 @@ class ExpenseScreen extends ConsumerWidget {
                           'amount': amount,
                           'note': noteController.text,
                           'type': type,
+                          'account': selectedAccount,
                           'category_id': selectedCategoryId,
                           'transaction_date': selectedDate.toIso8601String(),
                         };
@@ -1003,6 +1021,105 @@ class ExpenseScreen extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// Styled helper that lets the user pick which wallet (account) a transaction belongs to.
+Widget _buildAccountPicker({
+  required ThemeData theme,
+  required String selectedAccount,
+  required void Function(String) onChanged,
+}) {
+  const options = [
+    (value: 'cash', label: 'Cash', icon: Icons.wallet),
+    (value: 'bkash', label: 'bKash', icon: Icons.phone_android),
+    (value: 'nagad', label: 'Nagad', icon: Icons.flash_on),
+    (value: 'bank', label: 'Bank', icon: Icons.account_balance),
+  ];
+
+  const accountColors = {
+    'cash': Color(0xFF34D399),
+    'bkash': Color(0xFFEC4899),
+    'nagad': Color(0xFFF59E0B),
+    'bank': Color(0xFF60A5FA),
+  };
+
+  final isDark = theme.brightness == Brightness.dark;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 18,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Account',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: options.map((opt) {
+          final isSelected = selectedAccount == opt.value;
+          final color = accountColors[opt.value]!;
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: GestureDetector(
+                onTap: () => onChanged(opt.value),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? color.withValues(alpha: isDark ? 0.25 : 0.15)
+                        : (isDark ? Colors.black12 : Colors.grey[100]),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? color : Colors.transparent,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        opt.icon,
+                        size: 18,
+                        color: isSelected ? color : Colors.grey,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        opt.label,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: isSelected ? color : Colors.grey,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    ],
+  );
 }
 
 /// Friendly placeholder for an empty list, with one obvious next step.

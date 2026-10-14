@@ -1,8 +1,8 @@
 # LifeFlow App (Flutter)
 
-The web, Android and iOS client for [LifeFlow](../README.md).
+The web, Android and iOS client for [LifeFlow](../README.md): tasks, multi-wallet expenses, wishlist target purchases, habits, calendar, dashboard and analytics.
 
-- **Stack:** Flutter (Dart 3), Riverpod, Dio, fl_chart, geolocator
+- **Stack:** Flutter (Dart 3), Riverpod, Dio, fl_chart, geolocator, flutter_timezone
 - **Talks to:** the Laravel API at `http://127.0.0.1:8000/api/v1` by default
 
 ## Run
@@ -29,11 +29,11 @@ flutter build web --release --dart-define=API_BASE_URL=https://your-api.example.
 
 ```bash
 flutter analyze
-flutter test        # 10 tests in test/app_test.dart
+flutter test        # 19 tests in test/app_test.dart
 ```
 
 ## Structure
 
-`lib/core/` holds shared code (API client, storage, theme, formatters). `lib/features/<feature>/` holds each feature, split into `data/` (API calls), `domain/` (models) and `presentation/` (providers and screens). `lib/main_screen.dart` switches between a bottom navigation bar (phones) and a side rail (≥800px).
+`lib/core/` holds shared code (API client, storage, theme, formatters). `lib/features/<feature>/` holds each feature (auth, dashboard, calendar, tasks, expenses, wishlist with custom categories & filters, habits, analytics, settings), split into `data/` (API calls), `domain/` (models) and `presentation/` (providers and screens). `lib/main_screen.dart` provides responsive navigation (ergonomic 6-destination bottom bar with a Material 3 "More" bottom sheet on phones, side rail on ≥800px) and keeps tab state active via `IndexedStack`.
 
 See [HOW_TO_RUN.md](../HOW_TO_RUN.md) for full setup and troubleshooting.
