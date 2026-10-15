@@ -118,6 +118,15 @@ void main() {
       ApiConstants.normalizeServer('https://x.com/api/v1'),
       'https://x.com/api/v1',
     );
+    // A hosted API typed without a scheme gets https (http is redirected).
+    expect(
+      ApiConstants.normalizeServer('lifeflow-api-x1y2.onrender.com'),
+      'https://lifeflow-api-x1y2.onrender.com/api/v1',
+    );
+    expect(
+      ApiConstants.normalizeServer('localhost:8000'),
+      'http://localhost:8000/api/v1',
+    );
     expect(ApiConstants.normalizeServer(''), isNull);
     expect(ApiConstants.normalizeServer('ftp://x.com'), isNull);
   });

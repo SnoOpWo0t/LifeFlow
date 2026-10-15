@@ -10,10 +10,22 @@ class ApiConstants {
 
   /// Turns what a person types ("192.168.0.105:8000", "https://x.com/") into
   /// a full API base URL, or null when it isn't a usable address.
+  ///
+  /// Without a scheme, a laptop on the Wi-Fi (an IP address, "localhost",
+  /// "*.local") gets http://; anything else, like "my-api.onrender.com",
+  /// gets https://, since hosted APIs redirect plain http (which breaks POSTs).
   static String? normalizeServer(String input) {
     var value = input.trim();
     if (value.isEmpty) return null;
-    if (!value.contains('://')) value = 'http://$value';
+    if (!value.contains('://')) {
+      final host = value.split(RegExp(r'[:/]')).first.toLowerCase();
+      final local =
+          RegExp(r'^\d{1,3}(\.\d{1,3}){3}$').hasMatch(host) ||
+          host == 'localhost' ||
+          host.endsWith('.local') ||
+          !host.contains('.');
+      value = '${local ? 'http' : 'https'}://$value';
+    }
     while (value.endsWith('/')) {
       value = value.substring(0, value.length - 1);
     }
