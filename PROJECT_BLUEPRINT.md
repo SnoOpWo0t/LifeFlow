@@ -175,7 +175,9 @@ lifeflow_app/lib/
 └── main_screen.dart    # Bottom navigation (phones) / navigation rail (≥800px)
 ```
 
-**Android:** `lifeflow_app/android/` (app id `com.lifeflow.app`, label "LifeFlow", adaptive launcher icons, navy launch screen, `usesCleartextTraffic` so a phone can reach an `http://` API on the local Wi-Fi while testing, release signing from `key.properties` or the debug key). The APK is built by `.github/workflows/android.yml` (universal + arm64, uploaded as artifacts, attached to a GitHub Release on `v*` tags; optional `API_BASE_URL` and signing secrets).
+**Hosting:** `lifeflow-api/Dockerfile` (PHP 8.3 + `pdo_pgsql`), `docker-start.sh` (migrates over Neon's direct address, then serves) and `render.yaml` (Render Blueprint; secrets entered in Render, never in git). The database is Neon PostgreSQL; `config/database.php` turns on PDO prepare emulation for PostgreSQL so Neon's pooled (PgBouncer) address works. CI runs the backend tests on SQLite and on PostgreSQL 16.
+
+**Android:** `lifeflow_app/android/` (app id `com.lifeflow.app`, label "LifeFlow", adaptive launcher icons, navy launch screen, `usesCleartextTraffic` so a phone can reach an `http://` API on the local Wi-Fi while testing, release signing from `key.properties` or the debug key). The APK is built by `.github/workflows/android.yml` (universal + arm64, uploaded as artifacts, attached to a GitHub Release on `v*` tags together with a fixed-name `LifeFlow.apk`, so `releases/latest/download/LifeFlow.apk` is a permanent download link; optional `API_BASE_URL` and signing secrets).
 
 **Responsive breakpoints:** one-lane Kanban below 700px; navigation rail from 800px; two-column dashboard from 960px; habits grid and desktop "Add" buttons from 1000px; side-by-side charts and expense list from 1100px. Page content is capped at 1200px wide.
 

@@ -170,7 +170,22 @@ Your laptop keeps SQLite for development. To run the API against Neon (to try it
    ```
 3. Create the tables: `php artisan migrate --force`.
 
-Switch back to `DB_CONNECTION=sqlite` (and remove `DB_URL`) for everyday development.
+Use Neon's **direct** address (without `-pooler`) for `migrate`; the running API can use the pooled one. Switch back to `DB_CONNECTION=sqlite` (and remove `DB_URL`) for everyday development.
+
+No sudo? The driver can be used without installing it: `apt-get download php8.3-pgsql libpq5`, unpack both with `dpkg-deb -x <file>.deb root`, then run PHP as `LD_LIBRARY_PATH=root/usr/lib/x86_64-linux-gnu php -d extension=$PWD/root/usr/lib/php/20230831/pdo_pgsql.so artisan …`.
+
+### Putting the API online (Render, free)
+
+`lifeflow-api/Dockerfile` and `render.yaml` are ready. On [Render](https://render.com): **New → Blueprint**, pick this repository, and fill in what it asks for:
+
+| Variable | Value |
+|---|---|
+| `APP_KEY` | output of `php artisan key:generate --show` |
+| `APP_URL` | the service address, e.g. `https://lifeflow-api.onrender.com` |
+| `DB_URL` | Neon's pooled connection string |
+| `GEMINI_API_KEY` | optional: turns on the scanner and AI summaries |
+
+Each deploy runs the migrations (over Neon's direct address) and starts the API. Then point the app at `https://<your-api>.onrender.com/api/v1`: type it under **Server: …** on the phone's sign-in screen, or rebuild the APK with it (section 5). The free plan sleeps after 15 idle minutes, so the first request afterwards takes up to a minute; the app doesn't mind, because it works offline and syncs when the server answers.
 
 ### Offline use and sync
 

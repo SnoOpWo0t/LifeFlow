@@ -11,7 +11,7 @@ Every fact below comes from the actual codebase, so you can defend each one.
 > A cross-platform life-management app (Flutter + Laravel) that combines a Kanban task manager, expense and budget tracker, habit tracker, and weekly analytics behind one secure, tested REST API.
 
 **30-second pitch (for "tell me about a project"):**
-> "LifeFlow is a full-stack app I designed and built on my own. People usually juggle separate apps for tasks, money and habits, so I put all three in one place. The frontend is Flutter, so a single codebase runs on web, Android and iOS, and the layout adapts from phone to desktop. It uses Riverpod for state management and fl_chart for the charts. The backend is a Laravel REST API with Sanctum token authentication and Laravel Policies, so each user can only touch their own data. It's covered by automated tests that run on every push through GitHub Actions. I also added live weather from a free API, with city search and 'use my location'."
+> "LifeFlow is a full-stack app I designed and built on my own. People usually juggle separate apps for tasks, money and habits, so I put all three in one place. The frontend is Flutter, so a single codebase runs on web, Android and iOS, and the layout adapts from phone to desktop. It's offline-first: everything is stored on the device and synced with the server when there's a connection, so it works with no internet and even without an account. It uses Riverpod for state management and fl_chart for the charts. The backend is a Laravel REST API with Sanctum token authentication and Laravel Policies, so each user can only touch their own data. It's covered by automated tests that run on every push through GitHub Actions. I also added live weather from a free API, with city search and 'use my location'."
 
 ---
 
@@ -19,14 +19,16 @@ Every fact below comes from the actual codebase, so you can defend each one.
 
 ### Option A: Full-stack focus (recommended)
 
-**LifeFlow: Personal Productivity & Finance Platform** | *Flutter, Dart, Riverpod, Laravel, PHP, REST API, SQLite/PostgreSQL*
+**LifeFlow: Personal Productivity & Finance Platform** | *Flutter, Dart, Riverpod, Laravel, PHP, REST API, PostgreSQL (Neon), offline sync*
 *Personal project · Sole developer* · [github.com/SnoOpWo0t/LifeFlow](https://github.com/SnoOpWo0t/LifeFlow)
 
 - Designed and built a full-stack, cross-platform app (web, Android, iOS) from one **Flutter** codebase, combining task management, multi-wallet expense tracking, wishlist targets, habit tracking and analytics.
-- Built a versioned **Laravel REST API** with **42 endpoints**, secured by **Sanctum** token authentication, **Laravel Policies** for ownership checks, and rate limiting on login.
-- Wrote **61 backend tests (PHPUnit)** and **29 Flutter tests**, run automatically on every push with **GitHub Actions** CI. They cover authentication, data isolation between users, per-user timezones, pagination, data export, wishlist CRUD, custom categories & reordering, signed links, account deletion, streak logic and validation.
-- Modelled a relational schema with **15 migrations**: cascading foreign keys, enum-constrained fields, a composite unique index that prevents duplicate daily habit check-ins, and indexes on the dashboard's hot queries.
-- Built a **Kanban task board** with drag-and-drop on desktop and a lane switcher on phones, and a **habit tracker** whose streaks are recalculated on the server from the check-in history.
+- Made the app **offline-first**: an on-device database (sembast; IndexedDB on the web) is the source the UI reads, all totals, charts and streaks are computed on the device, and a **sync protocol** I designed (`POST /sync`: client-generated UUIDs, last-write-wins by edit time, soft-delete tombstones, cursor-based pulls, ownership checks) keeps phone, web and server in step. Works fully without an account; signing in uploads local data.
+- Deployed the database on **Neon PostgreSQL** and verified it end to end; fixed transaction aborts behind Neon's **PgBouncer pooler** by switching PDO to emulated prepares; CI runs the test suite on **both SQLite and PostgreSQL**.
+- Built a versioned **Laravel REST API** with **43 endpoints**, secured by **Sanctum** token authentication, **Laravel Policies** for ownership checks, and rate limiting on login.
+- Wrote **68 backend tests (PHPUnit)** and **41 Flutter tests**, run automatically on every push with **GitHub Actions** CI. They cover authentication, data isolation between users, per-user timezones, pagination, data export, wishlist CRUD, custom categories & reordering, signed links, account deletion, streak logic, validation, and sync conflicts (newest edit wins, tombstones, rejected foreign records).
+- Modelled a relational schema with **16 migrations**: cascading foreign keys, enum-constrained fields, a composite unique index that prevents duplicate daily habit check-ins, and indexes on the dashboard's hot queries.
+- Built a **Kanban task board** with drag-and-drop on desktop and a lane switcher on phones, and a **habit tracker** whose streaks are recalculated from the check-in history (on the device and on the server).
 - Built an **expense tracker** with multi-wallet account support (Cash, bKash, Nagad, Bank), editable colour-coded categories and transactions, monthly budgets with over-budget warnings, and **fl_chart** bar, line and donut charts.
 - Built a **Wishlist & target purchase manager** with customizable categories (e.g. Perfume, Tech, Fashion, Books), priority tiers, estimated costs, custom drag-and-drop ordering, category filtering, and 1-tap conversion into recorded wallet expenses.
 - Designed an adaptive, state-preserving UI: 6-destination bottom navigation with a Material 3 hamburger bottom sheet on phones, a desktop navigation rail, and **IndexedStack** state preservation across tabs.
@@ -35,7 +37,7 @@ Every fact below comes from the actual codebase, so you can defend each one.
 - Built a **dashboard calendar** that ties the modules together: per-day dots for tasks due, habits checked and spending (from one month-summary endpoint), with the selected day's details below.
 - Integrated **Google Gemini** to turn photos of receipts, money notes and shopping lists into reviewable entries: structured JSON output via response schemas, prompts that include the user's own categories, server-side validation of every field, model fallback, a per-user daily limit, and tests that fake the AI so CI needs no key.
 - Added **AI summaries** of the user's week or month: the server builds a digest from the user's own rows (money vs the previous period, top categories, tasks, habit check-ins), Gemini writes a headline, highlights and suggestions as structured JSON, and the result is **saved and reused** (with a "new data since" check) so the AI is only called when asked, under a per-user daily limit.
-- Shipped an **installable Android app**: a GitHub Actions workflow builds universal and arm64 APKs and attaches them to GitHub Releases, with launcher icons, optional release signing from secrets, and a server-address setting so one APK works against a laptop on Wi-Fi or the deployed API.
+- Shipped an **installable Android app** with a permanent download link: a GitHub Actions workflow builds universal and arm64 APKs and attaches them to GitHub Releases, with launcher icons, optional release signing from secrets, and a server-address setting so one APK works against a laptop on Wi-Fi or the deployed API.
 - Combined data from every module into one dashboard endpoint: a **productivity score**, today's tasks, live multi-wallet balances, a budget overview and a recent-activity feed.
 - Integrated free, key-less APIs (**Open-Meteo**, **BigDataCloud**) for live weather, with city search and device geolocation.
 - Made the UI responsive: bottom navigation and single-column layouts on phones; a navigation rail and multi-column layouts on desktop; a theme that follows the device (or a fixed Light/Dark choice).
@@ -43,9 +45,9 @@ Every fact below comes from the actual codebase, so you can defend each one.
 
 ### Option B: Shorter version (when space is tight, 3–4 bullets)
 
-- Built a cross-platform productivity app in **Flutter** (web/Android/iOS) with a **Laravel REST API** (42 endpoints), **Sanctum** auth and **Policies** for per-user data isolation.
+- Built an **offline-first**, cross-platform productivity app in **Flutter** (web/Android/iOS) with its own **sync protocol** to a **Laravel REST API** (43 endpoints) on **Neon PostgreSQL**, **Sanctum** auth and **Policies** for per-user data isolation.
 - Built Kanban tasks, multi-wallet expense tracking with charts and budgets, wishlist purchase planning with custom categories and filters, and habit streaks derived from check-in history; responsive phone and desktop layouts with state preservation.
-- Added **61 PHPUnit + 29 Flutter tests** with **GitHub Actions** CI; found and fixed a dashboard crash and a cross-user data leak through tests.
+- Added **68 PHPUnit + 41 Flutter tests** (CI on SQLite and PostgreSQL) with **GitHub Actions** CI; found and fixed a dashboard crash and a cross-user data leak through tests.
 - Added an **AI photo scanner** (Google Gemini) that turns receipts and notes screenshots into transactions after user review, and **AI weekly/monthly summaries** with suggestions.
 - Shipped a downloadable **Android APK** built and released by **GitHub Actions**.
 - Integrated free public APIs for live weather with city search and geolocation.
@@ -63,7 +65,7 @@ Every fact below comes from the actual codebase, so you can defend each one.
 **Strong verbs:** Designed, Built, Engineered, Implemented, Integrated, Architected, Optimised, Secured, Modelled, Diagnosed, Tested, Deployed.
 
 **Rules:**
-- **Never invent numbers.** "42 endpoints", "15 migrations" and "61 tests" are real, so use them. Don't write "10,000 users" or "40% faster" unless you measured it.
+- **Never invent numbers.** "43 endpoints", "16 migrations" and "68 tests" are real, so use them. Don't write "10,000 users" or "40% faster" unless you measured it.
 - **Add real metrics later** if you can: users after deployment, Lighthouse score, API response time, test coverage %.
 - **Always include links:** GitHub repo, live demo (once deployed), and the demo video.
 - **Put it high on the CV** if you're a student or junior. A complete, tested full-stack project is a strong signal.
@@ -84,16 +86,17 @@ Every fact below comes from the actual codebase, so you can defend each one.
 
 | Fact | Value |
 |---|---|
-| Frontend | Flutter (Dart 3), Riverpod 3, Dio, fl_chart, google_fonts, image_picker, geolocator, flutter_timezone |
+| Frontend | Flutter (Dart 3), Riverpod 3, sembast (on-device DB), Dio, fl_chart, google_fonts, image_picker, geolocator, flutter_timezone |
 | Backend | Laravel 13 (PHP 8.3+), Laravel Sanctum, Policies, Form Requests, API Resources |
-| Database | SQLite in development; PostgreSQL for production |
-| API | 42 endpoints under `/api/v1` |
+| Database | On the device: sembast (offline-first). Server: SQLite in development; **Neon PostgreSQL** in production |
+| Sync | `POST /sync`: device-made UUIDs, newest edit wins, tombstones, cursor; every 3 s after edits / 5 min / on resume |
+| API | 43 endpoints under `/api/v1` |
 | Tables | users, tasks, habits, habit_logs, expense_categories, transactions, wishlist_items, ai_insights, personal_access_tokens (+ Laravel cache/jobs/sessions) |
-| Migrations | 15 |
-| Tests | 61 backend (PHPUnit) + 29 Flutter; GitHub Actions on every push |
+| Migrations | 16 |
+| Tests | 68 backend (PHPUnit) + 41 Flutter; GitHub Actions on every push (backend on SQLite and PostgreSQL) |
 | Size | ~12,900 lines of Dart, ~3,500 lines of PHP (app code, routes, migrations) |
 | Modules | Auth, Dashboard, Calendar, Tasks, Expenses, Wishlist, Scan, Habits, Analytics + AI summaries, Settings/Profile |
-| Platforms | Web, Android (APK built by GitHub Actions), iOS (plus desktop scaffolding) |
+| Platforms | Web, Android (APK built by GitHub Actions, download link in the README), iOS (plus desktop scaffolding) |
 | Free APIs | Open-Meteo (weather + geocoding), BigDataCloud (reverse geocoding) |
 
 ---
@@ -123,7 +126,10 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 ### B. Architecture
 
 **Q5. Why separate the Flutter app and the Laravel API instead of connecting Flutter straight to a database?**
-> "Security and flexibility. The client never holds database credentials, and all business rules (validation, ownership, streak calculation) run on the server where users can't tamper with them. Any future client can reuse the same API."
+> "Security and flexibility. The client never holds the server database's credentials, and the server checks everything it receives (validation, ownership) where users can't tamper with it. Any future client can reuse the same API."
+
+**Q5b. How does the offline mode work?**
+> "The app has its own database on the device and the UI only ever reads that, so it behaves the same online or offline. Every record gets a UUID on the device, so it can be created offline without clashing. Each edit stamps an `updated_at` and marks the record dirty. The sync call sends the dirty records plus a cursor; the server applies each one only if it's newer than what it has (last-write-wins), and returns everything changed since the cursor, including soft-deleted rows as tombstones so deletions spread. A habit check-in's id is the habit's UUID plus the date, so the same day ticked on two devices is one row. The trade-off of last-write-wins is that two people editing the same record offline lose one edit; for a personal app that's acceptable, and I'd move to per-field merging or CRDTs if it were collaborative."
 
 **Q6. How is the Flutter code organised?**
 > "By feature: `features/tasks`, `features/expenses` and so on. Each feature has `data` (API calls), `domain` (models) and `presentation` (screens and Riverpod providers). Shared code like the API client, storage, theme and formatters lives in `core/`. The UI never calls HTTP directly."
@@ -132,7 +138,7 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 > "It's compile-time safe, doesn't depend on `BuildContext`, and providers can depend on other providers. For example, the weather provider watches the location provider and refetches automatically when the city changes. `AsyncValue` makes every screen handle loading, error and data explicitly."
 
 **Q8. How does a request travel from a button tap to the database?**
-> "The widget calls a Riverpod notifier, which calls a repository, which uses Dio. A Dio interceptor adds the `Authorization: Bearer` header. In Laravel, Sanctum authenticates the token, the controller validates the input, a Policy checks ownership, and Eloquent writes to the database. The JSON response becomes a Dart model, the provider updates its state, and the UI rebuilds."
+> "Now that it's offline-first: the widget calls a Riverpod notifier, which calls a repository, which writes to the device's database. That bumps a data-version provider, so every screen built from the data recomputes instantly. A few seconds later the sync service sends the change to `POST /sync`. Before the offline work, the path was: the repository used Dio. A Dio interceptor adds the `Authorization: Bearer` header. In Laravel, Sanctum authenticates the token, the controller validates the input, a Policy checks ownership, and Eloquent writes to the database. The JSON response becomes a Dart model, the provider updates its state, and the UI rebuilds."
 
 ### C. Backend & API
 
@@ -199,12 +205,12 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 ### F. Testing & quality
 
 **Q22. How did you test it?**
-> "There are 61 backend tests in PHPUnit using an in-memory SQLite database and `Sanctum::actingAs()`. They cover registration and login, the rate limit, token revocation on logout, account deletion and data export, cross-user access returning 403 for tasks, habits, transactions, wishlist items and categories, scoped category validation, habit streaks, per-user timezones (for example a user at UTC+14 checking a habit gets *their* date), pagination, signed avatar links, wishlist CRUD, custom category tagging & query filtering, custom drag-and-drop reordering, the calendar's month summary and day details, the AI scanner and AI summaries with Gemini faked (only the user's own data is used, saved summaries aren't regenerated, daily limits), the exact fields the user endpoint returns, and the dashboard's task counts. The 29 Flutter tests cover money formatting, the weather models, colour parsing, parsing a page of transactions, wishlist custom categories, category filter providers, category icon and color styling utilities, item conversion to wallet expenses, the calendar grid, the appearance setting's migration from the old on/off switch, the AI summary model, the phone's server-address setting, widget tests of the sign-in form's validation and of the scan review sheet (including a regression test for unpriced wishlist items). GitHub Actions runs all of them, plus `flutter analyze` and a web build, on every push. The tests paid off immediately: they found a dashboard crash for users with no transactions."
+> "There are 68 backend tests in PHPUnit using an in-memory SQLite database and `Sanctum::actingAs()`. They cover registration and login, the rate limit, token revocation on logout, account deletion and data export, cross-user access returning 403 for tasks, habits, transactions, wishlist items and categories, scoped category validation, habit streaks, per-user timezones (for example a user at UTC+14 checking a habit gets *their* date), pagination, signed avatar links, wishlist CRUD, custom category tagging & query filtering, custom drag-and-drop reordering, the calendar's month summary and day details, the AI scanner and AI summaries with Gemini faked (only the user's own data is used, saved summaries aren't regenerated, daily limits), the exact fields the user endpoint returns, and the dashboard's task counts. The 41 Flutter tests cover money formatting, the weather models, colour parsing, the on-device database (restarts, tombstones, newest edit wins), sync with a faked server, offline sign-in, no-account mode, local dashboard numbers and recurring tasks, wishlist custom categories, category filter providers, category icon and color styling utilities, item conversion to wallet expenses, the calendar grid, the appearance setting's migration from the old on/off switch, the AI summary model, the phone's server-address setting, widget tests of the sign-in form's validation and of the scan review sheet (including a regression test for unpriced wishlist items). GitHub Actions runs all of them, plus `flutter analyze` and a web build, on every push. The tests paid off immediately: they found a dashboard crash for users with no transactions."
 
 ### G. Deployment & scaling
 
 **Q23. How would you deploy it for free?**
-> "PostgreSQL on **Neon** (its free tier wakes up automatically), the API on **Render**'s free tier with UptimeRobot pinging it to keep it awake, and the Flutter web build on **Cloudflare Pages**. The API URL is a build-time setting (`--dart-define=API_BASE_URL`), so the same code points at local or production."
+> "The database is already on **Neon** PostgreSQL (its free tier wakes up automatically); I hit transaction errors through its PgBouncer pooler and fixed them by having PDO emulate prepared statements, and CI now runs the tests on Postgres too. The API ships with a Dockerfile and a Render Blueprint that runs migrations on start; the API on **Render**'s free tier with UptimeRobot pinging it to keep it awake, and the Flutter web build on **Cloudflare Pages**. The API URL is a build-time setting (`--dart-define=API_BASE_URL`), so the same code points at local or production."
 
 **Q24. What if it had 100,000 users?**
 > "The indexes are there and the transaction list is already paginated. Next I'd briefly cache the dashboard summary, paginate the other lists, move avatars to object storage behind a CDN, and run several API instances behind a load balancer. The API is stateless (tokens live in the database), so it scales horizontally."
@@ -235,7 +241,8 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 |---|---|---|
 | Reminders | Not implemented yet (shown as "Coming soon") | "Planned with local notifications on mobile and FCM for server push" |
 | Web auth | Token in `localStorage` | "Switch to Sanctum's cookie-based SPA auth once the app and API are hosted on the same site" |
-| Other lists | Tasks and habits aren't paginated (transactions are) | "Same pattern as transactions once lists get long" |
+| Sync conflicts | Last-write-wins per record: two offline edits of the same record keep only the newer | "Fine for a personal app; per-field merge or CRDTs if it became collaborative" |
+| Large accounts | The first sync downloads everything at once | "Page the first pull by cursor once accounts get big" |
 | Accounts | No password reset or email verification | "Add with Laravel's built-ins and a free email provider" |
 
 Fixing one or two of these before an interview gives you extra stories. Password reset is a good next one.
@@ -248,7 +255,8 @@ Fixing one or two of these before an interview gives you extra stories. Password
 - [x] README versions are correct (Laravel 13, PHP 8.3)
 - [x] Automated tests + CI badge in the README
 - [ ] Push to GitHub and check the CI badge turns green
-- [ ] Add a live demo link once it's deployed
+- [x] Android APK download link in the README
+- [ ] Add a live demo link once the API is on Render
 - [ ] Record a fresh demo video (the current GIF shows an older UI)
 - [ ] Re-read every bullet and make sure you can explain it for two minutes
 - [ ] Practise the 30-second pitch out loud

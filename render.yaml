@@ -1,0 +1,30 @@
+# Render Blueprint: Dashboard → New → Blueprint → pick this repository.
+# Render asks for the values marked "sync: false" (they never go in git):
+#   APP_KEY         run `php artisan key:generate --show` and paste the output
+#   APP_URL         the service's address, e.g. https://lifeflow-api.onrender.com
+#   DB_URL          Neon → Connect → connection string (pooled, with -pooler)
+#   GEMINI_API_KEY  optional, enables the AI scanner and AI summaries
+services:
+  - type: web
+    name: lifeflow-api
+    runtime: docker
+    rootDir: lifeflow-api
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: DB_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: APP_TIMEZONE
+        value: Asia/Dhaka
+      - key: CACHE_STORE
+        value: database
+      - key: SESSION_DRIVER
+        value: array

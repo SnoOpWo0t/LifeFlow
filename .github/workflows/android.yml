@@ -4,7 +4,9 @@
 # Run it: GitHub → Actions → "Android APK" → Run workflow. Optionally give the
 # API address (e.g. https://lifeflow-api.onrender.com/api/v1); without one, set
 # the server from the app's sign-in screen. Download the APK from the run's
-# "Artifacts". Pushing a tag like v1.0.0 also publishes it as a GitHub Release.
+# "Artifacts". Pushing a tag like v1.0.0 also publishes it as a GitHub Release,
+# and https://github.com/<owner>/<repo>/releases/latest/download/LifeFlow.apk
+# then always downloads the newest one.
 name: Android APK
 
 on:
@@ -72,6 +74,8 @@ jobs:
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk "dist/LifeFlow-$version.apk"
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/LifeFlow-$version-arm64.apk"
+          # Fixed name for the README's "latest" download link.
+          cp build/app/outputs/flutter-apk/app-release.apk dist/LifeFlow.apk
           ls -lh dist
 
       - uses: actions/upload-artifact@v4

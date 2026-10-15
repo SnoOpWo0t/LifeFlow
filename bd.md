@@ -1,60 +1,49 @@
-# Database: what LifeFlow uses and what to use online
+# Database: where LifeFlow keeps data
 
-## Today: SQLite (local file)
+LifeFlow has three places data can live. The app always uses the first; the server copy is for backup and for sharing between devices.
 
-LifeFlow doesn't use a hosted database service. The API stores everything in **SQLite**, a database kept in a single file: `lifeflow-api/database/database.sqlite`. Profile photos are stored on disk in `lifeflow-api/storage/app/public/avatars/`. The automated tests use a separate in-memory SQLite database, so they never touch your data.
-
-That's ideal on your own computer. It stops working once the app is online, because free hosting services wipe their disk on every restart or redeploy, so users, tasks and photos would vanish.
-
-## Online: Neon PostgreSQL (free, recommended)
-
-**Neon** gives you a free PostgreSQL database that **pauses when idle and wakes up automatically** on the next request. You never have to un-pause it by hand, which makes it the best "free and permanent" choice.
-
-- Laravel supports PostgreSQL out of the box; the existing migrations run unchanged.
-- The app already handles PostgreSQL's habit of returning money amounts as text.
-- Catches (free tiers change, so check before signing up): about 0.5 GB of storage, and a short delay on the first query after it has been idle.
-
-**Alternatives**
-- **Supabase**: PostgreSQL plus file storage, but free projects **pause after about a week without activity** and must be resumed by hand from the dashboard.
-- **Aiven**: free MySQL or PostgreSQL.
-
-## App first or database first?
-
-**The app can be built first; the database doesn't block it.** The Android APK doesn't contain a database or the API address it must use: it asks for the server address on the sign-in screen (or has it baked in at build time). So:
-
-1. **Now:** build the APK on GitHub ([HOW_TO_RUN.md, section 5](HOW_TO_RUN.md#5--android-app-apk)) and test it against your laptop over Wi-Fi. Your laptop's SQLite file is the database.
-2. **Later:** set up Neon + Render (below). Nothing in the app changes.
-3. **Then:** type the public API address into **Server: …** in the app, or run the Android workflow again with *API base URL* set, so the APK points there by default.
-
-The only thing a phone needs that the database setup provides is **an API that's always online**, so other people can use the APK when your laptop is off.
-
-## Profile photos online
-
-Photos are now resized to 512px (tens of KB each), so they're small enough to store **in the database itself**. That avoids needing a separate file-storage service. Alternatively, use **Cloudinary**'s free plan. Either way needs a small code change in `ProfileController`.
-
-## The full free setup
-
-| Part | Free option | Catch |
+| Where | What | Used for |
 |---|---|---|
-| Database | **Neon** | Short wake-up delay after idling |
-| Laravel API | **Render** (free web service) | Sleeps when idle; first request after that takes ~30–60 s (UptimeRobot pings can keep it awake) |
+| **On the device** | sembast (a file in the app's private folder on Android; IndexedDB in the browser) | Everything you see and edit. Works with no internet, with or without an account |
+| **Your laptop** | SQLite file `lifeflow-api/database/database.sqlite` | Development. Tests use a separate in-memory SQLite database, so they never touch it |
+| **Production** | **Neon PostgreSQL** (free tier) | The shared copy your phone and the web app sync with, once the API is online |
+
+## On the device (offline-first)
+
+All tasks, transactions, categories, habits, check-ins and wishlist items are stored on the device first. The dashboard, calendar, charts and streaks are worked out there too, so nothing needs the internet except the AI scanner, AI summaries, weather and profile photos.
+
+With an account, the app syncs through `POST /api/v1/sync`: records get UUIDs on the device, the newest edit wins, and deletes travel as tombstones. Without an account nothing leaves the device. Logging out clears the account's data from the device (it's on the server).
+
+## Neon PostgreSQL (production) ✅ set up
+
+The Neon project ("Lifeflow App", branch `production`, AWS US East 2) has all 16 migrations applied. It was checked end to end by running the API against it and writing and reading back tasks, transactions (with Bengali text and decimals), categories, habits, check-ins and wishlist items through the sync and REST endpoints: everything came back exactly, older edits were ignored, deletes applied, and the test account was removed afterwards.
+
+Things to know:
+
+- **Two addresses:** Neon's connection string with `-pooler` in the host goes through a connection pooler (good for the running API). Use the **direct** address (the same string without `-pooler`) for `php artisan migrate`; the Docker start script does this automatically.
+- **Pooler fix:** behind the pooler, PostgreSQL forgot PDO's prepared statements between queries and transactions failed ("current transaction is aborted"). `config/database.php` now lets PDO fill in values itself (`PDO::ATTR_EMULATE_PREPARES`, on by default for PostgreSQL; turn off with `DB_EMULATE_PREPARES=false`).
+- **Free tier:** about 0.5 GB, and a short wake-up delay on the first query after it has been idle. It never needs un-pausing by hand.
+- **The password:** the connection string contains it. Keep it only in `lifeflow-api/.env` (ignored by git) and in Render's settings, never in code or chat. If it has been shared anywhere, use **Reset password** in Neon's *Connect* dialog and update those two places.
+
+## Using Neon from the laptop
+
+PHP needs its PostgreSQL driver (`sudo apt install php8.3-pgsql`; a no-sudo way is in [HOW_TO_RUN.md](HOW_TO_RUN.md#using-the-neon-postgresql-database)). Then, in `lifeflow-api/.env`:
+
+```
+DB_CONNECTION=pgsql
+DB_URL="postgresql://USER:PASSWORD@HOST/neondb?sslmode=require&channel_binding=require"
+```
+
+and run `php artisan migrate`. Switch back to `DB_CONNECTION=sqlite` for everyday development. Never run `php artisan test` against Neon: the tests wipe the database they run on. CI runs them on a throwaway PostgreSQL instead.
+
+## Putting it online
+
+| Part | Service | Catch |
+|---|---|---|
+| Database | **Neon** ✅ | Short wake-up delay after idling |
+| Laravel API | **Render** (free web service, `Dockerfile` + `render.yaml` ready) | Sleeps when idle; first request after that takes ~30–60 s (the app doesn't mind: it works offline and syncs later) |
 | Flutter web app | **Cloudflare Pages**, Netlify, Vercel or GitHub Pages | None that matters |
-| Weather | Open-Meteo + BigDataCloud (already done) | None |
-| Tests on every push | GitHub Actions (already set up) | None |
-| Android APK | GitHub Actions (already set up) | Set up your own signing key before sharing updates |
-| AI (scanner + summaries) | Google Gemini free tier, key in the API's environment variables (`GEMINI_API_KEY`) | Rate-limited; free-tier prompts may be used by Google |
+| Android APK | GitHub Releases ([direct link](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)) | Set up your own signing key before sharing updates |
+| AI (scanner + summaries) | Google Gemini free tier, key in the API's environment (`GEMINI_API_KEY`) | Rate-limited; free-tier prompts may be used by Google |
 
-## What switching takes
-
-1. Create a free Neon project and copy its connection string.
-2. Install PHP's PostgreSQL extension: `sudo apt install php8.3-pgsql`
-3. In `lifeflow-api/.env` (on the server, or locally to try it):
-   ```
-   DB_CONNECTION=pgsql
-   DB_URL=postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require
-   ```
-4. Run `php artisan migrate`.
-
-On Render, add `GEMINI_API_KEY` (and the other `.env` values) as environment variables, never in the code. Keep using SQLite on your laptop for development. The connection string contains your database password, so keep it in `.env` (which git ignores) and never commit it or paste it anywhere public.
-
-Full deployment steps are in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md).
+On Render: **New → Blueprint**, pick the repository, and paste `APP_KEY`, `APP_URL`, `DB_URL` (Neon's pooled string) and optionally `GEMINI_API_KEY`. Then put `https://<your-api>.onrender.com/api/v1` into the app's **Server: …** setting, or rebuild the APK with it. Full steps: [HOW_TO_RUN.md](HOW_TO_RUN.md#putting-the-api-online-render-free) and [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md).

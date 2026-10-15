@@ -3,8 +3,9 @@
 The REST backend for [LifeFlow](../README.md): authentication, tasks, habits, expenses, wishlist, calendar, dashboard, analytics, the AI photo scanner and AI summaries.
 
 - **Stack:** Laravel 13, PHP 8.3+, Laravel Sanctum (API tokens)
-- **Database:** SQLite locally (`database/database.sqlite`), PostgreSQL in production
-- **Endpoints:** 42, all under `/api/v1`, listed in [PROJECT_BLUEPRINT.md](../PROJECT_BLUEPRINT.md)
+- **Database:** SQLite locally (`database/database.sqlite`), **Neon PostgreSQL** in production (see [bd.md](../bd.md))
+- **Deploy:** `Dockerfile` + `docker-start.sh` (migrates, then serves) and the root `render.yaml`
+- **Endpoints:** 43, all under `/api/v1` (including `POST /sync` for the offline-first app), listed in [PROJECT_BLUEPRINT.md](../PROJECT_BLUEPRINT.md)
 
 ## Setup
 
@@ -28,7 +29,7 @@ Each user's "today" (habits, dashboard, weekly analytics) follows the timezone t
 php artisan test
 ```
 
-61 tests (`tests/Feature/ApiTest.php`, `WishlistTest.php`, `ScanTest.php` and `InsightTest.php`, plus Laravel's examples), on an in-memory SQLite database. They cover auth, rate limiting, token revocation, account deletion, data export, wishlist CRUD, custom category tagging & filtering, custom ordering, per-user data isolation (tasks, habits, transactions, categories, wishlist), per-user timezones, pagination, signed avatar links, the calendar, the wishlist, the AI photo scanner and AI summaries (with Gemini faked: only the user's own data is used, saved summaries are reused, daily limits), validation, habit streaks and the dashboard summary. They also run on every push via GitHub Actions.
+68 tests (`tests/Feature/ApiTest.php`, `SyncTest.php`, `WishlistTest.php`, `ScanTest.php` and `InsightTest.php`, plus Laravel's examples), on an in-memory SQLite database (and on PostgreSQL in CI). They cover sync (newest edit wins, tombstones, one check-in per habit and day, rejecting other users' records), auth, rate limiting, token revocation, account deletion, data export, wishlist CRUD, custom category tagging & filtering, custom ordering, per-user data isolation (tasks, habits, transactions, categories, wishlist), per-user timezones, pagination, signed avatar links, the calendar, the wishlist, the AI photo scanner and AI summaries (with Gemini faked: only the user's own data is used, saved summaries are reused, daily limits), validation, habit streaks and the dashboard summary. They also run on every push via GitHub Actions.
 
 ## Where things are
 

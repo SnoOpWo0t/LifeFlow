@@ -8,6 +8,8 @@
 [![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Laravel Version](https://img.shields.io/badge/Laravel-13.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/SnoOpWo0t/LifeFlow/ci.yml?style=for-the-badge&label=CI)](https://github.com/SnoOpWo0t/LifeFlow/actions)
+[![Android APK](https://img.shields.io/github/v/release/SnoOpWo0t/LifeFlow?style=for-the-badge&logo=android&logoColor=white&label=Android%20APK&color=3DDC84)](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)
+[![Works offline](https://img.shields.io/badge/Works-offline-0EA5E9?style=for-the-badge)](#-offline-first--sync)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 </div>
@@ -15,7 +17,17 @@
 <br />
 
 <div align="center">
-  <i>LifeFlow brings your tasks, money and habits under one roof: one Flutter app for web, Android and iOS, backed by a secure Laravel API.</i>
+  <i>LifeFlow brings your tasks, money and habits under one roof: one offline-first Flutter app for Android, web and iOS, synced through a secure Laravel API and PostgreSQL (Neon).</i>
+</div>
+
+<br />
+
+<div align="center">
+
+### 📥 [Download the Android app (APK)](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)
+
+Works offline straight away; no account needed. &nbsp;·&nbsp; [All releases](https://github.com/SnoOpWo0t/LifeFlow/releases) &nbsp;·&nbsp; [Install help](#3-android-app)
+
 </div>
 
 ---
@@ -24,12 +36,13 @@
 
 - [About the Project](#-about-the-project)
 - [Key Features](#-key-features)
+- [Offline-first & sync](#-offline-first--sync)
 - [Visuals & Demos](#-visuals--demos)
 - [Architecture & Code Structure](#️-architecture--code-structure)
 - [Tech Stack](#-tech-stack)
 - [Quality & Security](#-quality--security)
 - [Roadmap](#️-roadmap)
-- [Getting Started](#️-getting-started)
+- [Getting Started](#️-getting-started) (download, run, database, hosting)
 - [License](#-license)
 - [Contact](#-contact)
 
@@ -59,6 +72,32 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
 - **🌦️ Live Weather:** search any city, or tap **"Use my current location"**. Powered by free, key-less APIs (Open-Meteo, BigDataCloud).
 - **🔐 Accounts & Settings:** token login with server-side logout, profile photos (automatically resized before upload, shown on the dashboard), **appearance that follows your device** or a fixed Light/Dark choice, settings saved to your account, **Export my data** (everything as JSON, or transactions as CSV for spreadsheets; built on the device, so it works offline) and **Delete account** (password-confirmed, removes all data).
 - **🕒 Your own "today":** the app sends your device's timezone, so habits, today's tasks and weekly charts roll over at *your* midnight, wherever you are.
+
+---
+
+## 📴 Offline-first & sync
+
+LifeFlow keeps all your data **on your device** and treats the server as a backup and a way to share it between devices. No internet? Nothing changes: you can add, edit and delete everything, and every total, chart, streak and calendar dot is worked out on the device.
+
+| | Without internet | Notes |
+|---|---|---|
+| Tasks, expenses, categories, wallets, budget | ✅ | Add, edit, delete, charts and totals |
+| Habits and streaks | ✅ | Check-ins and streaks are calculated on the device |
+| Wishlist | ✅ | Including reordering and "convert to expense" |
+| Dashboard, calendar, weekly analytics | ✅ | Built from the data on the device |
+| Export my data (JSON / CSV) | ✅ | The file is made on the device |
+| Use without an account | ✅ | Data stays on that device until you sign in |
+| Sync with other devices / the web app | ⏳ | Happens automatically when you're back online |
+| AI photo scanner, AI summaries | ❌ | Run on the server with Gemini; need internet and an account |
+| Weather, profile photo upload, account deletion | ❌ | Need the internet |
+
+**How sync works**
+
+1. Every record gets its id (a UUID) on the device, so it can be created offline and never clashes with another device's records.
+2. Each change is saved locally first and marked as *not uploaded yet*. A few seconds later (and every 5 minutes, when the app returns to the front, and on pull-to-refresh) the app sends the pending changes to `POST /api/v1/sync` and gets back everything that changed elsewhere since its last sync.
+3. If two devices edited the same record, **the newest edit wins**. Deletes are kept as "tombstones" until every device has heard about them. A habit's check-in for a day is the same record on every device, so ticking it on your phone and on the web never doubles it.
+4. Settings shows the state: *Synced just now*, *Offline · 3 changes waiting*, or *Not backed up* when you have no account.
+5. Signing in after using the app without an account uploads what's on the device. Logging out removes the account's data from the device (after warning if anything hasn't uploaded yet), so the next person to sign in on that phone starts clean.
 
 ---
 
@@ -234,7 +273,8 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 - [ ]  Sign in with Google
 - [ ]  Multi-currency support
 - [ ]  AI assistant for adding tasks in plain language
-- [ ]  Public deployment (free hosting)
+- [X]  Production database on Neon (PostgreSQL), verified end to end
+- [ ]  Public API on Render (Dockerfile and `render.yaml` are ready: one click plus your secrets)
 
 The full prioritised list, all of it doable for free, is in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md), including ideas from the [Catalyst](https://github.com/HAVIC-47/catalyst-app) app (mood tracking, category budgets, bills, savings goals…), with a checklist of what's already done.
 
@@ -273,11 +313,19 @@ flutter pub get
 flutter run -d web-server --web-port 8080     # → http://localhost:8080
 ```
 
-### 3. Android app (optional)
+### 3. Android app
 
-No Android Studio needed: on GitHub open **Actions → Android APK → Run workflow**, then download the APK from the run's *Artifacts* and install it on your phone. Details, including testing against your laptop over Wi-Fi, are in [HOW_TO_RUN.md](HOW_TO_RUN.md#5--android-app-apk).
+**Just want the app?** [Download LifeFlow.apk](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk), open it on your phone and allow *Install unknown apps* once. Tap **Continue without an account** to use it fully offline, or sign in to sync (the phone needs to reach an API: your laptop on the same Wi-Fi, or the deployed one).
 
-### 4. Run the tests
+**Building it yourself** needs no Android Studio: on GitHub open **Actions → Android APK → Run workflow** (or push a `v*` tag to publish a release), then download the APK from the run's *Artifacts*. Details, including testing against your laptop over Wi-Fi, are in [HOW_TO_RUN.md](HOW_TO_RUN.md#5--android-app-apk).
+
+### 4. Database and hosting
+
+- **Development:** SQLite, nothing to set up.
+- **Production:** [Neon](https://neon.tech) PostgreSQL. Put the connection string in `DB_URL` with `DB_CONNECTION=pgsql` and run `php artisan migrate --force` (see [HOW_TO_RUN.md](HOW_TO_RUN.md#using-the-neon-postgresql-database)). Pooled Neon addresses work because PDO emulates prepared statements for PostgreSQL (`config/database.php`).
+- **API hosting:** `lifeflow-api/Dockerfile` and [`render.yaml`](render.yaml) deploy it to Render's free plan; the container runs migrations on start. On Render choose **New → Blueprint**, pick this repository and paste `APP_KEY`, `APP_URL`, `DB_URL` (and optionally `GEMINI_API_KEY`) when asked.
+
+### 5. Run the tests
 
 ```bash
 cd lifeflow-api && php artisan test

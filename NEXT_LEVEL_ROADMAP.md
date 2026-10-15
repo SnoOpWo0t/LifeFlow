@@ -43,6 +43,9 @@ A prioritised list of what's done and what to improve next. Everything here can 
 | **Scanning a shopping list: "Add to wishlist" stayed disabled ("0 of 32 selected")** even with every line ticked, because items without a price were treated as empty | Wishlist lines only need a title (the price is optional); covered by a widget test |
 
 ### Features & quality
+- **Offline-first:** all data in an on-device database (sembast; IndexedDB on the web); dashboard, calendar, charts and streaks worked out on the device; **use without an account**; background **sync** (`POST /sync`: UUIDs made on the device, newest edit wins, deletes as tombstones); sync status in Settings; logging out clears the device
+- **Neon PostgreSQL** set up and checked end to end (16 migrations, a 20-point write/read-back check through the API); pooled connections work (PDO prepare emulation); CI also runs the tests on PostgreSQL
+- **Deploy files ready:** `Dockerfile`, `docker-start.sh`, `render.yaml`; a permanent APK download link (`releases/latest/download/LifeFlow.apk`)
 - Login page redesign with the LifeFlow logo and brand colours
 - **Edit and delete transactions** (tap a transaction); **rename and delete habits** (card menu); **edit and delete categories** (with colour picker)
 - **Delete account** in Settings: password-confirmed, removes all of the user's data
@@ -96,9 +99,9 @@ The goal is a public link that keeps working without paying or babysitting it.
 **If you have a debit/credit card for identity verification only (never charged):** **Oracle Cloud Always Free** gives you real always-on virtual machines. That means no sleeping, and you could run the API, database and files on one server.
 
 ### Deployment steps (🔴 ⭐⭐⭐)
-1. Create a Neon project and copy the connection string.
-2. Add a `Dockerfile` for `lifeflow-api` (PHP 8.3 + `pdo_pgsql`), and set `DB_CONNECTION=pgsql`, `DB_URL=...`, `APP_KEY`, `APP_URL`, `APP_TIMEZONE` as Render environment variables.
-3. Deploy the API on Render; run `php artisan migrate --force` as the release command.
+1. ✅ Create a Neon project and copy the connection string. *(Done; tables created.)*
+2. ✅ `Dockerfile` for `lifeflow-api` (PHP 8.3 + `pdo_pgsql`) and `render.yaml`. *(Done.)*
+3. ⬜ On Render: **New → Blueprint**, pick the repo, paste `APP_KEY`, `APP_URL`, `DB_URL` (and `GEMINI_API_KEY`). Migrations run on every deploy.
 4. `flutter build web --release --dart-define=API_BASE_URL=https://<your-api>.onrender.com/api/v1`, then deploy `build/web` to Cloudflare Pages.
 5. Restrict CORS to your Pages domain (`config/cors.php`, `allowed_origins`).
 6. Add an UptimeRobot monitor on `https://<your-api>.onrender.com/up`.
@@ -151,7 +154,7 @@ The goal is a public link that keeps working without paying or babysitting it.
 
 1. **Next:** K3 undo after a scan and D3 undo after delete, K2 to-do scanning, D2 skeleton loaders. All quick and visible.
 2. **Then:** reminders (section 2), A1 design tokens; once hosting is decided, cookie-based login (section 3).
-3. **Deploy:** section 1 (Neon + Render + Cloudflare Pages + UptimeRobot), then rebuild the Android APK with the public API address and set up your own signing key ([HOW_TO_RUN.md, section 5](HOW_TO_RUN.md#5--android-app-apk)). **A live link and a downloadable APK on your CV beat any single feature.**
+3. **Deploy:** section 1 (Neon is done; Render, Cloudflare Pages, UptimeRobot left), then rebuild the Android APK with the public API address and set up your own signing key ([HOW_TO_RUN.md, section 5](HOW_TO_RUN.md#5--android-app-apk)). **A live link and a downloadable APK on your CV beat any single feature.**
 4. **Stand-out features:** Google sign-in, AI assistant (Gemini free tier), multi-currency.
 
 ---
@@ -183,7 +186,7 @@ The goal is a public link that keeps working without paying or babysitting it.
 | K5 | ⬜ **Budgets per category** | A monthly limit per category that fills up and turns red when exceeded | LifeFlow has one overall budget; add limits per category beside the donut chart | 🟡 | ⭐⭐⭐ |
 | K6 | ⬜ **Bills & recurring payments** | Due dates, recurrence, overdue / due-soon warnings, one-tap "paid" | Show bills as calendar dots; "paid" creates the expense | 🟡 | ⭐⭐⭐ |
 | K7 | ⬜ **Savings goals** | Targets with progress bars and quick additions | Similar to the wishlist target, but for saving money | 🟢 | ⭐⭐ |
-| K8 | ⬜ **Search & filters for transactions** | Search note, category, place and amount (even "october" or "monday"); filter by type, period, category and amount | A search bar and filter chips on Expenses (the list is already paginated server-side) | 🟡 | ⭐⭐ |
+| K8 | ⬜ **Search & filters for transactions** | Search note, category, place and amount (even "october" or "monday"); filter by type, period, category and amount | A search bar and filter chips on Expenses (all transactions are on the device now, so it can search instantly, even offline) | 🟡 | ⭐⭐ |
 | K9 | ⬜ **Year heatmap & week view** | A 12-month heatmap of spending/income and a week view | Extra views for the dashboard calendar | 🟡 | ⭐⭐ |
 | K10 | ⬜ **Customisable dashboard** | Choose which dashboard sections to show; the choice syncs | A "Dashboard sections" setting stored in `preferences` | 🟢 | ⭐⭐ |
 | K11 | ⬜ **Time & place on transactions** | Each entry can have a time and a place | Two optional fields; the scanner already reads the shop name | 🟢 | ⭐ |
