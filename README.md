@@ -28,6 +28,12 @@
 
 </div>
 
+<br />
+
+<p align="center">
+  <img src="Screenshots/launch/lifeflow-cover.jpg" alt="LifeFlow: tasks, money and habits in one app that works offline" width="100%">
+</p>
+
 ---
 
 ## 📑 Table of Contents
@@ -101,6 +107,27 @@ LifeFlow keeps all your data **on your device** and treats the server as a backu
 
 ## 📱 Visuals & Demos
 
+<p align="center">
+  <img src="Screenshots/launch/lifeflow-ai-scanner.jpg" alt="AI photo scanner: a receipt becomes expenses, a shopping list becomes wishlist items" width="100%">
+</p>
+
+<p align="center">
+  <img src="Screenshots/launch/lifeflow-ai-summaries.jpg" alt="AI summaries of your week or month with suggestions" width="49%">
+  <img src="Screenshots/launch/lifeflow-offline.jpg" alt="Works offline, no account needed, syncs when online" width="49%">
+</p>
+
+<details>
+<summary><b>📸 Scanner close-ups</b>: a receipt and a shopping list, ready to review</summary>
+<br />
+<div align="center">
+  <img src="Screenshots/phone-scan-receipt.jpg" alt="Scanned receipt: lines, categories, discount, VAT" width="32%">
+  <img src="Screenshots/phone-scan-wishlist.jpg" alt="Scanned shopping list: wishlist items with prices and priority" width="32%">
+</div>
+</details>
+
+<details>
+<summary><b>🖼️ All app screenshots</b>: phone, desktop, dark mode, sign-in</summary>
+
 ### Phone
 
 <div align="center">
@@ -137,6 +164,10 @@ LifeFlow keeps all your data **on your device** and treats the server as a backu
   <img src="Screenshots/desktop-settings.png" alt="Settings showing Synced just now" width="37%">
   <img src="Screenshots/desktop-settings-no-account.png" alt="Settings without an account: Not backed up" width="37%">
 </div>
+
+</details>
+
+> 📣 **Launch kit:** the cover, feature posters and a square social image are in [`Screenshots/launch/`](Screenshots/launch) (high resolution, ready for a store page, LinkedIn or a portfolio).
 
 ### Video Walkthrough
 

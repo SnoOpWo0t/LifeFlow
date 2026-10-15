@@ -45,6 +45,7 @@ A prioritised list of what's done and what to improve next. Everything here can 
 ### Features & quality
 - **Offline-first:** all data in an on-device database (sembast; IndexedDB on the web); dashboard, calendar, charts and streaks worked out on the device; **use without an account**; background **sync** (`POST /sync`: UUIDs made on the device, newest edit wins, deletes as tombstones); sync status in Settings; logging out clears the device
 - **Neon PostgreSQL** set up and checked end to end (16 migrations, a 20-point write/read-back check through the API); pooled connections work (PDO prepare emulation); CI also runs the tests on PostgreSQL
+- **Launch kit:** a cover image, feature posters (AI scanner, AI summaries, offline) and a square social image in `Screenshots/launch/`, made from real app screens; source in `Screenshots/launch/source/`
 - **Deploy files ready:** `Dockerfile`, `docker-start.sh`, `render.yaml`; a permanent APK download link (`releases/latest/download/LifeFlow.apk`)
 - Login page redesign with the LifeFlow logo and brand colours
 - **Edit and delete transactions** (tap a transaction); **rename and delete habits** (card menu); **edit and delete categories** (with colour picker)

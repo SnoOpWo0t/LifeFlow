@@ -1,0 +1,136 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0B1120;--navy2:#111a2e;--cyan:#06B6D4;--violet:#7C3AED;--text:#E2E8F0;--muted:#94A3B8;--green:#3DDC84}
+*{box-sizing:border-box;margin:0}
+body{font-family:Outfit,sans-serif;background:var(--navy);color:var(--text)}
+.poster{display:none;position:relative;overflow:hidden;width:1600px;height:900px;
+  background:radial-gradient(circle at 15% 20%,rgba(6,182,212,.18),transparent 45%),radial-gradient(circle at 85% 85%,rgba(124,58,237,.22),transparent 50%),var(--navy)}
+.poster.on{display:block}
+.square{width:1080px;height:1080px}
+.grad{background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand{display:flex;align-items:center;gap:14px;font-weight:700;font-size:30px;color:#fff}
+.brand img{width:54px}
+h1{font-size:68px;line-height:1.05;font-weight:800;color:#fff;letter-spacing:-1px}
+h2{font-size:52px;line-height:1.08;font-weight:800;color:#fff;letter-spacing:-.5px}
+.lead{font-size:24px;color:var(--muted);line-height:1.45}
+.pills{display:flex;flex-wrap:wrap;gap:12px}
+.pill{padding:10px 18px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:19px;font-weight:500;color:var(--text)}
+.cta{display:inline-flex;align-items:center;gap:12px;padding:16px 28px;border-radius:16px;background:linear-gradient(90deg,var(--cyan),var(--violet));color:#fff;font-weight:700;font-size:22px;box-shadow:0 12px 30px rgba(124,58,237,.35)}
+.cta small{font-weight:500;opacity:.85;font-size:16px}
+.phone{position:absolute;width:300px;aspect-ratio:9/19.5;border-radius:44px;background:#05080f;padding:11px;
+  box-shadow:0 30px 70px rgba(0,0,0,.55),0 0 0 2px rgba(255,255,255,.08) inset}
+.phone img{width:100%;height:100%;object-fit:cover;object-position:top;border-radius:34px;display:block;background:#fff}
+.phone .notch{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:84px;height:22px;border-radius:12px;background:#05080f;z-index:2}
+.photo{position:absolute;border-radius:14px;overflow:hidden;box-shadow:0 20px 45px rgba(0,0,0,.5);border:6px solid #fff;background:#fff}
+.photo img{display:block;width:100%}
+.arrow{position:absolute;font-size:46px;color:var(--cyan);font-weight:800}
+.tag{position:absolute;padding:8px 14px;border-radius:12px;background:rgba(11,17,32,.85);border:1px solid rgba(255,255,255,.15);font-size:17px;font-weight:600;color:#fff;backdrop-filter:blur(4px)}
+.tag b{color:var(--cyan)}
+.step{display:flex;gap:14px;align-items:flex-start;font-size:21px;color:var(--text);line-height:1.4}
+.step i{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:18px;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#fff}
+.step span{color:var(--muted)}
+.foot{position:absolute;bottom:34px;font-size:17px;color:var(--muted)}
+.browser{position:absolute;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 30px 70px rgba(0,0,0,.55)}
+.browser .bar{height:34px;background:#1e293b;display:flex;align-items:center;gap:8px;padding:0 14px}
+.browser .bar i{width:11px;height:11px;border-radius:50%;background:#475569;display:block}
+.browser img{display:block;width:100%}
+.label{font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cyan)}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px 22px}
+.card b{display:block;font-size:22px;color:#fff;margin-bottom:4px}
+.card span{font-size:17px;color:var(--muted);line-height:1.4}
+</style></head><body>
+
+<!-- 1. Cover / hero -->
+<section class="poster" id="cover">
+  <div style="position:absolute;left:90px;top:90px;width:700px">
+    <div class="brand"><img src="logo_mark.png">LifeFlow</div>
+    <h1 style="margin-top:46px">Tasks, money & habits.<br><span class="grad">One app. Even offline.</span></h1>
+    <p class="lead" style="margin-top:24px;width:620px">Snap a receipt and it becomes expenses. Get an AI read of your week. Track bKash, Nagad, cash and bank, build habit streaks, and plan what you want to buy.</p>
+    <div class="pills" style="margin-top:30px;width:660px">
+      <span class="pill">📸 AI receipt & notes scanner</span><span class="pill">✨ AI weekly summaries</span>
+      <span class="pill">📴 Works offline</span><span class="pill">🔄 Syncs phone & web</span>
+      <span class="pill">👛 Multi-wallet</span><span class="pill">🔥 Habit streaks</span><span class="pill">🎁 Wishlist</span>
+    </div>
+    <div style="margin-top:40px" class="cta">⬇ Download for Android <small>free · APK</small></div>
+  </div>
+  <div class="phone" style="left:870px;top:150px;transform:rotate(-6deg)"><div class="notch"></div><img src="phone-dashboard.png"></div>
+  <div class="phone" style="left:1240px;top:150px;transform:rotate(6deg)"><div class="notch"></div><img src="phone-ai-summary.png"></div>
+  <div class="phone" style="left:1050px;top:95px;z-index:3;width:320px"><div class="notch"></div><img src="p-receipt-review.png"></div>
+</section>
+
+<!-- 2. AI scanner -->
+<section class="poster" id="scan">
+  <div style="position:absolute;left:80px;top:70px;width:1440px;text-align:center">
+    <div class="label">AI photo scanner</div>
+    <h2 style="margin-top:12px">Snap it. Check it. <span class="grad">It's tracked.</span></h2>
+    <p class="lead" style="margin-top:12px">Receipts, money notes and shopping lists (English or Bengali) become entries you review before anything is saved.</p>
+  </div>
+  <!-- expenses -->
+  <div class="photo" style="left:90px;top:330px;width:250px;transform:rotate(-5deg)"><img src="receipt.png" style="width:100%;margin:-60px 0 -40px"></div>
+  <div class="arrow" style="left:350px;top:520px">→</div>
+  <div class="phone" style="left:410px;top:300px;width:250px"><div class="notch"></div><img src="p-receipt-review.png"></div>
+  <div class="tag" style="left:110px;top:270px">🧾 Receipt → <b>expenses</b></div>
+  <div class="tag" style="left:440px;top:845px">Discount shared · new category made</div>
+  <!-- wishlist -->
+  <div class="photo" style="left:900px;top:340px;width:240px;transform:rotate(4deg)"><img src="wishlist-note.png"></div>
+  <div class="arrow" style="left:1155px;top:520px">→</div>
+  <div class="phone" style="left:1220px;top:300px;width:250px"><div class="notch"></div><img src="p-wish-review.png"></div>
+  <div class="tag" style="left:910px;top:270px">📝 Shopping list → <b>wishlist</b></div>
+  <div class="tag" style="left:1225px;top:845px">Prices, priority & category filled in</div>
+  <div style="position:absolute;left:725px;top:420px;width:140px;text-align:center;font-size:16px;color:var(--muted);line-height:1.5">
+    <div style="font-size:40px">✨</div>Google Gemini reads the photo.<br><br>You untick, edit, then tap <b style="color:#fff">Save</b>.</div>
+</section>
+
+<!-- 3. AI summaries -->
+<section class="poster" id="summary">
+  <div style="position:absolute;left:90px;top:110px;width:560px">
+    <div class="label">AI summaries</div>
+    <h2 style="margin-top:12px">Your week, <span class="grad">explained.</span></h2>
+    <p class="lead" style="margin-top:18px">One tap writes a short read of this week or month from your own numbers, with suggestions you can act on.</p>
+    <div style="display:grid;gap:18px;margin-top:34px">
+      <div class="step"><i>1</i><div>Money first<br><span>Spending vs the last period, top categories, biggest expenses</span></div></div>
+      <div class="step"><i>2</i><div>Tasks & habits<br><span>What got done, what's overdue, which streaks are alive</span></div></div>
+      <div class="step"><i>3</i><div>2–4 concrete suggestions<br><span>Saved, so reopening costs nothing; "new data since" tells you when to refresh</span></div></div>
+    </div>
+  </div>
+  <div class="browser" style="left:700px;top:110px;width:840px;height:640px"><div class="bar"><i></i><i></i><i></i></div><img src="desktop-ai-summary.png"></div>
+  <div class="phone" style="left:1270px;top:300px;width:270px;z-index:3"><div class="notch"></div><img src="phone-ai-summary.png"></div>
+</section>
+
+<!-- 4. Offline-first -->
+<section class="poster" id="offline">
+  <div style="position:absolute;left:90px;top:100px;width:640px">
+    <div class="label">Offline-first</div>
+    <h2 style="margin-top:12px">No signal? <span class="grad">No problem.</span></h2>
+    <p class="lead" style="margin-top:18px">Everything is saved on your phone first. Add, edit and see every chart with no internet, even without an account.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px">
+      <div class="card"><b>📴 Works offline</b><span>Dashboard, charts, streaks and calendar are worked out on the device</span></div>
+      <div class="card"><b>👤 No account needed</b><span>Start right away; sign in later to back up</span></div>
+      <div class="card"><b>🔄 Syncs by itself</b><span>Changes upload when you're back online, phone and web stay in step</span></div>
+      <div class="card"><b>🛡️ Your data</b><span>Newest edit wins, deletes sync too, logging out clears the device</span></div>
+    </div>
+  </div>
+  <div class="phone" style="left:830px;top:120px;width:300px;transform:rotate(-4deg)"><div class="notch"></div><img src="phone-login-offline.png"></div>
+  <div class="phone" style="left:1200px;top:120px;width:300px;transform:rotate(4deg)"><div class="notch"></div><img src="phone-dashboard.png"></div>
+  <div class="tag" style="left:1150px;top:770px">✈️ Airplane mode? Still saving.</div>
+</section>
+
+<!-- 5. Square social post -->
+<section class="poster square" id="social">
+  <div style="position:absolute;left:70px;top:70px;width:940px;text-align:center">
+    <div class="brand" style="justify-content:center"><img src="logo_mark.png">LifeFlow</div>
+    <h2 style="margin-top:26px;font-size:56px">Tasks, money & habits.<br><span class="grad">One app. Even offline.</span></h2>
+  </div>
+  <div class="phone" style="left:90px;top:340px;width:280px;transform:rotate(-6deg)"><div class="notch"></div><img src="phone-dashboard.png"></div>
+  <div class="phone" style="left:400px;top:300px;width:290px;z-index:3"><div class="notch"></div><img src="p-receipt-review.png"></div>
+  <div class="phone" style="left:720px;top:340px;width:280px;transform:rotate(6deg)"><div class="notch"></div><img src="phone-ai-summary.png"></div>
+  <div style="position:absolute;left:0;right:0;bottom:46px;text-align:center"><div class="cta">⬇ Free on Android <small>github.com/SnoOpWo0t/LifeFlow</small></div></div>
+</section>
+
+<script>
+const id = new URLSearchParams(location.search).get('p') || 'cover';
+document.getElementById(id).classList.add('on');
+</script>
+</body></html>

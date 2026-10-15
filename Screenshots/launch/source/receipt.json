@@ -1,0 +1,7 @@
+{"kind":"receipt","receipt":{"merchant":"Shwapno","date":"2026-10-15","items":[
+{"name":"Miniket Rice 5kg","amount":450,"category":"Food","new_category":false},
+{"name":"Soybean Oil 1L","amount":190,"category":"Food","new_category":false},
+{"name":"Farm Eggs 12pc","amount":150,"category":"Food","new_category":false},
+{"name":"Sunsilk Shampoo","amount":340,"category":"Toiletries","new_category":true},
+{"name":"Dettol Soap x3","amount":210,"category":"Toiletries","new_category":true}],
+"extras":[{"name":"VAT 5%","amount":67}],"discount":50,"total":1357}}
