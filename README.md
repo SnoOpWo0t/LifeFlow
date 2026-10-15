@@ -116,40 +116,22 @@ LifeFlow keeps all your data **on your device** and treats the server as a backu
   <img src="Screenshots/launch/lifeflow-offline.jpg" alt="Works offline, no account needed, syncs when online" width="49%">
 </p>
 
-<details>
-<summary><b>📸 Scanner close-ups</b>: a receipt and a shopping list, ready to review</summary>
-<br />
-<div align="center">
-  <img src="Screenshots/phone-scan-receipt.jpg" alt="Scanned receipt: lines, categories, discount, VAT" width="32%">
-  <img src="Screenshots/phone-scan-wishlist.jpg" alt="Scanned shopping list: wishlist items with prices and priority" width="32%">
-</div>
-</details>
+### 🧭 Feature tour
 
-<details>
-<summary><b>🖼️ All app screenshots</b>: phone, desktop, dark mode, sign-in</summary>
+| Feature | Phone | Desktop |
+|---|---|---|
+| **📊 Dashboard**<br><sub>Weather, productivity score, today's tasks & habits, budget, wallets, calendar, recent activity</sub> | <img src="Screenshots/phone-dashboard.png" alt="Dashboard on a phone" width="200"> | <img src="Screenshots/desktop-dashboard.png" alt="Dashboard on desktop" width="460"> |
+| **📸 AI scanner: receipt → expenses**<br><sub>Lines, categories (new ones created), shared discount, VAT, wallet and date; review before saving</sub> | <img src="Screenshots/phone-scan-receipt.jpg" alt="Scanned receipt ready to review" width="200"> | <img src="Screenshots/desktop-scan.png" alt="Choosing a receipt or notes to scan" width="460"> |
+| **📝 AI scanner: shopping list → wishlist**<br><sub>Titles, prices, priority and category filled in; unpriced items can be added too</sub> | <img src="Screenshots/phone-scan-wishlist.jpg" alt="Scanned shopping list ready to add" width="200"> | <img src="Screenshots/desktop-wishlist.png" alt="Wishlist on desktop" width="460"> |
+| **💰 Expenses**<br><sub>Multi-wallet (Cash, bKash, Nagad, Bank), categories, income vs expense, spending donut</sub> | <img src="Screenshots/phone-expenses.png" alt="Expenses on a phone" width="200"> | <img src="Screenshots/desktop-expenses.png" alt="Expenses on desktop" width="460"> |
+| **📋 Tasks**<br><sub>Kanban: lane switcher on phones, drag and drop on desktop</sub> | <img src="Screenshots/phone-tasks.png" alt="Task board on a phone" width="200"> | <img src="Screenshots/desktop-tasks.png" alt="Task board on desktop" width="460"> |
+| **🔥 Habits**<br><sub>Daily check-ins, 7-day view, streaks from your history</sub> | <img src="Screenshots/phone-habits.png" alt="Habits on a phone" width="200"> | <img src="Screenshots/desktop-habits.png" alt="Habits on desktop" width="460"> |
+| **✨ AI summary & analytics**<br><sub>This week / this month, highlights and suggestions; weekly charts</sub> | <img src="Screenshots/phone-ai-summary.png" alt="AI summary on a phone" width="200"> | <img src="Screenshots/desktop-ai-summary.png" alt="Analytics with the AI summary on desktop" width="460"> |
+| **📈 Weekly charts**<br><sub>Income vs expenses, daily productivity, best day</sub> | <img src="Screenshots/phone-analytics.png" alt="Weekly analytics on a phone" width="200"> | <img src="Screenshots/desktop-analytics.png" alt="Weekly analytics on desktop" width="460"> |
+| **📴 Offline & sync**<br><sub>Use it without an account; sync status in Settings</sub> | <img src="Screenshots/phone-login-offline.png" alt="Sign-in with Continue without an account" width="200"> | <img src="Screenshots/desktop-settings.png" alt="Settings: synced just now" width="460"><br><img src="Screenshots/desktop-settings-no-account.png" alt="Settings without an account: not backed up" width="460"> |
+| **🧩 Navigation & sign-in**<br><sub>Phones: a More menu for Wishlist and Settings, tabs keep their state. Desktop: the sign-in page</sub> | <img src="Screenshots/phone-more.png" alt="More menu on a phone" width="200"> | <img src="Screenshots/login%20pc.png" alt="Sign-in page on desktop" width="460"> |
 
-### Phone
-
-<div align="center">
-  <img src="Screenshots/phone-dashboard.png" alt="Dashboard on a phone" width="24%">
-  <img src="Screenshots/phone-tasks.png" alt="Task manager on a phone" width="24%">
-  <img src="Screenshots/phone-expenses.png" alt="Expenses on a phone" width="24%">
-  <img src="Screenshots/phone-habits.png" alt="Habits on a phone" width="24%">
-  <img src="Screenshots/phone-ai-summary.png" alt="AI summary on a phone" width="24%">
-</div>
-
-### Desktop
-
-<div align="center">
-  <img src="Screenshots/desktop-dashboard.png" alt="Dashboard on desktop" width="49%">
-  <img src="Screenshots/desktop-tasks.png" alt="Task manager on desktop" width="49%">
-  <img src="Screenshots/desktop-expenses.png" alt="Expenses on desktop" width="49%">
-  <img src="Screenshots/desktop-ai-summary.png" alt="Analytics with the AI summary on desktop" width="49%">
-  <img src="Screenshots/desktop-wishlist.png" alt="Wishlist on desktop" width="49%">
-  <img src="Screenshots/desktop-scan.png" alt="Scanning a receipt or notes" width="49%">
-</div>
-
-### Dark mode
+### 🌙 Dark mode
 
 <div align="center">
   <img src="Screenshots/phone-dashboard-dark.png" alt="Dashboard in dark mode on a phone" width="24%">
@@ -157,17 +139,32 @@ LifeFlow keeps all your data **on your device** and treats the server as a backu
   <img src="Screenshots/desktop-dashboard-dark.png" alt="Dashboard in dark mode on desktop" width="49%">
 </div>
 
-### Sign in, offline mode and sync
-
+<details>
+<summary><b>🗂️ More close-ups</b> (from an earlier version of the UI, before the 6-tab navigation): budget warning, category manager, monthly budget</summary>
+<br />
 <div align="center">
-  <img src="Screenshots/phone-login-offline.png" alt="Sign-in page with Continue without an account" width="24%">
-  <img src="Screenshots/desktop-settings.png" alt="Settings showing Synced just now" width="37%">
-  <img src="Screenshots/desktop-settings-no-account.png" alt="Settings without an account: Not backed up" width="37%">
+  <img src="Screenshots/Budget%20Exceedingg%20warning.png" alt="Over-budget warning on the dashboard" width="24%">
+  <img src="Screenshots/Custom%20Category.png" alt="Managing expense categories with colours" width="24%">
+  <img src="Screenshots/Set%20Monthly%20Budget.png" alt="Setting a monthly budget" width="24%">
 </div>
-
 </details>
 
-> 📣 **Launch kit:** the cover, feature posters and a square social image are in [`Screenshots/launch/`](Screenshots/launch) (high resolution, ready for a store page, LinkedIn or a portfolio).
+### 📣 Launch kit
+
+High-resolution images for a store page, LinkedIn, a portfolio or a launch post, made from real app screens ([source](Screenshots/launch/source)):
+
+<div align="center">
+  <img src="Screenshots/launch/lifeflow-social-square.jpg" alt="Square social media image" width="32%">
+  <img src="Screenshots/launch/lifeflow-cover.jpg" alt="Cover / banner image" width="64%">
+</div>
+
+| File | Size | Use it for |
+|---|---|---|
+| [`lifeflow-cover.jpg`](Screenshots/launch/lifeflow-cover.jpg) | 3200 × 1800 | README / website banner, LinkedIn featured, store header |
+| [`lifeflow-ai-scanner.jpg`](Screenshots/launch/lifeflow-ai-scanner.jpg) | 3200 × 1800 | The AI scanner feature |
+| [`lifeflow-ai-summaries.jpg`](Screenshots/launch/lifeflow-ai-summaries.jpg) | 3200 × 1800 | The AI summaries feature |
+| [`lifeflow-offline.jpg`](Screenshots/launch/lifeflow-offline.jpg) | 3200 × 1800 | Offline-first and sync |
+| [`lifeflow-social-square.jpg`](Screenshots/launch/lifeflow-social-square.jpg) | 2160 × 2160 | Facebook, Instagram, LinkedIn posts |
 
 ### Video Walkthrough
 
