@@ -56,6 +56,21 @@ class StorageService {
     return _prefs.getString(_serverKey);
   }
 
+  /// Forgets a typed server address that can't work, so the built-in live
+  /// API is used without retyping: the device itself (127.0.0.1/localhost,
+  /// the old default) or lifeflow-api.onrender.com, which belongs to
+  /// someone else (ours got a suffix: lifeflow-api-06bt).
+  Future<void> forgetUnusableServer() async {
+    final saved = _prefs.getString(_serverKey);
+    if (saved == null) return;
+    final host = Uri.tryParse(saved)?.host ?? '';
+    if (host == '127.0.0.1' ||
+        host == 'localhost' ||
+        host == 'lifeflow-api.onrender.com') {
+      await _prefs.remove(_serverKey);
+    }
+  }
+
   Future<void> saveServerUrl(String? url) async {
     if (url == null) {
       await _prefs.remove(_serverKey);

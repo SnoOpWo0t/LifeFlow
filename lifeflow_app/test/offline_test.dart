@@ -265,6 +265,20 @@ void main() {
     });
   });
 
+  test('a typed server that cannot work is forgotten on start', () async {
+    for (final (saved, kept) in [
+      ('http://127.0.0.1:8000/api/v1', false),
+      ('http://lifeflow-api.onrender.com/api/v1', false),
+      ('https://lifeflow-api-06bt.onrender.com/api/v1', true),
+      ('http://192.168.0.113:8000/api/v1', true),
+    ]) {
+      SharedPreferences.setMockInitialValues({'server_url': saved});
+      final storage = StorageService(await SharedPreferences.getInstance());
+      await storage.forgetUnusableServer();
+      expect(storage.getServerUrl() != null, kept, reason: saved);
+    }
+  });
+
   group('signing in', () {
     test('the app opens offline with the account it last saw', () async {
       SharedPreferences.setMockInitialValues({

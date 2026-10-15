@@ -17,6 +17,8 @@
 <br />
 <sub>Always the latest version · works offline, no account needed · <a href="https://github.com/SnoOpWo0t/LifeFlow/releases/latest">smaller arm64 build &amp; release notes</a> · <a href="#3-android-app">how to install</a></sub>
 
+🌐 **Live server:** [`https://lifeflow-api-06bt.onrender.com`](https://lifeflow-api-06bt.onrender.com/up) &nbsp;·&nbsp; the app is already connected to it: just **Sign up**, nothing to type
+
 <br /><br />
 
 [![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
@@ -72,7 +74,7 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
 - **✨ AI summaries** (needs internet and an account): on the Analytics tab, one tap writes a short read of **this week or this month**: a headline, what happened with your money, tasks and habits (compared with the previous period), the highlights, and 2–4 concrete suggestions. Summaries are saved, so opening them again costs nothing, and the app tells you when there's newer data so you can refresh.
 - **🔥 Habit Tracker:** daily check-ins with a small animation (and a vibration on phones), a 7-day view and streaks **calculated from your check-in history**, so they're always accurate. Rename or delete habits from the card menu.
 - **📈 Weekly Analytics:** the AI summary, an income-vs-expenses line chart and a daily productivity bar chart, with clean round-number axes.
-- **🤖 Android app:** an installable APK built for free by GitHub Actions (no Android Studio needed). On the phone, the sign-in screen has a **Server address** setting, so the same APK can talk to your laptop over Wi-Fi while testing, or to the deployed API later.
+- **🤖 Android app:** an installable APK built for free by GitHub Actions (no Android Studio needed). It comes **connected to the live API** (`https://lifeflow-api-06bt.onrender.com`, data in Neon PostgreSQL), so there's nothing to set up; a **Server address** setting on the sign-in screen can point it at a laptop on Wi-Fi for testing.
 - **🌦️ Live Weather:** search any city, or tap **"Use my current location"**. Powered by free, key-less APIs (Open-Meteo, BigDataCloud).
 - **🔐 Accounts & Settings:** token login with server-side logout, profile photos (automatically resized before upload, shown on the dashboard), **appearance that follows your device** or a fixed Light/Dark choice, settings saved to your account, **Export my data** (everything as JSON, or transactions as CSV for spreadsheets; built on the device, so it works offline) and **Delete account** (password-confirmed, removes all data).
 - **🕒 Your own "today":** the app sends your device's timezone, so habits, today's tasks and weekly charts roll over at *your* midnight, wherever you are.
@@ -343,7 +345,7 @@ flutter run -d web-server --web-port 8080     # → http://localhost:8080
 
 **Just want the app?** [Download LifeFlow.apk](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk), open it on your phone and allow *Install unknown apps* once. Then either tap **Continue without an account** (fully offline) or **Sign up**: the app is connected to the live API (`https://lifeflow-api-06bt.onrender.com`, data in Neon PostgreSQL), so accounts, sync, the AI scanner and AI summaries work anywhere. The free server sleeps when idle, so the first sign-in after a break can take up to a minute.
 
-*Updating from 1.1.0?* If you typed a server address before, tap **Server: …** on the sign-in screen and choose **Use default**.
+You never need to type a server address: the app comes connected to the live server, and an old or wrong address typed into an earlier version is forgotten automatically. (**Server: …** on the sign-in screen is only for pointing a test build at your own laptop or server.)
 
 **Building it yourself** needs no Android Studio: on GitHub open **Actions → Android APK → Run workflow** (or push a `v*` tag to publish a release), then download the APK from the run's *Artifacts*. Details, including testing against your laptop over Wi-Fi, are in [HOW_TO_RUN.md](HOW_TO_RUN.md#5--android-app-apk).
 

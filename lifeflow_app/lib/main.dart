@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -5,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/local/local_providers.dart';
 import 'core/local/open_local_db.dart';
 import 'core/network/api_client.dart';
+import 'core/storage/storage_service.dart';
 import 'core/sync/sync_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
@@ -15,6 +17,7 @@ import 'main_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+  if (!kIsWeb) await StorageService(prefs).forgetUnusableServer();
   final db = await openLocalDb();
   try {
     ApiClient.deviceTimezone =
