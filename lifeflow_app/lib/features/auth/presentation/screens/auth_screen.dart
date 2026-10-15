@@ -312,10 +312,54 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 const SizedBox(height: 12),
                 const _ServerButton(),
               ],
+              const SizedBox(height: 20),
+              const _WithoutAccountButton(),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Use the app with no account (or go back to that data). Everything stays on
+/// the device; signing in later uploads it.
+class _WithoutAccountButton extends ConsumerWidget {
+  const _WithoutAccountButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifier = ref.read(authProvider.notifier);
+    final returning = notifier.hasLocalData;
+    return Column(
+      children: [
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.white,
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+            minimumSize: const Size.fromHeight(48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          onPressed: notifier.useWithoutAccount,
+          icon: const Icon(Icons.phone_android),
+          label: Text(
+            returning
+                ? 'Back to my data on this device'
+                : 'Continue without an account',
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          returning
+              ? 'Signing in uploads what you have on this device to the account.'
+              : 'Works offline. Your data stays on this device; sign in any '
+                    'time to back it up and sync.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: _textMuted, fontSize: 12),
+        ),
+      ],
     );
   }
 }

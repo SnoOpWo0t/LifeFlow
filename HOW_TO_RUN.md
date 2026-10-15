@@ -140,8 +140,8 @@ They don't start automatically after a reboot; run the two `systemd-run` lines a
 ## 3. Run the tests
 
 ```bash
-cd lifeflow-api && php artisan test                  # 61 backend tests
-cd lifeflow_app && flutter analyze && flutter test   # static checks + 29 Flutter tests
+cd lifeflow-api && php artisan test                  # 68 backend tests
+cd lifeflow_app && flutter analyze && flutter test   # static checks + 41 Flutter tests
 ```
 
 The same checks run automatically on GitHub for every push (`.github/workflows/ci.yml`).
@@ -157,6 +157,26 @@ flutter build web --release --dart-define=API_BASE_URL=https://your-api.example.
 ```
 
 Free hosting options are covered in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md).
+
+### Using the Neon (PostgreSQL) database
+
+Your laptop keeps SQLite for development. To run the API against Neon (to try it, or on the server):
+
+1. PHP needs its PostgreSQL driver: `sudo apt install php8.3-pgsql` (on Render this is part of the deploy setup).
+2. In `lifeflow-api/.env` (never commit it), switch the connection, using the connection string from Neon's **Connect** dialog:
+   ```
+   DB_CONNECTION=pgsql
+   DB_URL="postgresql://USER:PASSWORD@HOST/neondb?sslmode=require&channel_binding=require"
+   ```
+3. Create the tables: `php artisan migrate --force`.
+
+Switch back to `DB_CONNECTION=sqlite` (and remove `DB_URL`) for everyday development.
+
+### Offline use and sync
+
+The app keeps all data on the device and works without internet. With an account, it syncs with the API through `POST /api/v1/sync` a few seconds after each change, every 5 minutes, when the app comes back to the front, and on pull-to-refresh. Without an account (**Continue without an account** on the sign-in screen) nothing is sent anywhere; signing in later uploads it. Only the AI photo scanner and AI summaries need the server.
+
+After pulling this version, run `php artisan migrate` once: it adds the sync columns (`uuid`, `client_updated_at`, `deleted_at`) and gives existing rows their ids.
 
 ---
 
@@ -174,6 +194,10 @@ You don't need Android Studio or Java: GitHub builds the APK for free (`.github/
 4. Copy one to your phone (Google Drive, USB, Telegram…) and open it. Android asks you to allow **Install unknown apps** for the app you opened it from; allow it once.
 
 To publish a download link for others, bump `version:` in `lifeflow_app/pubspec.yaml`, then push a tag: `git tag v1.0.1 && git push origin v1.0.1`. The APK is attached to a new **GitHub Release**.
+
+### Use it without any server
+
+Tap **Continue without an account**: everything works offline and is saved on the phone. Sign in later (Profile & Settings → **Sign in**) to back it up and sync; the scanner and AI summaries need that.
 
 ### Use it with the API on your laptop (before you deploy)
 

@@ -200,33 +200,7 @@ void main() {
     expect(categoryColor(null), Colors.grey);
   });
 
-  group('paginated transactions', () {
-    Map<String, dynamic> page(int current, int last) => {
-      'data': [
-        {
-          'id': 1,
-          'amount': '760.00', // PostgreSQL sends decimals as text
-          'type': 'expense',
-          'transaction_date': '2026-10-13',
-          'category': {
-            'id': 2,
-            'name': 'Food',
-            'type': 'expense',
-            'color_hex': '#F97316',
-          },
-        },
-      ],
-      'meta': {'current_page': current, 'last_page': last},
-    };
-
-    test('knows when more pages exist', () {
-      final first = TransactionPage.fromJson(page(1, 3));
-      expect(first.items.single.amount, 760);
-      expect(first.items.single.category?.name, 'Food');
-      expect(first.hasMore, isTrue);
-      expect(TransactionPage.fromJson(page(3, 3)).hasMore, isFalse);
-    });
-
+  group('transactions', () {
     test('category totals parse numbers sent as text', () {
       final spending = CategorySpending.fromJson({
         'name': 'Food',
@@ -274,7 +248,7 @@ void main() {
       'WishlistItem parses PostgreSQL string numbers and SQLite numbers',
       () {
         final fromPostgres = WishlistItem.fromJson({
-          'id': 1,
+          'id': 'w1',
           'title': 'Mechanical Keyboard',
           'estimated_price': '150.75',
           'priority': 'HIGH',
@@ -285,7 +259,7 @@ void main() {
         expect(fromPostgres.isPurchased, isTrue);
 
         final fromSqlite = WishlistItem.fromJson({
-          'id': 2,
+          'id': 'w2',
           'title': 'Coffee Beans',
           'estimated_price': 20,
           'is_purchased': false,
@@ -299,19 +273,19 @@ void main() {
     test('WishlistStats calculates progress and totals accurately', () async {
       final items = [
         WishlistItem(
-          id: 1,
+          id: '1',
           title: 'Laptop',
           estimatedPrice: 1000,
           isPurchased: true,
         ),
         WishlistItem(
-          id: 2,
+          id: '2',
           title: 'Monitor',
           estimatedPrice: 300,
           isPurchased: false,
         ),
         WishlistItem(
-          id: 3,
+          id: '3',
           title: 'Desk',
           estimatedPrice: 200,
           isPurchased: false,
@@ -337,7 +311,7 @@ void main() {
 
     test('WishlistItem parses and serializes custom category properly', () {
       final item = WishlistItem.fromJson({
-        'id': 10,
+        'id': '10',
         'title': 'Dior Sauvage Elixir',
         'estimated_price': 160.0,
         'category': 'Perfume',
@@ -372,9 +346,9 @@ void main() {
       'Wishlist category filter and categories provider work accurately',
       () async {
         final items = [
-          WishlistItem(id: 1, title: 'Perfume Bottle', category: 'Perfume'),
-          WishlistItem(id: 2, title: 'Mechanical Keyboard', category: 'Tech'),
-          WishlistItem(id: 3, title: 'Mystery Gift'),
+          WishlistItem(id: '1', title: 'Perfume Bottle', category: 'Perfume'),
+          WishlistItem(id: '2', title: 'Mechanical Keyboard', category: 'Tech'),
+          WishlistItem(id: '3', title: 'Mystery Gift'),
         ];
 
         final container = ProviderContainer(
@@ -517,7 +491,7 @@ void main() {
             expenseRepositoryProvider.overrideWithValue(expenses),
             categoriesProvider.overrideWith(
               (ref) async => [
-                ExpenseCategory(id: 1, name: 'Food', type: 'expense'),
+                ExpenseCategory(id: 'food', name: 'Food', type: 'expense'),
               ],
             ),
           ],
@@ -544,8 +518,8 @@ void main() {
         [for (final t in expenses.transactions) t['amount']],
         [540.0, 270.0, 45.0],
       );
-      expect(expenses.transactions.first['category_id'], 1);
-      expect(expenses.transactions[1]['category_id'], 99);
+      expect(expenses.transactions.first['category_id'], 'food');
+      expect(expenses.transactions[1]['category_id'], 'new');
       expect(
         expenses.transactions.every((t) => t['account'] == 'cash'),
         isTrue,
@@ -622,19 +596,19 @@ class _MockWishlistNotifier extends AsyncNotifier<List<WishlistItem>>
   _MockWishlistNotifier(this._initial);
 
   @override
-  Future<List<WishlistItem>> build() async => _initial;
+  List<WishlistItem> build() => _initial;
 
   @override
   Future<void> addItem(Map<String, dynamic> data) async {}
 
   @override
-  Future<void> updateItem(int id, Map<String, dynamic> data) async {}
+  Future<void> updateItem(String id, Map<String, dynamic> data) async {}
 
   @override
   Future<void> togglePurchased(WishlistItem item) async {}
 
   @override
-  Future<void> deleteItem(int id) async {}
+  Future<void> deleteItem(String id) async {}
 
   @override
   Future<void> reorder(int oldIndex, int newIndex) async {}
@@ -669,7 +643,7 @@ class _FakeExpenseRepository implements ExpenseRepository {
   Future<ExpenseCategory> createCategory(Map<String, dynamic> data) async {
     createdCategories.add(data['name'] as String);
     return ExpenseCategory(
-      id: 99,
+      id: 'new',
       name: data['name'] as String,
       type: data['type'] as String,
     );
@@ -679,7 +653,7 @@ class _FakeExpenseRepository implements ExpenseRepository {
   Future<Transaction> addTransaction(Map<String, dynamic> data) async {
     transactions.add(data);
     return Transaction(
-      id: transactions.length,
+      id: '${transactions.length}',
       amount: (data['amount'] as num).toDouble(),
       type: data['type'] as String,
       transactionDate: DateTime.now(),

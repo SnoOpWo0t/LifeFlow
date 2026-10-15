@@ -11,6 +11,7 @@ use App\Http\Controllers\HabitController;
 use App\Http\Controllers\InsightController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScanController;
+use App\Http\Controllers\SyncController;
 use App\Http\Controllers\WishlistController;
 
 Route::prefix('v1')->group(function () {
@@ -31,6 +32,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
         Route::get('/calendar', [CalendarController::class, 'month']);
         Route::get('/calendar/day', [CalendarController::class, 'day']);
+
+        // Offline-first: the app sends what changed on the phone, gets what changed elsewhere.
+        Route::post('/sync', SyncController::class)->middleware('throttle:60,1');
 
         // AI photo reader: receipts, notes and shopping lists -> entries to review.
         Route::post('/scan', ScanController::class);

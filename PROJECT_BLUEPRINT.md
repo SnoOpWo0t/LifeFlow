@@ -9,6 +9,8 @@ Ideas that aren't built yet are listed separately at the end, under [Planned](#4
 
 Laravel Eloquent on **SQLite** in development and **PostgreSQL** in production. Every user-owned table has a `user_id` foreign key with `ON DELETE CASCADE`, so deleting a user removes all their data.
 
+**Synced tables** (`tasks`, `expense_categories`, `transactions`, `habits`, `habit_logs`, `wishlist_items`) also have `uuid` (unique; the id the app gave the record on the device), `client_updated_at` (when it was last edited, which decides which edit wins) and `deleted_at` (soft deletes, so a delete reaches other devices). A habit log's uuid is `<habit uuid>_<YYYY-MM-DD>`, so one day's check-in is one row whichever device made it. The `Syncable` model trait (`app/Models/Concerns/`) fills these in for normal API writes too.
+
 ### users
 `id`, `name`, `email` (unique), `password` (hashed), `avatar_path` (file name only; the API hands out signed, expiring links), `preferences` (JSON), `timezone` (IANA name reported by the app, e.g. `Asia/Dhaka`), `provider`, `provider_id` (reserved for Google sign-in), `email_verified_at`, timestamps
 
@@ -49,7 +51,7 @@ Unique: `(user_id, period, period_start)`: one saved summary per week or month; 
 ## 2. API endpoints
 
 All under `/api/v1`. Everything except register, login and (signed) avatar links needs an `Authorization: Bearer <token>` header (Laravel Sanctum). The app also sends `X-Timezone: <IANA name>`, which the server stores on the user.
-**42 endpoints** in total. Responses are built by API Resources (`app/Http/Resources/`); single objects are returned unwrapped.
+**43 endpoints** in total. Responses are built by API Resources (`app/Http/Resources/`); single objects are returned unwrapped.
 
 ### Authentication
 | Method | Path | What it does |
@@ -129,6 +131,11 @@ All under `/api/v1`. Everything except register, login and (signed) avatar links
 | DELETE | `/wishlist/{id}` | Delete item |
 | POST | `/wishlist/reorder` | Bulk reorder (`{"order": [id1, id2, ...]}`) |
 
+### Sync (offline-first)
+| Method | Path | What it does |
+|---|---|---|
+| POST | `/sync` | Body `{"since": <cursor or null>, "changes": {"categories": [...], "tasks": [...], "habits": [...], "habit_logs": [...], "transactions": [...], "wishlist": [...]}}`. Each record is `{"id": "<uuid>", ...fields, "updated_at", "deleted_at", "created_at"}`, foreign keys as uuids (`transactions.category_id`, `habit_logs.habit_id`). The server keeps the newer edit (by `updated_at`), skips records created and deleted offline, and rejects invalid records or someone else's uuid. Reply: `{"cursor", "changes": {...every record changed since `since`, deletes included...}, "rejected": {"tasks": ["<uuid>"]}}`; an older edit that lost comes back with the server's version. Up to 1000 records per collection per call; limited to 60 calls a minute |
+
 ### Rules that apply everywhere
 - **Ownership:** updates and deletes go through Laravel Policies (`app/Policies/`). Another user's record returns **403**. Lists only ever query the signed-in user's rows.
 - **Validation:** every write is validated on the server by a Form Request (one class per action, `app/Http/Requests/`); failures return **422** with per-field messages, which the app shows under the matching field.
@@ -138,18 +145,22 @@ All under `/api/v1`. Everything except register, login and (signed) avatar links
 
 ## 3. Flutter app structure
 
-Organised by feature. Each feature has `data/` (API calls), `domain/` (models) and `presentation/` (Riverpod providers and screens).
+Organised by feature. Each feature has `data/` (repositories over the on-device database, or API calls for online-only features), `domain/` (models) and `presentation/` (Riverpod providers and screens).
+
+**Offline-first:** tasks, money, habits and the wishlist are read and written only through `LocalDb` (`core/local/`, sembast: a file on Android/desktop, IndexedDB on the web). It keeps everything in memory too, so reads are instant and providers return synchronously; every change bumps `dataVersionProvider`, which the providers watch. The dashboard, calendar, analytics, charts and streaks are calculated on the device. `SyncService` (`core/sync/`) uploads records marked `_dirty` and applies the server's changes when signed in; `syncProvider` runs it 3 s after edits, every 5 min, on resume and on pull-to-refresh. Without an account (`User.local()`, id 0) nothing is synced. The device's data belongs to the account that signed in (`owner` in the database's meta): signing in with a different account clears it, no-account data is uploaded to the new account, and logging out clears it. The AI scanner, AI summaries, profile photo and account deletion call the API directly.
 
 ```text
 lifeflow_app/lib/
 ├── core/
+│   ├── local/          # LocalDb: on-device database, in-memory copy, tombstones, change stream; open_local_db (IO / web)
+│   ├── sync/           # SyncService (POST /sync) and syncProvider (when to sync, status for Settings)
 │   ├── files/          # Save downloaded files (browser download on web, Downloads folder on mobile)
 │   ├── network/        # Dio client: adds the token and X-Timezone, signs out on 401; API base URL (--dart-define, or the server address chosen on the phone)
-│   ├── storage/        # Token and server address storage (SharedPreferences)
+│   ├── storage/        # Token, cached account (for opening offline), no-account flag, server address (SharedPreferences)
 │   ├── theme/          # Material 3 light/dark themes (Outfit font)
-│   └── utils/          # formatMoney() etc.
+│   └── utils/          # formatMoney(), dateKey() etc.
 ├── features/
-│   ├── auth/           # Sign in / sign up screen (plus "Server: …" address on phones), AuthNotifier (loads account settings on sign-in)
+│   ├── auth/           # Sign in / sign up / "Continue without an account" (plus "Server: …" on phones); AuthNotifier (account settings, device data ownership)
 │   ├── dashboard/      # Summary screen, live weather provider (Open-Meteo)
 │   ├── calendar/       # Dashboard calendar: month grid / week strip, dots per day, day details
 │   ├── tasks/          # Kanban board (lanes on desktop, lane switcher on phones)
@@ -159,7 +170,7 @@ lifeflow_app/lib/
 │   ├── habits/         # Habit cards, check-ins, rename/delete
 │   ├── analytics/      # AI summary card + weekly charts
 │   ├── insights/       # AI summaries: repository (GET/POST /insights), models, summary card
-│   └── settings/       # Profile photo, appearance (System/Light/Dark), weather location, delete account
+│   └── settings/       # Sync status card, profile photo, appearance, weather location, export (built on the device), log out / delete account / erase device data
 ├── main.dart           # Providers, theme, signed-in vs signed-out routing
 └── main_screen.dart    # Bottom navigation (phones) / navigation rail (≥800px)
 ```

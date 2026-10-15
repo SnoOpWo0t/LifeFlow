@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/local/local_providers.dart';
 import '../../data/wishlist_repository.dart';
 import '../../domain/wishlist_item.dart';
 
 final wishlistRepositoryProvider = Provider<WishlistRepository>((ref) {
-  return WishlistRepository(ref.watch(apiClientProvider));
+  return WishlistRepository(ref.watch(localDbProvider));
 });
 
 final wishlistProvider =
@@ -12,94 +12,44 @@ final wishlistProvider =
       WishlistNotifier.new,
     );
 
+/// Read from the device; rebuilds after any change.
 class WishlistNotifier extends AsyncNotifier<List<WishlistItem>> {
   @override
-  Future<List<WishlistItem>> build() async {
+  List<WishlistItem> build() {
+    ref.watch(dataVersionProvider);
     return ref.watch(wishlistRepositoryProvider).fetchWishlist();
   }
 
   Future<void> addItem(Map<String, dynamic> data) async {
-    final repo = ref.read(wishlistRepositoryProvider);
-    final previous = state.value ?? [];
-
-    final newItem = await repo.createItem(data);
-    state = AsyncData([newItem, ...previous]);
+    await ref.read(wishlistRepositoryProvider).createItem(data);
   }
 
-  Future<void> updateItem(int id, Map<String, dynamic> data) async {
-    final repo = ref.read(wishlistRepositoryProvider);
-    final previous = state.value ?? [];
-
-    final updated = await repo.updateItem(id, data);
-    state = AsyncData(
-      previous.map((item) => item.id == id ? updated : item).toList(),
-    );
+  Future<void> updateItem(String id, Map<String, dynamic> data) async {
+    await ref.read(wishlistRepositoryProvider).updateItem(id, data);
   }
 
   Future<void> togglePurchased(WishlistItem item) async {
-    final repo = ref.read(wishlistRepositoryProvider);
-    final previous = state.value ?? [];
-    final nextStatus = !item.isPurchased;
-
-    // Optimistic update
-    state = AsyncData(
-      previous
-          .map((i) => i.id == item.id ? i.copyWith(isPurchased: nextStatus) : i)
-          .toList(),
-    );
-
-    try {
-      final serverItem = await repo.updateItem(item.id, {
-        'is_purchased': nextStatus,
-      });
-      state = AsyncData(
-        (state.value ?? previous)
-            .map((i) => i.id == item.id ? serverItem : i)
-            .toList(),
-      );
-    } catch (e) {
-      state = AsyncData(previous); // Revert on failure
-      rethrow;
-    }
+    await ref.read(wishlistRepositoryProvider).updateItem(item.id, {
+      'is_purchased': !item.isPurchased,
+    });
   }
 
-  Future<void> deleteItem(int id) async {
-    final repo = ref.read(wishlistRepositoryProvider);
-    final previous = state.value ?? [];
-
-    // Optimistic delete
-    state = AsyncData(previous.where((item) => item.id != id).toList());
-
-    try {
-      await repo.deleteItem(id);
-    } catch (e) {
-      state = AsyncData(previous); // Revert on failure
-      rethrow;
-    }
+  Future<void> deleteItem(String id) async {
+    await ref.read(wishlistRepositoryProvider).deleteItem(id);
   }
 
   Future<void> reorder(int oldIndex, int newIndex) async {
-    final previous = state.value ?? [];
-    if (oldIndex < 0 || oldIndex >= previous.length) return;
-    if (newIndex < 0 || newIndex > previous.length) return;
+    final items = List<WishlistItem>.from(state.value ?? []);
+    if (oldIndex < 0 || oldIndex >= items.length) return;
+    if (newIndex < 0 || newIndex > items.length) return;
+    if (oldIndex < newIndex) newIndex -= 1;
 
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-
-    final items = List<WishlistItem>.from(previous);
     final moved = items.removeAt(oldIndex);
     items.insert(newIndex, moved);
-
-    // Apply optimistic reorder
-    state = AsyncData(items);
-
-    try {
-      final orderIds = items.map((i) => i.id).toList();
-      await ref.read(wishlistRepositoryProvider).reorder(orderIds);
-    } catch (e) {
-      state = AsyncData(previous); // Revert
-    }
+    state = AsyncData(items); // show the new order straight away
+    await ref
+        .read(wishlistRepositoryProvider)
+        .reorder(items.map((i) => i.id).toList());
   }
 }
 
@@ -288,7 +238,7 @@ final filteredWishlistProvider = Provider<List<WishlistItem>>((ref) {
       break;
     case 'custom':
     default:
-      // default server order (unpurchased first, then sort_order)
+      // stored order (unpurchased first, then sort_order)
       break;
   }
 

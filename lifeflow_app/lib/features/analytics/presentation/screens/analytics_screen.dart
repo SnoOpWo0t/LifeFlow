@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../insights/presentation/ai_summary_card.dart';
 import '../../../../core/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/sync/sync_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/analytics_provider.dart';
 import '../../domain/analytics_models.dart';
@@ -24,9 +25,7 @@ class AnalyticsScreen extends ConsumerWidget {
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(weeklyAnalyticsProvider);
-        },
+        onRefresh: () => ref.read(syncProvider.notifier).syncNow(),
         child: analyticsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, stack) => ListView(

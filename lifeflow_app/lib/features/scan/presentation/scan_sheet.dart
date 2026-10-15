@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/presentation/providers/auth_provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/utils/formatters.dart';
@@ -36,6 +37,31 @@ const _accounts = [
 /// sheet. [target]: 'money' (receipts and notes) or 'wishlist'.
 Future<void> startScan(BuildContext context, {required String target}) async {
   final wishlist = target == 'wishlist';
+  final user = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(authProvider).value;
+  if (user == null || user.isLocal) {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.document_scanner_outlined),
+        title: const Text('Scanning needs an account'),
+        content: const Text(
+          'The photo is read by AI on the LifeFlow server, so it needs an '
+          'account and internet. Everything else works without one. '
+          'Sign in from Profile & Settings.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
   final source = await showModalBottomSheet<ImageSource>(
     context: context,
     showDragHandle: true,
@@ -361,12 +387,12 @@ class _ScanReviewSheetState extends ConsumerState<ScanReviewSheet> {
   Future<void> _saveMoney(List<_Line> lines) async {
     final repo = ref.read(expenseRepositoryProvider);
     final existing = await ref.read(categoriesProvider.future);
-    final ids = <String, int>{
+    final ids = <String, String>{
       for (final c in existing) '${c.type}:${c.name.toLowerCase()}': c.id,
     };
     final created = <String>[];
 
-    Future<int?> categoryId(String type, String name) async {
+    Future<String?> categoryId(String type, String name) async {
       if (name.isEmpty) return null;
       final key = '$type:${name.toLowerCase()}';
       if (ids.containsKey(key)) return ids[key];

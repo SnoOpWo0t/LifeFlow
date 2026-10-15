@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/sync/sync_provider.dart';
 import '../../domain/habit_models.dart';
 import '../providers/habit_provider.dart';
 
@@ -84,7 +85,7 @@ class HabitScreen extends ConsumerWidget {
           final perRow = isWide ? 2 : 1;
           final rowCount = (habits.length / perRow).ceil();
           return RefreshIndicator(
-            onRefresh: () => ref.refresh(habitsProvider.future),
+            onRefresh: () => ref.read(syncProvider.notifier).syncNow(),
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               // Bottom padding keeps the floating "Add Habit" button off the last card.
@@ -309,7 +310,7 @@ class HabitScreen extends ConsumerWidget {
                           .read(habitsProvider.notifier)
                           .addHabit(
                             Habit(
-                              id: 0,
+                              id: '',
                               name: nameController.text,
                               colorHex: selectedColor,
                               currentStreak: 0,

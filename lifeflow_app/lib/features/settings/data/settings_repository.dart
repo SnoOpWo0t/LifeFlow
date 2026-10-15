@@ -145,24 +145,12 @@ class SettingsRepository {
     }
   }
 
-  /// Download all account data. [format]: 'json' (everything) or 'csv'
-  /// (transactions only).
-  Future<({List<int> bytes, String filename, String mimeType})> exportData(
-    String format,
-  ) async {
-    final response = await _apiClient.dio.get<List<int>>(
-      '/profile/export',
-      queryParameters: {'format': format},
-      options: Options(responseType: ResponseType.bytes),
-    );
-    final disposition = response.headers.value('content-disposition') ?? '';
-    final match = RegExp(r'filename="?([^";]+)"?').firstMatch(disposition);
-    return (
-      bytes: response.data ?? const [],
-      filename: match?.group(1) ?? 'lifeflow-export.$format',
-      mimeType: format == 'csv' ? 'text/csv' : 'application/json',
-    );
-  }
+  /// The settings as saved, for "Export my data".
+  Map<String, dynamic> get preferences => {
+    _themeKey: themeMode.name,
+    _budgetKey: monthlyBudget,
+    _locationKey: weatherLocation.toJson(),
+  };
 
   Future<String> uploadAvatar(List<int> bytes, String filename) async {
     final formData = FormData.fromMap({

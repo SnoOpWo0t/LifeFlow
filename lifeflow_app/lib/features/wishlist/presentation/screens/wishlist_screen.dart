@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../scan/presentation/scan_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/sync/sync_provider.dart';
 import '../../domain/wishlist_item.dart';
 import '../../domain/wishlist_category_utils.dart';
 import '../providers/wishlist_provider.dart';
@@ -199,10 +200,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
         ),
         data: (allItems) {
           return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(wishlistProvider);
-              await ref.read(wishlistProvider.future);
-            },
+            onRefresh: () => ref.read(syncProvider.notifier).syncNow(),
             child: CustomScrollView(
               slivers: [
                 // Top Hero Summary Banner

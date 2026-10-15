@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/sync/sync_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/expense_provider.dart';
 import '../../../scan/presentation/scan_sheet.dart';
@@ -69,12 +70,7 @@ class ExpenseScreen extends ConsumerWidget {
       ),
       body: Builder(
         builder: (context) {
-          Future<void> refresh() async {
-            ref.invalidate(transactionsProvider);
-            ref.invalidate(chartDataProvider);
-            ref.invalidate(spendingByCategoryProvider);
-            await ref.read(transactionsProvider.future);
-          }
+          Future<void> refresh() => ref.read(syncProvider.notifier).syncNow();
 
           // Infinite scroll: fetch the next page shortly before the end.
           bool onScroll(ScrollNotification notification) {
@@ -305,7 +301,7 @@ class ExpenseScreen extends ConsumerWidget {
           : existing.amount.toStringAsFixed(existing.amount % 1 == 0 ? 0 : 2),
     );
     final noteController = TextEditingController(text: existing?.note ?? '');
-    int? selectedCategoryId = existing?.category?.id;
+    String? selectedCategoryId = existing?.category?.id;
     String type = existing?.type ?? 'expense';
     String selectedAccount = existing?.account ?? 'cash';
     DateTime selectedDate = existing?.transactionDate ?? DateTime.now();
@@ -409,7 +405,7 @@ class ExpenseScreen extends ConsumerWidget {
                             style: TextStyle(color: theme.colorScheme.error),
                           ),
                           data: (categories) {
-                            return DropdownButtonFormField<int>(
+                            return DropdownButtonFormField<String>(
                               decoration: InputDecoration(
                                 labelText: 'Category',
                                 prefixIcon: const Icon(Icons.category),

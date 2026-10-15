@@ -1,30 +1,46 @@
-import '../../../core/network/api_client.dart';
+import '../../../core/local/local_db.dart';
 import '../domain/task.dart';
 
+/// Tasks, stored on the device (synced by SyncService).
 class TaskRepository {
-  final ApiClient _apiClient;
+  final LocalDb _db;
+  static const _store = 'tasks';
 
-  TaskRepository(this._apiClient);
+  TaskRepository(this._db);
 
-  Future<List<Task>> fetchTasks() async {
-    final response = await _apiClient.dio.get('/tasks');
-    return (response.data as List).map((json) => Task.fromJson(json)).toList();
+  /// By due date; tasks without one last.
+  List<Task> fetchTasks() {
+    final tasks = _db.all(_store).map(Task.fromJson).toList();
+    tasks.sort((a, b) {
+      if (a.dueDate == null || b.dueDate == null) {
+        return a.dueDate == null ? (b.dueDate == null ? 0 : 1) : -1;
+      }
+      return a.dueDate!.compareTo(b.dueDate!);
+    });
+    return tasks;
   }
 
   Future<Task> createTask(Task task) async {
-    final response = await _apiClient.dio.post('/tasks', data: task.toJson());
-    return Task.fromJson(response.data);
+    return Task.fromJson(await _db.save(_store, task.toJson()));
   }
 
+  /// A recurring task marked done rolls its due date forward and goes back
+  /// to "todo".
   Future<Task> updateTask(Task task) async {
-    final response = await _apiClient.dio.put(
-      '/tasks/${task.id}',
-      data: task.toJson(),
-    );
-    return Task.fromJson(response.data);
+    final data = task.toJson();
+    final rule = _db.get(_store, task.id)?['recurrence_rule'] as String?;
+    if (data['status'] == 'done' && rule != null) {
+      final d = task.dueDate ?? DateTime.now();
+      final next = switch (rule) {
+        'daily' => DateTime(d.year, d.month, d.day + 1, d.hour, d.minute),
+        'weekly' => DateTime(d.year, d.month, d.day + 7, d.hour, d.minute),
+        _ => DateTime(d.year, d.month + 1, d.day, d.hour, d.minute),
+      };
+      data['due_date'] = next.toIso8601String();
+      data['status'] = 'todo';
+    }
+    return Task.fromJson(await _db.save(_store, data, id: task.id));
   }
 
-  Future<void> deleteTask(int id) async {
-    await _apiClient.dio.delete('/tasks/$id');
-  }
+  Future<void> deleteTask(String id) => _db.delete(_store, id);
 }

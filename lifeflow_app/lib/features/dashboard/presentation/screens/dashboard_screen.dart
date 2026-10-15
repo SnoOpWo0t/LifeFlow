@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/sync/sync_provider.dart';
 import '../providers/weather_provider.dart';
 import 'dart:ui';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
-import '../../../calendar/presentation/providers/calendar_provider.dart';
 import '../../../calendar/presentation/widgets/dashboard_calendar.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../settings/presentation/widgets/city_picker.dart';
@@ -537,11 +537,7 @@ class DashboardScreen extends ConsumerWidget {
           const gap = SizedBox(height: 16);
 
           return RefreshIndicator(
-            onRefresh: () {
-              ref.invalidate(calendarMonthProvider);
-              ref.invalidate(calendarDayProvider);
-              return ref.refresh(dashboardSummaryProvider.future);
-            },
+            onRefresh: () => ref.read(syncProvider.notifier).syncNow(),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 // Two columns once there's room, so everything fits above the fold on desktop.
@@ -876,9 +872,7 @@ class DashboardScreen extends ConsumerWidget {
                             formatMoney(balance),
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isNegative
-                                  ? Colors.redAccent
-                                  : acc.color,
+                              color: isNegative ? Colors.redAccent : acc.color,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),

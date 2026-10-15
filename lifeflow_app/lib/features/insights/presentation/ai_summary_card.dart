@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/sync/sync_provider.dart';
+import '../../auth/presentation/providers/auth_provider.dart';
 import '../data/insights_repository.dart';
 import '../domain/ai_insight.dart';
 
@@ -39,6 +41,8 @@ class _AiSummaryCardState extends ConsumerState<AiSummaryCard> {
       _error = null;
     });
     try {
+      // The summary is written from the server's copy: upload the latest first.
+      await ref.read(syncProvider.notifier).syncNow();
       await ref.read(insightsRepositoryProvider).generate(_period);
       ref.invalidate(insightProvider(_period));
     } on InsightException catch (e) {
@@ -52,7 +56,9 @@ class _AiSummaryCardState extends ConsumerState<AiSummaryCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final state = ref.watch(insightProvider(_period));
+    final isLocal = ref.watch(
+      authProvider.select((a) => a.value?.isLocal ?? true),
+    );
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -111,17 +117,29 @@ class _AiSummaryCardState extends ConsumerState<AiSummaryCard> {
             ],
           ),
           const SizedBox(height: 16),
-          state.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (_, _) => TextButton(
-              onPressed: () => ref.invalidate(insightProvider(_period)),
-              child: const Text("Couldn't load the summary. Tap to retry."),
-            ),
-            data: (data) => _buildBody(theme, data),
-          ),
+          if (isLocal)
+            const Text(
+              'AI summaries are written on the LifeFlow server, so they need '
+              'an account and internet. Sign in from Profile & Settings to '
+              'back up your data and get them.',
+              style: TextStyle(color: Colors.grey),
+            )
+          else
+            ref
+                .watch(insightProvider(_period))
+                .when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (_, _) => TextButton(
+                    onPressed: () => ref.invalidate(insightProvider(_period)),
+                    child: const Text(
+                      "Couldn't load the summary (are you online?). Tap to retry.",
+                    ),
+                  ),
+                  data: (data) => _buildBody(theme, data),
+                ),
         ],
       ),
     );

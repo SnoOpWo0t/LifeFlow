@@ -21,7 +21,7 @@ class HabitController extends Controller
 
         // Streaks go stale when a day is missed without any toggle, so refresh
         // them from the logs before returning.
-        $habits->each(fn (Habit $habit) => $this->recalculateStreaks($habit, $today));
+        $habits->each(fn (Habit $habit) => $habit->refreshStreaks($today));
 
         $sevenDaysAgo = $today->copy()->subDays(6)->toDateString();
         $habits->load(['logs' => function ($query) use ($sevenDaysAgo) {
@@ -54,15 +54,18 @@ class HabitController extends Controller
 
         $localToday = $request->user()->localNow()->startOfDay();
         $today = $localToday->toDateString();
-        $existingLog = $habit->logs()->whereDate('completed_date', $today)->first();
+        // Unchecking leaves a tombstone (for sync), so checking again restores it.
+        $log = $habit->logs()->withTrashed()->whereDate('completed_date', $today)->first();
 
-        if ($existingLog) {
-            $existingLog->delete();
-        } else {
+        if (! $log) {
             $habit->logs()->create(['completed_date' => $today]);
+        } elseif ($log->trashed()) {
+            $log->restore();
+        } else {
+            $log->delete();
         }
 
-        $this->recalculateStreaks($habit, $localToday);
+        $habit->refreshStreaks($localToday);
 
         return new HabitResource($habit->load('logs'));
     }
@@ -73,50 +76,5 @@ class HabitController extends Controller
 
         $habit->delete();
         return response()->json(null, 204);
-    }
-
-    /**
-     * Derive streaks from the logs instead of incrementing counters, which
-     * drifted whenever a day was missed or a check-in was undone.
-     *
-     * current_streak: consecutive days ending today, or ending yesterday if
-     * today isn't checked yet (the streak is still alive until midnight).
-     */
-    private function recalculateStreaks(Habit $habit, Carbon $today): void
-    {
-        $days = $habit->logs()
-            ->orderBy('completed_date')
-            ->pluck('completed_date')
-            ->map(fn ($date) => Carbon::parse($date)->toDateString())
-            ->unique()
-            ->values();
-
-        $longest = 0;
-        $run = 0;
-        $previous = null;
-        foreach ($days as $day) {
-            $continues = $previous !== null
-                && Carbon::parse($previous)->addDay()->toDateString() === $day;
-            $run = $continues ? $run + 1 : 1;
-            $longest = max($longest, $run);
-            $previous = $day;
-        }
-
-        $logged = $days->flip();
-        $cursor = $today->copy();
-        if (! $logged->has($cursor->toDateString())) {
-            $cursor->subDay();
-        }
-        $current = 0;
-        while ($logged->has($cursor->toDateString())) {
-            $current++;
-            $cursor->subDay();
-        }
-
-        if ($habit->current_streak !== $current || $habit->longest_streak !== $longest) {
-            $habit->current_streak = $current;
-            $habit->longest_streak = $longest;
-            $habit->save();
-        }
     }
 }

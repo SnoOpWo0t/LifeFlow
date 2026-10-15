@@ -213,7 +213,7 @@ class ApiTest extends TestCase
         $this->assertEquals(250, $tx->fresh()->amount);
 
         $this->deleteJson("/api/v1/transactions/{$tx->id}")->assertNoContent();
-        $this->assertDatabaseMissing('transactions', ['id' => $tx->id]);
+        $this->assertSoftDeleted('transactions', ['id' => $tx->id]);
     }
 
     public function test_transactions_cannot_use_another_users_category(): void

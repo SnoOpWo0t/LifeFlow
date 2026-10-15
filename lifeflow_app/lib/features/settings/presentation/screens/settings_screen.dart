@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../../core/files/file_saver.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/local/local_providers.dart';
+import '../../../../core/sync/sync_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/local_export.dart';
 import '../../data/settings_repository.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/city_picker.dart';
@@ -75,7 +78,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = ref.watch(themeModeProvider);
     final location = ref.watch(weatherLocationProvider);
     final avatarUrl = _avatarFailedToLoad ? null : user?.avatarUrl;
-    final initials = _initials(user?.name);
+    final initials = _initials(user == null || user.isLocal ? null : user.name);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile & Settings')),
@@ -123,32 +126,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                       ))
                               : null),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: InkWell(
-                      onTap: _isUploading ? null : _pickAndUploadImage,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
+                  if (!(user?.isLocal ?? false))
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: InkWell(
+                        onTap: _isUploading ? null : _pickAndUploadImage,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             Center(
               child: Text(
-                user?.name ?? 'User',
+                user == null || user.isLocal ? 'No account' : user.name,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -157,11 +161,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             Center(
               child: Text(
-                user?.email ?? '',
+                user == null || user.isLocal
+                    ? 'Data saved on this device'
+                    : user.email,
                 style: const TextStyle(color: Colors.grey),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+            const _SyncCard(),
+            const SizedBox(height: 24),
             Text(
               'Preferences',
               style: TextStyle(
@@ -257,28 +265,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: _exportData,
             ),
             const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text(
-                'Log out',
-                style: TextStyle(color: Colors.redAccent),
+            if (user?.isLocal ?? false)
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_forever_outlined,
+                  color: Colors.redAccent,
+                ),
+                title: const Text(
+                  'Erase data on this device',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+                subtitle: const Text('Removes everything and starts over'),
+                onTap: _confirmErase,
+              )
+            else ...[
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.redAccent),
+                title: const Text(
+                  'Log out',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+                onTap: _confirmLogout,
               ),
-              onTap: _confirmLogout,
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.delete_forever_outlined,
-                color: Colors.redAccent,
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_forever_outlined,
+                  color: Colors.redAccent,
+                ),
+                title: const Text(
+                  'Delete account',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+                subtitle: const Text(
+                  'Permanently removes your account and all its data',
+                ),
+                onTap: _confirmDeleteAccount,
               ),
-              title: const Text(
-                'Delete account',
-                style: TextStyle(color: Colors.redAccent),
-              ),
-              subtitle: const Text(
-                'Permanently removes your account and all its data',
-              ),
-              onTap: _confirmDeleteAccount,
-            ),
+            ],
           ],
         ),
       ),
@@ -315,9 +338,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (format == null) return;
 
     try {
-      final export = await ref
-          .read(settingsRepositoryProvider)
-          .exportData(format);
+      final export = LocalExporter(ref.read(localDbProvider)).export(
+        format,
+        user: ref.read(authProvider).value!,
+        preferences: ref.read(settingsRepositoryProvider).preferences,
+      );
       final savedTo = await saveBytes(
         export.bytes,
         export.filename,
@@ -417,12 +442,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     passwordCtrl.dispose();
   }
 
+  Future<void> _confirmErase() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Erase everything?'),
+        content: const Text(
+          "Your tasks, money, habits and wishlist on this device are deleted. "
+          "There's no account backup, so this can't be undone.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Erase'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) ref.read(authProvider.notifier).eraseLocalData();
+  }
+
   Future<void> _confirmLogout() async {
+    // Try to upload unsynced changes first; warn if some are still waiting.
+    await ref.read(syncProvider.notifier).syncNow();
+    if (!mounted) return;
+    final pending = ref.read(localDbProvider).pendingCount;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Log out?'),
-        content: const Text("You'll need to sign in again to see your data."),
+        content: Text(
+          pending == 0
+              ? "Your data is saved to your account. It's removed from this "
+                    'device until you sign in again.'
+              : '$pending ${pending == 1 ? 'change hasn\'t' : 'changes haven\'t'} '
+                    "been uploaded yet (you're offline). Logging out now "
+                    'loses ${pending == 1 ? 'it' : 'them'}.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -436,5 +497,84 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
     if (confirmed == true) ref.read(authProvider.notifier).logout();
+  }
+}
+
+/// Where the data lives and whether it's synced. Without an account: a
+/// prompt to sign in and back it up.
+class _SyncCard extends ConsumerWidget {
+  const _SyncCard();
+
+  static String _ago(DateTime t) {
+    final d = DateTime.now().difference(t);
+    if (d.inMinutes < 1) return 'just now';
+    if (d.inHours < 1) return '${d.inMinutes} min ago';
+    if (d.inDays < 1) return '${d.inHours} h ago';
+    return '${d.inDays} d ago';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final user = ref.watch(authProvider).value;
+    ref.watch(dataVersionProvider);
+    final pending = ref.watch(localDbProvider).pendingCount;
+
+    if (user == null || user.isLocal) {
+      return Card(
+        child: ListTile(
+          leading: const Icon(Icons.cloud_off_outlined),
+          title: const Text('Not backed up'),
+          subtitle: const Text(
+            'Everything works offline and is saved on this device. Sign in or '
+            'create an account to back it up and use it on other devices.',
+          ),
+          isThreeLine: true,
+          trailing: FilledButton(
+            onPressed: ref.read(authProvider.notifier).showSignIn,
+            child: const Text('Sign in'),
+          ),
+        ),
+      );
+    }
+
+    final status = ref.watch(syncProvider);
+    final waiting = pending == 0
+        ? ''
+        : ' · $pending ${pending == 1 ? 'change' : 'changes'} waiting';
+    final (icon, title, subtitle) = status.syncing
+        ? (Icons.sync, 'Syncing…', 'Works offline; changes upload when online.')
+        : status.offline
+        ? (
+            Icons.cloud_off_outlined,
+            'Offline$waiting',
+            'Everything still works. Changes upload when you are back online.',
+          )
+        : status.error != null
+        ? (Icons.error_outline, status.error!, 'Tap the arrows to try again.')
+        : (
+            pending == 0
+                ? Icons.cloud_done_outlined
+                : Icons.cloud_upload_outlined,
+            status.lastSynced == null
+                ? 'Not synced yet$waiting'
+                : 'Synced ${_ago(status.lastSynced!)}$waiting',
+            'Saved on this device and backed up to your account.',
+          );
+
+    return Card(
+      child: ListTile(
+        leading: Icon(icon, color: theme.colorScheme.primary),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: IconButton(
+          tooltip: 'Sync now',
+          icon: const Icon(Icons.sync),
+          onPressed: status.syncing
+              ? null
+              : () => ref.read(syncProvider.notifier).syncNow(),
+        ),
+      ),
+    );
   }
 }

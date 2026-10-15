@@ -1,16 +1,19 @@
 class HabitLog {
-  final int id;
+  final String id;
   final String completedDate;
 
   HabitLog({required this.id, required this.completedDate});
 
   factory HabitLog.fromJson(Map<String, dynamic> json) {
-    return HabitLog(id: json['id'], completedDate: json['completed_date']);
+    return HabitLog(
+      id: json['id'] as String,
+      completedDate: json['completed_date'] as String,
+    );
   }
 }
 
 class Habit {
-  final int id;
+  final String id;
   final String name;
   final String? colorHex;
   final int currentStreak;
@@ -28,7 +31,7 @@ class Habit {
 
   factory Habit.fromJson(Map<String, dynamic> json) {
     return Habit(
-      id: json['id'],
+      id: json['id'] as String,
       name: json['name'],
       colorHex: json['color_hex'],
       currentStreak: json['current_streak'],

@@ -1,9 +1,8 @@
+import '../../../core/utils/dates.dart';
 import '../../expenses/domain/expense_models.dart';
 import '../../tasks/domain/task.dart';
 
-/// "2026-10-14": the key the API uses for a day.
-String dateKey(DateTime d) =>
-    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+export '../../../core/utils/dates.dart' show dateKey;
 
 /// The 42 days (6 weeks, Monday first) shown for [month], including the
 /// trailing days of the previous month and leading days of the next.

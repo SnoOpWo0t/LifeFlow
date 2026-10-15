@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/local/local_providers.dart';
+import 'core/local/open_local_db.dart';
 import 'core/network/api_client.dart';
+import 'core/sync/sync_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
@@ -12,6 +15,7 @@ import 'main_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+  final db = await openLocalDb();
   try {
     ApiClient.deviceTimezone =
         (await FlutterTimezone.getLocalTimezone()).identifier;
@@ -21,7 +25,10 @@ void main() async {
 
   runApp(
     ProviderScope(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        localDbProvider.overrideWithValue(db),
+      ],
       child: const LifeFlowApp(),
     ),
   );
@@ -34,6 +41,8 @@ class LifeFlowApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final themeMode = ref.watch(themeModeProvider);
+    // Keeps background sync running while signed in (no rebuilds).
+    ref.listen(syncProvider, (_, _) {});
 
     return MaterialApp(
       title: 'LifeFlow',

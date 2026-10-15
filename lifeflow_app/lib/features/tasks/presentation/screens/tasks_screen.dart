@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/sync/sync_provider.dart';
 import '../../domain/task.dart';
 import '../providers/task_provider.dart';
 
@@ -330,7 +331,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           .read(tasksProvider.notifier)
                           .addTask(
                             Task(
-                              id: 0,
+                              id: '',
                               title: titleController.text,
                               description: descController.text,
                               status: 'todo',
@@ -450,7 +451,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         ),
                       )
                     : RefreshIndicator(
-                        onRefresh: () => ref.refresh(tasksProvider.future),
+                        onRefresh: () =>
+                            ref.read(syncProvider.notifier).syncNow(),
                         child: ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
                           // Leave room so the floating "New task" button never covers the last card.

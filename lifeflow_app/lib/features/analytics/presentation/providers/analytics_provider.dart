@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/local/local_providers.dart';
 import '../../data/analytics_repository.dart';
 import '../../domain/analytics_models.dart';
 
 final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
-  return AnalyticsRepository(ref.watch(apiClientProvider));
+  return AnalyticsRepository(ref.watch(localDbProvider));
 });
 
 final weeklyAnalyticsProvider = FutureProvider.autoDispose<WeeklyAnalytics>((
   ref,
-) async {
-  final repository = ref.watch(analyticsRepositoryProvider);
-  return repository.fetchWeeklyStats();
+) {
+  ref.watch(dataVersionProvider);
+  return ref.watch(analyticsRepositoryProvider).fetchWeeklyStats();
 });

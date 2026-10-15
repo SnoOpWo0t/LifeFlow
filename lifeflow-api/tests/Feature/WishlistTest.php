@@ -136,7 +136,7 @@ class WishlistTest extends TestCase
         $response = $this->deleteJson("/api/v1/wishlist/{$item->id}");
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('wishlist_items', ['id' => $item->id]);
+        $this->assertSoftDeleted('wishlist_items', ['id' => $item->id]);
     }
 
     public function test_user_cannot_access_or_modify_another_users_wishlist_item(): void

@@ -39,24 +39,25 @@
 
 Managing tasks, tracking habits and budgeting usually means juggling several apps that don't talk to each other. **LifeFlow** puts all three in one place.
 
-The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a-time Kanban board and thumb-reachable buttons. Desktops get a side navigation rail, multi-column layouts and side-by-side charts. Everything is stored per user on the server, so your data and settings follow you to any device.
+The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a-time Kanban board and thumb-reachable buttons. Desktops get a side navigation rail, multi-column layouts and side-by-side charts. It's **offline-first**: everything is saved on your device first, so the app works with no internet at all, even without an account. Sign in and your data syncs with the server, so it follows you to any device.
 
 ---
 
 ## ✨ Key Features
 
+- **📴 Works offline:** all your data lives in a database on the device, so adding, editing and every chart work with no internet. Use it **without an account** if you like (data stays on that device), or sign in to **back it up and sync** across phone and web. Changes upload a few seconds after you make them and whenever you're back online; if two devices edit the same thing, the newest edit wins. Settings shows *Synced just now* / *Offline, 3 changes waiting*, and pull-to-refresh syncs.
 - **📊 Dashboard:** live weather, a productivity score, **today's tasks** (due today, overdue, or finished today), habit progress, monthly budget overview positioned above live **multi-wallet accounts** (Cash, bKash, Nagad, Bank), Wishlist targets preview, and a recent-activity feed. Two columns on desktop, one on phones.
 - **📅 Calendar:** your month at a glance on the dashboard. Each day shows dots for tasks due, habits checked (all or some) and money spent; tap a day to see its tasks, habit check-ins and transactions. A full month grid on desktop; a one-week strip you can expand on phones.
 - **📋 Kanban Task Manager:** *To Do*, *In Progress* and *Done* lanes with priorities and due dates. Drag and drop on desktop; a lane switcher and a "Move to…" menu on phones. Deleting asks for confirmation.
-- **💰 Expense Tracker:** income and expenses with multi-wallet account tags (`cash`, `bkash`, `nagad`, `bank`), colour-coded categories (create, edit, delete), a monthly budget, an income-vs-expense bar chart and a **spending-by-category donut** for the month. **Tap any transaction to edit or delete it.** The list loads 30 at a time as you scroll. Amounts are shown with thousands separators (`৳ 124,123`).
+- **💰 Expense Tracker:** income and expenses with multi-wallet account tags (`cash`, `bkash`, `nagad`, `bank`), colour-coded categories (create, edit, delete), a monthly budget, an income-vs-expense bar chart and a **spending-by-category donut** for the month. **Tap any transaction to edit or delete it.** Amounts are shown with thousands separators (`৳ 124,123`).
 - **🎁 Wishlist & Target Purchases:** track dream purchases with **customizable categories** (e.g. Perfume, Tech, Fashion, Books, etc.), set estimated prices, assign priorities (Low, Normal, High), store store links, reorder with custom sorting, filter by category or status, and seamlessly convert acquired items into wallet expense transactions with a single tap!
-- **📸 AI photo scanner:** take a photo or choose a screenshot of a **receipt**, your **money notes** (Notepad, notes apps, chats, handwriting) or a **shopping list / product page**. Google Gemini reads it (English or Bengali) and you **review every line** before anything is saved: fix names and amounts, switch income/expense, pick categories (new ones are created for you), the date and the wallet. Receipt discounts are shared across items, or save the whole receipt as one expense.
-- **✨ AI summaries:** on the Analytics tab, one tap writes a short read of **this week or this month**: a headline, what happened with your money, tasks and habits (compared with the previous period), the highlights, and 2–4 concrete suggestions. Summaries are saved, so opening them again costs nothing, and the app tells you when there's newer data so you can refresh.
+- **📸 AI photo scanner** (needs internet and an account): take a photo or choose a screenshot of a **receipt**, your **money notes** (Notepad, notes apps, chats, handwriting) or a **shopping list / product page**. Google Gemini reads it (English or Bengali) and you **review every line** before anything is saved: fix names and amounts, switch income/expense, pick categories (new ones are created for you), the date and the wallet. Receipt discounts are shared across items, or save the whole receipt as one expense.
+- **✨ AI summaries** (needs internet and an account): on the Analytics tab, one tap writes a short read of **this week or this month**: a headline, what happened with your money, tasks and habits (compared with the previous period), the highlights, and 2–4 concrete suggestions. Summaries are saved, so opening them again costs nothing, and the app tells you when there's newer data so you can refresh.
 - **🔥 Habit Tracker:** daily check-ins with a small animation (and a vibration on phones), a 7-day view and streaks **calculated from your check-in history**, so they're always accurate. Rename or delete habits from the card menu.
 - **📈 Weekly Analytics:** the AI summary, an income-vs-expenses line chart and a daily productivity bar chart, with clean round-number axes.
 - **🤖 Android app:** an installable APK built for free by GitHub Actions (no Android Studio needed). On the phone, the sign-in screen has a **Server address** setting, so the same APK can talk to your laptop over Wi-Fi while testing, or to the deployed API later.
 - **🌦️ Live Weather:** search any city, or tap **"Use my current location"**. Powered by free, key-less APIs (Open-Meteo, BigDataCloud).
-- **🔐 Accounts & Settings:** token login with server-side logout, profile photos (automatically resized before upload, shown on the dashboard), **appearance that follows your device** or a fixed Light/Dark choice, settings saved to your account, **Export my data** (everything as JSON, or transactions as CSV for spreadsheets) and **Delete account** (password-confirmed, removes all data).
+- **🔐 Accounts & Settings:** token login with server-side logout, profile photos (automatically resized before upload, shown on the dashboard), **appearance that follows your device** or a fixed Light/Dark choice, settings saved to your account, **Export my data** (everything as JSON, or transactions as CSV for spreadsheets; built on the device, so it works offline) and **Delete account** (password-confirmed, removes all data).
 - **🕒 Your own "today":** the app sends your device's timezone, so habits, today's tasks and weekly charts roll over at *your* midnight, wherever you are.
 
 ---
@@ -92,10 +93,12 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
   <img src="Screenshots/desktop-dashboard-dark.png" alt="Dashboard in dark mode on desktop" width="49%">
 </div>
 
-### Sign in
+### Sign in, offline mode and sync
 
 <div align="center">
-  <img src="Screenshots/shot-1280.png" alt="Sign-in page" width="70%">
+  <img src="Screenshots/phone-login-offline.png" alt="Sign-in page with Continue without an account" width="24%">
+  <img src="Screenshots/desktop-settings.png" alt="Settings showing Synced just now" width="37%">
+  <img src="Screenshots/desktop-settings-no-account.png" alt="Settings without an account: Not backed up" width="37%">
 </div>
 
 ### Video Walkthrough
@@ -116,7 +119,8 @@ Watch the walkthrough on YouTube (OLD video hasnt been updated) :
 
 The project is split into two apps that talk over HTTP: a **Laravel REST API** and a **Flutter client**.
 
-* 🛡️ **Security:** the database and business rules (validation, ownership checks, streak calculation) live on the server. The Flutter app never touches the database directly.
+* 📴 **Offline-first:** the app reads and writes its own on-device database (sembast: a file on Android, IndexedDB on the web) and works out the dashboard, calendar, charts and streaks itself. A sync service trades changes with the API (`POST /sync`) when there's a connection. Records get their ids (UUIDs) on the device, deletes are kept as tombstones until synced, and the newest edit wins.
+* 🛡️ **Security:** the server is the shared copy and checks everything it receives (validation, ownership: nobody can sync into someone else's records). AI features run only on the server, so the Gemini key never reaches the app.
 * 🚀 **Scalability:** the API and the web app can be hosted separately; the same Flutter code builds for web, Android and iOS.
 * 🔄 **Reusability:** any future client (another website, a desktop app) can use the same API.
 
@@ -125,22 +129,22 @@ LifeFlow/
 ├── .github/workflows/ci.yml       # Automatic tests on every push (GitHub Actions)
 ├── .github/workflows/android.yml  # Builds the Android APK on GitHub (on demand or on a v* tag)
 ├── lifeflow-api/                  # Backend REST API (Laravel)
-│   ├── app/Http/Controllers/      # Auth, Dashboard, Calendar, Tasks, Expenses, Wishlist, Habits, Analytics, Scan, Insights, Profile
+│   ├── app/Http/Controllers/      # Sync, Auth, Dashboard, Calendar, Tasks, Expenses, Wishlist, Habits, Analytics, Scan, Insights, Profile
 │   ├── app/Http/Requests/         # Validation rules, one class per action (Form Requests)
 │   ├── app/Http/Resources/        # The exact JSON shape returned for each model (API Resources)
 │   ├── app/Http/Middleware/       # Remembers each user's timezone (X-Timezone header)
 │   ├── app/Services/              # Gemini client, photo reader, AI summary writer (prompts, schemas, cleaning)
 │   ├── app/Policies/              # "Only the owner may edit/delete" rules
-│   ├── app/Models/                # Eloquent models
-│   ├── routes/api.php             # 42 endpoints under /api/v1
-│   ├── database/migrations/       # Database schema (15 migrations)
-│   └── tests/Feature/             # Feature & API tests (61 tests: Api, Wishlist, Scan, Insight…)
+│   ├── app/Models/                # Eloquent models (Concerns/Syncable: uuid, edit time, soft deletes)
+│   ├── routes/api.php             # 43 endpoints under /api/v1
+│   ├── database/migrations/       # Database schema (16 migrations)
+│   └── tests/Feature/             # Feature & API tests (68 tests: Api, Sync, Wishlist, Scan, Insight…)
 │
 └── lifeflow_app/                  # Frontend (Flutter)
     ├── lib/
-    │   ├── core/                  # API client, storage, theme, formatters
+    │   ├── core/                  # On-device database (local/), sync (sync/), API client, storage, theme
     │   ├── features/              # One folder per feature: data / domain / presentation
-    │   │   ├── auth/              # Sign in / sign up
+    │   │   ├── auth/              # Sign in / sign up / use without an account
     │   │   ├── dashboard/         # Summary + live weather
     │   │   ├── calendar/          # Month-at-a-glance calendar + day details
     │   │   ├── tasks/             # Kanban board
@@ -154,7 +158,7 @@ LifeFlow/
     │   ├── main.dart              # App entry point
     │   └── main_screen.dart       # Responsive navigation (6-destination bar with modal sheet / side rail)
     ├── android/                   # Android app: id com.lifeflow.app, LifeFlow icons, signing
-    └── test/app_test.dart         # Flutter unit and widget tests (29 tests)
+    └── test/                      # Flutter unit and widget tests (41 tests; offline_test.dart covers storage and sync)
 ```
 
 More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJECT_BLUEPRINT.md).
@@ -167,6 +171,7 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 
 - **Framework:** [Flutter](https://flutter.dev/) (Dart 3)
 - **State management:** [Riverpod](https://riverpod.dev/)
+- **On-device database:** sembast (+ sembast_web for IndexedDB)
 - **Networking:** Dio
 - **Charts:** fl_chart
 - **Other:** google_fonts, image_picker, geolocator, flutter_timezone, shared_preferences
@@ -178,7 +183,8 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 
 **Database**
 
-- **Development:** SQLite (a single local file)
+- **On the device:** sembast, so the app works offline
+- **Server, development:** SQLite (a single local file)
 - **Production:** PostgreSQL (e.g. Neon's free tier); see [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md)
 
 **Free external APIs (no keys needed)**
@@ -194,8 +200,9 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 
 ## ✅ Quality & Security
 
-- **Automated tests:** 61 backend tests (PHPUnit) and 29 Flutter tests, run on every push by GitHub Actions.
-- **Data isolation:** every edit and delete goes through Laravel Policies, and lists and new records are always scoped to the signed-in user, so nobody can read or change anyone else's data (covered by tests).
+- **Automated tests:** 68 backend tests (PHPUnit) and 41 Flutter tests, run on every push by GitHub Actions.
+- **Data isolation:** every edit and delete goes through Laravel Policies, lists and new records are always scoped to the signed-in user, and sync rejects records that belong to someone else, so nobody can read or change anyone else's data (covered by tests).
+- **Signing out clears the device:** your synced data is removed from the phone when you log out (it warns first if changes haven't uploaded yet), and a different account never sees the previous one's data.
 - **Login protection:** passwords are hashed, login/register are limited to 10 attempts per minute, logout revokes the token on the server, and an expired session returns you to the sign-in screen.
 - **Validation:** on the server for every request (Laravel Form Requests), and in the forms before anything is sent.
 - **No data leaks in responses:** API Resources return only the fields the app needs (never internal columns such as `user_id` or `provider`).
@@ -217,6 +224,7 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 - [X]  AI photo scanner for receipts, money notes and shopping lists (Gemini)
 - [X]  AI summaries of your week or month, with suggestions
 - [X]  Installable Android app (APK built by GitHub Actions)
+- [X]  Offline-first: on-device database, use without an account, background sync
 - [X]  Responsive layouts for phone and desktop
 - [X]  Automated tests and CI
 - [X]  Wishlist & target purchases (custom categories, priority, drag-and-drop sort, store link, 1-tap expense conversion)

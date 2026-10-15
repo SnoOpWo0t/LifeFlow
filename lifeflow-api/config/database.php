@@ -97,6 +97,12 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Connection poolers (Neon's "-pooler" address, PgBouncer) don't keep
+            // server-side prepared statements between queries, which aborts
+            // transactions. Letting PDO fill in the values avoids that.
+            'options' => extension_loaded('pdo_pgsql') ? [
+                PDO::ATTR_EMULATE_PREPARES => (bool) env('DB_EMULATE_PREPARES', true),
+            ] : [],
         ],
 
         'sqlsrv' => [

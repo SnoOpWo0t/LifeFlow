@@ -1,5 +1,5 @@
 class Task {
-  final int id;
+  final String id;
   final String title;
   final String? description;
   final String status;
@@ -19,7 +19,7 @@ class Task {
 
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
-      id: json['id'],
+      id: json['id'] as String,
       title: json['title'],
       description: json['description'],
       status: json['status'],
@@ -43,7 +43,7 @@ class Task {
   }
 
   Task copyWith({
-    int? id,
+    String? id,
     String? title,
     String? description,
     String? status,

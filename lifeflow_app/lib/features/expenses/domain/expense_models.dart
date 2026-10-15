@@ -1,5 +1,5 @@
 class ExpenseCategory {
-  final int id;
+  final String id;
   final String name;
   final String type;
   final String? colorHex;
@@ -13,7 +13,7 @@ class ExpenseCategory {
 
   factory ExpenseCategory.fromJson(Map<String, dynamic> json) {
     return ExpenseCategory(
-      id: json['id'],
+      id: json['id'] as String,
       name: json['name'],
       type: json['type'],
       colorHex: json['color_hex'],
@@ -28,7 +28,7 @@ class ExpenseCategory {
 }
 
 class Transaction {
-  final int id;
+  final String id;
   final ExpenseCategory? category;
   final double amount;
   final String type;
@@ -48,11 +48,10 @@ class Transaction {
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
-      id: json['id'],
+      id: json['id'] as String,
       category: json['category'] != null
           ? ExpenseCategory.fromJson(json['category'])
           : null,
-      // PostgreSQL returns decimals as strings, SQLite as numbers.
       amount: double.parse(json['amount'].toString()),
       type: json['type'],
       account: json['account'] as String? ?? 'cash',
@@ -62,20 +61,12 @@ class Transaction {
   }
 }
 
-/// One page of `GET /transactions` (the API returns 30 per page).
+/// One page of transactions (30 at a time, newest first).
 class TransactionPage {
   final List<Transaction> items;
   final bool hasMore;
 
   const TransactionPage(this.items, {required this.hasMore});
-
-  factory TransactionPage.fromJson(Map<String, dynamic> json) {
-    final meta = json['meta'] as Map<String, dynamic>;
-    return TransactionPage(
-      (json['data'] as List).map((j) => Transaction.fromJson(j)).toList(),
-      hasMore: (meta['current_page'] as num) < (meta['last_page'] as num),
-    );
-  }
 }
 
 /// Everything loaded so far, for infinite scrolling.
@@ -97,7 +88,7 @@ class TransactionFeed {
   );
 }
 
-/// This month's spending in one category (from `GET /transactions/by-category`).
+/// This month's spending in one category.
 class CategorySpending {
   final String name;
   final String? colorHex;

@@ -1,5 +1,5 @@
 class WishlistItem {
-  final int id;
+  final String id;
   final String title;
   final String? note;
   final double? estimatedPrice;
@@ -25,7 +25,7 @@ class WishlistItem {
 
   factory WishlistItem.fromJson(Map<String, dynamic> json) {
     return WishlistItem(
-      id: json['id'] as int,
+      id: json['id'] as String,
       title: json['title'] as String,
       note: json['note'] as String?,
       estimatedPrice: json['estimated_price'] != null
@@ -57,7 +57,7 @@ class WishlistItem {
   }
 
   WishlistItem copyWith({
-    int? id,
+    String? id,
     String? title,
     String? note,
     double? estimatedPrice,

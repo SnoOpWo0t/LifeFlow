@@ -13,6 +13,11 @@ class User {
     this.preferences,
   });
 
+  /// Someone using the app without an account: data stays on the device.
+  factory User.local() => User(id: 0, name: 'You', email: '');
+
+  bool get isLocal => id == 0;
+
   factory User.fromJson(Map<String, dynamic> json) {
     final preferences = json['preferences'];
     return User(

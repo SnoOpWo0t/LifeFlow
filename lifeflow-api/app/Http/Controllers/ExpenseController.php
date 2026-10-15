@@ -40,13 +40,15 @@ class ExpenseController extends Controller
     }
 
     /**
-     * Transactions keep their amounts; their category becomes empty
-     * (the foreign key is ON DELETE SET NULL).
+     * Transactions keep their amounts; their category becomes empty. Done
+     * row by row (not by the foreign key) so the change syncs to devices.
      */
     public function destroyCategory(ExpenseCategory $category): JsonResponse
     {
         Gate::authorize('delete', $category);
 
+        Transaction::where('category_id', $category->id)->get()
+            ->each(fn (Transaction $tx) => $tx->update(['category_id' => null]));
         $category->delete();
 
         return response()->json(null, 204);

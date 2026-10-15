@@ -550,7 +550,7 @@ class _ConvertToExpenseDialogState
     extends ConsumerState<_ConvertToExpenseDialog> {
   late final TextEditingController _amountController;
   late final TextEditingController _noteController;
-  int? _selectedCategoryId;
+  String? _selectedCategoryId;
   String _selectedAccount = 'cash';
   bool _isSaving = false;
   String? _errorMessage;
@@ -736,7 +736,7 @@ class _ConvertToExpenseDialogState
                       .where((c) => c.type == 'expense')
                       .toList();
 
-                  int? effectiveCategory = _selectedCategoryId;
+                  String? effectiveCategory = _selectedCategoryId;
                   if (effectiveCategory == null &&
                       widget.item.category != null &&
                       widget.item.category!.trim().isNotEmpty) {
@@ -754,7 +754,7 @@ class _ConvertToExpenseDialogState
                     }
                   }
 
-                  return DropdownButtonFormField<int?>(
+                  return DropdownButtonFormField<String?>(
                     initialValue: effectiveCategory,
                     decoration: InputDecoration(
                       labelText: 'Category (optional)',
@@ -769,12 +769,12 @@ class _ConvertToExpenseDialogState
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem<int?>(
+                      const DropdownMenuItem<String?>(
                         value: null,
                         child: Text('Uncategorized'),
                       ),
                       ...expenseCats.map(
-                        (c) => DropdownMenuItem<int?>(
+                        (c) => DropdownMenuItem<String?>(
                           value: c.id,
                           child: Text(c.name),
                         ),
