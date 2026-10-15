@@ -3,7 +3,7 @@
 The REST backend for [LifeFlow](../README.md): authentication, tasks, habits, expenses, wishlist, calendar, dashboard, analytics, the AI photo scanner and AI summaries.
 
 - **Stack:** Laravel 13, PHP 8.3+, Laravel Sanctum (API tokens)
-- **Database:** SQLite locally (`database/database.sqlite`), **Neon PostgreSQL** in production (see [bd.md](../bd.md))
+- **Database:** SQLite locally (`database/database.sqlite`), **Neon PostgreSQL** in production (see [PROJECT_BLUEPRINT.md, section 1](../PROJECT_BLUEPRINT.md#1-database-and-data-storage))
 - **Deploy:** `Dockerfile` + `docker-start.sh` (migrates, then serves) and the root `render.yaml`
 - **Endpoints:** 43, all under `/api/v1` (including `POST /sync` for the offline-first app), listed in [PROJECT_BLUEPRINT.md](../PROJECT_BLUEPRINT.md)
 

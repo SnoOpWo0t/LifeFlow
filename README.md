@@ -5,28 +5,26 @@
 
 **Your All-In-One Life Management Platform for Phone and Desktop** 📱💻
 
+<i>Tasks, money and habits in one offline-first app for Android, web and iOS, synced through a secure Laravel API and PostgreSQL (Neon).</i>
+
+<br /><br />
+
+<a href="https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk">
+  <img src="https://img.shields.io/github/v/release/SnoOpWo0t/LifeFlow?style=for-the-badge&logo=android&logoColor=white&label=Download%20for%20Android&color=3DDC84&labelColor=1F2937" alt="Download LifeFlow for Android (APK)" height="44">
+</a>
+
+**[⬇️ Download LifeFlow.apk](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)**
+<br />
+<sub>Always the latest version · works offline, no account needed · <a href="https://github.com/SnoOpWo0t/LifeFlow/releases/latest">smaller arm64 build &amp; release notes</a> · <a href="#3-android-app">how to install</a></sub>
+
+<br /><br />
+
 [![Flutter Version](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Laravel Version](https://img.shields.io/badge/Laravel-13.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![PostgreSQL on Neon](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](PROJECT_BLUEPRINT.md#1-database-and-data-storage)
 [![CI](https://img.shields.io/github/actions/workflow/status/SnoOpWo0t/LifeFlow/ci.yml?style=for-the-badge&label=CI)](https://github.com/SnoOpWo0t/LifeFlow/actions)
-[![Android APK](https://img.shields.io/github/v/release/SnoOpWo0t/LifeFlow?style=for-the-badge&logo=android&logoColor=white&label=Android%20APK&color=3DDC84)](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)
 [![Works offline](https://img.shields.io/badge/Works-offline-0EA5E9?style=for-the-badge)](#-offline-first--sync)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-
-</div>
-
-<br />
-
-<div align="center">
-  <i>LifeFlow brings your tasks, money and habits under one roof: one offline-first Flutter app for Android, web and iOS, synced through a secure Laravel API and PostgreSQL (Neon).</i>
-</div>
-
-<br />
-
-<div align="center">
-
-### 📥 [Download the Android app (APK)](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)
-
-Works offline straight away; no account needed. &nbsp;·&nbsp; [All releases](https://github.com/SnoOpWo0t/LifeFlow/releases) &nbsp;·&nbsp; [Install help](#3-android-app)
 
 </div>
 
