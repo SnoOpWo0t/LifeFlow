@@ -59,13 +59,13 @@ and run `php artisan migrate`. Switch back to `DB_CONNECTION=sqlite` for everyda
 
 Laravel Eloquent on **SQLite** in development and **PostgreSQL** in production. Every user-owned table has a `user_id` foreign key with `ON DELETE CASCADE`, so deleting a user removes all their data.
 
-**Synced tables** (`tasks`, `expense_categories`, `transactions`, `habits`, `habit_logs`, `wishlist_items`) also have `uuid` (unique; the id the app gave the record on the device), `client_updated_at` (when it was last edited, which decides which edit wins) and `deleted_at` (soft deletes, so a delete reaches other devices). A habit log's uuid is `<habit uuid>_<YYYY-MM-DD>`, so one day's check-in is one row whichever device made it. The `Syncable` model trait (`app/Models/Concerns/`) fills these in for normal API writes too.
+**Synced tables** (`tasks`, `expense_categories`, `transactions`, `habits`, `habit_logs`, `wishlist_items`, `savings`) also have `uuid` (unique; the id the app gave the record on the device), `client_updated_at` (when it was last edited, which decides which edit wins) and `deleted_at` (soft deletes, so a delete reaches other devices). A habit log's uuid is `<habit uuid>_<YYYY-MM-DD>`, so one day's check-in is one row whichever device made it. The `Syncable` model trait (`app/Models/Concerns/`) fills these in for normal API writes too.
 
 #### users
 `id`, `name`, `email` (unique), `password` (hashed), `avatar_path` (file name only; the API hands out signed, expiring links), `preferences` (JSON), `timezone` (IANA name reported by the app, e.g. `Asia/Dhaka`), `provider`, `provider_id` (reserved for Google sign-in), `email_verified_at`, timestamps
 
 `preferences` holds per-user settings that follow the account across devices:
-`theme_mode` (`system` | `light` | `dark`; older accounts may still have the previous on/off `is_dark_mode`, which the app converts), `push_notifications`, `monthly_budget`, `default_city`, `weather_location` (`name`, `region`, `country`, `latitude`, `longitude`).
+`theme_mode` (`system` | `light` | `dark`), `push_notifications`, `monthly_budget`, `default_city`, `weather_location`, `dashboard_sections` (JSON map of visible dashboard card toggles).
 
 #### tasks
 `id`, `user_id`, `title`, `description`, `status` (`todo` | `in_progress` | `done`), `priority` (`low` | `medium` | `high`), `due_date`, `recurrence_rule` (`daily` | `weekly` | `monthly`; when a recurring task is marked done, its due date moves forward and it returns to `todo`), timestamps
@@ -88,6 +88,10 @@ Index: `(user_id, transaction_date)`
 
 #### wishlist_items
 `id`, `user_id` (foreign key, `ON DELETE CASCADE`), `title`, `note` (nullable), `estimated_price` (decimal 12,2, nullable), `priority` (`low` | `normal` | `high`), `category` (string 60, nullable), `is_purchased` (boolean), `link` (nullable), `sort_order` (integer), timestamps
+
+#### savings
+`id`, `uuid` (unique, string 64), `user_id` (foreign key, `ON DELETE CASCADE`), `amount` (decimal 12,2), `type` (`deposit` | `withdrawal`), `account` (`cash` | `bkash` | `nagad` | `bank`), `note` (nullable), `transaction_date` (date), `client_updated_at`, timestamps, soft deletes.
+Indices: `(user_id, updated_at)`, `(user_id, transaction_date)`, `(user_id, account)`.
 
 #### ai_insights
 `id`, `user_id` (`ON DELETE CASCADE`), `period` (`week` | `month`), `period_start` (date: the Monday, or the 1st of the month), `content` (JSON: `headline`, `summary`, `highlights[]`, `suggestions[{title, detail, area}]`), timestamps (`updated_at` = when it was written)
@@ -181,10 +185,20 @@ All under `/api/v1`. Everything except register, login and (signed) avatar links
 | DELETE | `/wishlist/{id}` | Delete item |
 | POST | `/wishlist/reorder` | Bulk reorder (`{"order": [id1, id2, ...]}`) |
 
+### Savings Tracker
+| Method | Path | What it does |
+|---|---|---|
+| GET | `/savings` | List user's savings deposits and withdrawals, newest first |
+| POST | `/savings` | Deposit or withdraw savings (`amount`, `type` [deposit/withdrawal], `account` [cash/bkash/nagad/bank], `transaction_date`, `note`) |
+| GET | `/savings-summary` | Savings overview: `total_savings`, `total_deposits`, `total_withdrawals`, and per-wallet balances (`by_account`) |
+| GET | `/savings/{id}` | View single savings entry |
+| PUT/PATCH | `/savings/{id}` | Edit a savings entry |
+| DELETE | `/savings/{id}` | Delete a savings entry |
+
 ### Sync (offline-first)
 | Method | Path | What it does |
 |---|---|---|
-| POST | `/sync` | Body `{"since": <cursor or null>, "changes": {"categories": [...], "tasks": [...], "habits": [...], "habit_logs": [...], "transactions": [...], "wishlist": [...]}}`. Each record is `{"id": "<uuid>", ...fields, "updated_at", "deleted_at", "created_at"}`, foreign keys as uuids (`transactions.category_id`, `habit_logs.habit_id`). The server keeps the newer edit (by `updated_at`), skips records created and deleted offline, and rejects invalid records or someone else's uuid. Reply: `{"cursor", "changes": {...every record changed since `since`, deletes included...}, "rejected": {"tasks": ["<uuid>"]}}`; an older edit that lost comes back with the server's version. Up to 1000 records per collection per call; limited to 60 calls a minute |
+| POST | `/sync` | Body `{"since": <cursor or null>, "changes": {"categories": [...], "tasks": [...], "habits": [...], "habit_logs": [...], "transactions": [...], "wishlist": [...], "savings": [...]}}`. Each record is `{"id": "<uuid>", ...fields, "updated_at", "deleted_at", "created_at"}`, foreign keys as uuids (`transactions.category_id`, `habit_logs.habit_id`). The server keeps the newer edit (by `updated_at`), skips records created and deleted offline, and rejects invalid records or someone else's uuid. Reply: `{"cursor", "changes": {...every record changed since `since`, deletes included...}, "rejected": {"tasks": ["<uuid>"]}}`; an older edit that lost comes back with the server's version. Up to 1000 records per collection per call; limited to 60 calls a minute |
 
 ### Rules that apply everywhere
 - **Ownership:** updates and deletes go through Laravel Policies (`app/Policies/`). Another user's record returns **403**. Lists only ever query the signed-in user's rows.
@@ -197,7 +211,7 @@ All under `/api/v1`. Everything except register, login and (signed) avatar links
 
 Organised by feature. Each feature has `data/` (repositories over the on-device database, or API calls for online-only features), `domain/` (models) and `presentation/` (Riverpod providers and screens).
 
-**Offline-first:** tasks, money, habits and the wishlist are read and written only through `LocalDb` (`core/local/`, sembast: a file on Android/desktop, IndexedDB on the web). It keeps everything in memory too, so reads are instant and providers return synchronously; every change bumps `dataVersionProvider`, which the providers watch. The dashboard, calendar, analytics, charts and streaks are calculated on the device. `SyncService` (`core/sync/`) uploads records marked `_dirty` and applies the server's changes when signed in; `syncProvider` runs it 3 s after edits, every 5 min, on resume and on pull-to-refresh. Without an account (`User.local()`, id 0) nothing is synced. The device's data belongs to the account that signed in (`owner` in the database's meta): signing in with a different account clears it, no-account data is uploaded to the new account, and logging out clears it. The AI scanner, AI summaries, profile photo and account deletion call the API directly.
+**Offline-first:** tasks, money, habits, the wishlist and savings are read and written only through `LocalDb` (`core/local/`, sembast: a file on Android/desktop, IndexedDB on the web). It keeps everything in memory too, so reads are instant and providers return synchronously; every change bumps `dataVersionProvider`, which the providers watch. The dashboard, calendar, analytics, charts, savings totals and streaks are calculated on the device. `SyncService` (`core/sync/`) uploads records marked `_dirty` and applies the server's changes when signed in; `syncProvider` runs it 3 s after edits, every 5 min, on resume and on pull-to-refresh. Without an account (`User.local()`, id 0) nothing is synced. The device's data belongs to the account that signed in (`owner` in the database's meta): signing in with a different account clears it, no-account data is uploaded to the new account, and logging out clears it. The AI scanner, AI summaries, profile photo and account deletion call the API directly.
 
 ```text
 lifeflow_app/lib/
@@ -250,4 +264,4 @@ These were in the original plan or came up later. See [NEXT_LEVEL_ROADMAP.md](NE
 - Your own calendar events and reminders (the dashboard calendar currently shows tasks, habits and money)
 - Multi-currency
 - AI assistant (natural-language task entry); AI summaries of the week/month are already built
-- More ideas adapted from Catalyst (mood tracking, category budgets, bills, savings goals…): checklist in [NEXT_LEVEL_ROADMAP.md, section 6](NEXT_LEVEL_ROADMAP.md#6-ideas-from-catalyst-a-friends-money-and-mood-app-checklist)
+- More ideas adapted from Catalyst (category budgets, bills & recurring payments, savings goals, transaction search/filter, customizable dashboard are now built; mood tracking, to-do scanner, undo left): checklist in [NEXT_LEVEL_ROADMAP.md, section 6](NEXT_LEVEL_ROADMAP.md#6-ideas-from-catalyst-a-friends-money-and-mood-app-checklist)

@@ -66,7 +66,10 @@ A prioritised list of what's done and what to improve next. Everything here can 
 - **Installable Android app:** `.github/workflows/android.yml` builds the APK on GitHub (no Android Studio needed): a universal APK and a smaller arm64 one as downloadable artifacts, and a GitHub Release on every `v*` tag. Real app id (`com.lifeflow.app`), the name "LifeFlow", launcher and adaptive icons from the logo, a branded launch screen, and optional release signing from GitHub secrets. A **Server address** setting on the phone's sign-in screen lets the same APK use your laptop over Wi-Fi or the deployed API. Adapted from Catalyst (K15)
 - **Wishlist & target purchases:** customizable categories (e.g. Perfume, Tech, Fashion, Books), priority tiers (Low, Normal, High), estimated costs, custom drag-and-drop reordering, store link copy, target savings summary banner, category filter chips with live counts, and 1-tap conversion to recorded wallet expenses
 - **Multi-wallet accounting:** support for account/wallet types (`cash`, `bkash`, `nagad`, `bank`) on transactions with live per-wallet balances on the dashboard
-- **Decluttered mobile navigation:** ergonomic 6-destination bottom bar with a Material 3 hamburger "More" bottom sheet housing Wishlist and Settings
+- **Decluttered 5-item mobile navigation:** ergonomic 5-destination bottom bar (Home, Tasks, Expenses, Analytics, More) with a Material 3 "More" bottom sheet housing Habits, Wishlist, Savings, and Settings. Desktop keeps all destinations in the side rail
+- **Dedicated Savings Tracker:** dedicated savings vault completely isolated from daily expenses; tracks money reserved in each wallet (`bank`, `bkash`, `nagad`, `cash`) and total savings balance; deposit and withdrawal workflows with date and note tracking; synced offline-first across devices via `POST /sync`
+- **Customizable Dashboard:** personalize dashboard sections via a header tune button (`Icons.tune`); show/hide live weather, productivity score, today's tasks & habits, calendar, budget overview, multi-wallet accounts, savings vault, wishlist targets, and recent activity; preferences persist locally and sync across devices
+- **Search & Filter for Transactions:** instant on-device search across transaction notes, categories, amounts, and wallets; filter chips for transaction types (Income, Expense) and specific wallets (Cash, bKash, Nagad, Bank); live result counter and empty search reset
 - **Tab state preservation across navigation:** views remain mounted and preserve scroll and form state via `IndexedStack`; summary tabs (Dashboard, Analytics) refresh their data each time they're opened
 - **Responsive UI:** one-lane Kanban with "Move to…" on phones; two-column dashboard, side-by-side charts, habit grid and expense layout on desktop
 - Pull-to-refresh on every list; Retry buttons on error screens; confirmation before deletes
@@ -75,8 +78,14 @@ A prioritised list of what's done and what to improve next. Everything here can 
 - Real app name, description and icons for the browser tab and installed app
 - Login/register rate limit (10/min per IP); Laravel **Policies** for every edit/delete
 - Database indexes for dashboard and analytics queries
+- **Bills & recurring payments (K6):** full offline-first bills management accessible from the "More" launcher menu. Tracks due dates, recurrence frequencies (weekly, monthly, yearly, one-time), overdue/due-soon alert status indicators, categories, and payment accounts/wallets (`cash`, `bkash`, `nagad`, `bank`). 1-tap "Mark as Paid" automatically records an expense transaction in the local sembast transactions store, advances recurrence schedules, and syncs across devices.
+- **Budgets per category (K5):** monthly spending limits per category configured via a dedicated budget manager dialog on the Expenses page; dynamic progress bars with percentage fills, alert chips when approaching 80% limit and critical warning badges when 100%+ exceeded; preferences persist locally and sync with user profile settings.
+- **Customizable Savings Goals (K7) inside Savings & Dashboard:** target savings goals with target amounts, current contributions, target deadlines, custom notes, and visual progress meters. Toggleable visibility inside the Savings vault screen and integrated as a customizable card on the Dashboard. Direct deposit/contribute dialog allowing users to add money towards any goal in one tap.
+- **Organized "More" Sheet Launcher Grid:** modern launcher bottom sheet modeled after top-tier mobile dashboard design (4-column launcher grid with Journal, To-do, Wishlist, Budgets, Goals, Bills, Savings, Settings), prominent coral/salmon `+ New entry` quick-action button offering fast creation of tasks, bills, savings goals, deposits, wishlist items, and habits, functional Vault Mode privacy shield switch, Theme mode toggle, and account footer row with sign-out.
+- **Financial Privacy Shield (Vault Mode):** quick-toggle privacy mode accessible directly from the "More" bottom sheet launcher grid; conceals sensitive balances, bank/mobile wallet reserves, goal progress, and transaction figures across the Dashboard, Savings Vault, Bills & Subscriptions, and Expense Manager with `••••••` for public screen privacy; persists locally and syncs with cloud user profile settings.
+- **Optimized Wishlist Card Layout:** responsive item card redesign giving item titles maximum horizontal breathing room (supporting up to 2 lines without truncation) by wrapping category and priority chips in a dedicated sub-row beneath the title, and placing compact 28×28 action popup menus and reorder drag handles below the price.
 - Configurable API address (`--dart-define=API_BASE_URL=...`)
-- **61 backend tests + 29 Flutter tests**, run on every push by **GitHub Actions** (`.github/workflows/ci.yml`)
+- **68 backend tests + 52 Flutter tests**, run on every push by **GitHub Actions** (`.github/workflows/ci.yml`)
 - Dead code removed (old login screen, an old unused chart function, deprecated `withOpacity`)
 
 ---
@@ -164,7 +173,7 @@ The goal is a public link that keeps working without paying or babysitting it.
 
 [Catalyst](https://github.com/HAVIC-47/catalyst-app) (Flutter app + [web app](https://github.com/HAVIC-47/catalyst)) by a friend solves similar problems. These are its features that fit LifeFlow, with what's already been brought over.
 
-**Progress: 5 of 19 done** (✅ done · 🟨 partly · ⬜ to do)
+**Progress: 10 of 19 done** (✅ done · 🟨 partly · ⬜ to do)
 
 ### ✅ Done
 
@@ -174,6 +183,11 @@ The goal is a public link that keeps working without paying or babysitting it.
 | S2 | ✅ **Money-notes scanner** | Screenshots of notes become income and expense entries | The same Scan button reads notes, chats and handwriting (English or Bengali) into income/expense lines |
 | S3 | ✅ **Shopping-list scanner** | A list or product screenshot becomes wishlist items | **Scan** on Wishlist: titles, notes, prices, priority, category and store links; unpriced items can be added too |
 | K1 | ✅ **AI summaries & suggestions** | A weekly, monthly or yearly read of the user's data, with suggestions, built from a digest, saved, capped per day | *AI summary* card on Analytics for this week / this month: money vs the previous period, tasks, habits, wishlist; saved, "New data since" hint, daily limit, in the data export |
+| K5 | ✅ **Budgets per category** | A monthly limit per category that fills up and turns red when exceeded | **Category Budgets** on Expenses: set monthly spending limits per category; visual progress bars with live percentages, warning alert at 80%, and critical badge when 100%+ exceeded; offline-first sembast persistence synced via profile preferences |
+| K6 | ✅ **Bills & recurring payments** | Due dates, recurrence, overdue / due-soon warnings, one-tap "paid" | **Bills & Recurring Payments** in "More" launcher menu: due dates, recurrence frequencies (weekly, monthly, yearly, one-time), alert badges (overdue, due today, upcoming); 1-tap "Mark as Paid" creates an expense transaction in the selected wallet, advances next due date, and syncs across devices |
+| K7 | ✅ **Savings goals** | Targets with progress bars and quick additions | **Savings Goals** inside Savings screen and as a toggleable card on the Dashboard: target amounts, target dates, progress bars, and 1-tap "Contribute" deposit dialog; toggleable visibility |
+| K8 | ✅ **Search & filters for transactions** | Search note, category, place and amount; filter by type, period, category and amount | Instant on-device search across note, category, amount, and wallet; filter chips for type (Income/Expense) and wallets (Cash, bKash, Nagad, Bank); result counter and clear button |
+| K10 | ✅ **Customisable dashboard** | Choose which dashboard sections to show; the choice syncs | **Customizable Dashboard**: tune button in dashboard header opens section sheet; toggle 10 sections (weather, productivity, tasks, calendar, habits, budget, accounts, savings vault, savings goals, wishlist, recent activity); persisted and synced via `/profile/settings` |
 | K15 | ✅ **Downloadable Android app** | Signed APKs attached to every GitHub release, with a small arm64 build | GitHub Actions builds a universal and an arm64 APK (artifacts, and a Release on `v*` tags), with LifeFlow icons and an in-app server address. *Left:* create your own signing key (optional until you share updates) and code obfuscation |
 
 ### ⬜ Still to do
@@ -184,16 +198,11 @@ The goal is a public link that keeps working without paying or babysitting it.
 | K2 | ⬜ **Scan a to-do list** | A screenshot of a list becomes tickets on the board (ticked lines as done), with Undo | Add a `tasks` target to `POST /scan` and drop the items onto the Kanban board | 🟢 | ⭐⭐ |
 | K3 | ⬜ **Undo after bulk adds** | A scan's items can be removed in one tap | An "Undo" action on the "Added N transactions" message | 🟢 | ⭐⭐ |
 | K4 | ⬜ **Mood tracking × money** | Log a daily mood (five faces) with tags; calendar days are tinted by mood; a chart compares mood with net cash flow, with correlation | A mood row on the dashboard calendar and a chart in Analytics | 🟡 | ⭐⭐⭐ |
-| K5 | ⬜ **Budgets per category** | A monthly limit per category that fills up and turns red when exceeded | LifeFlow has one overall budget; add limits per category beside the donut chart | 🟡 | ⭐⭐⭐ |
-| K6 | ⬜ **Bills & recurring payments** | Due dates, recurrence, overdue / due-soon warnings, one-tap "paid" | Show bills as calendar dots; "paid" creates the expense | 🟡 | ⭐⭐⭐ |
-| K7 | ⬜ **Savings goals** | Targets with progress bars and quick additions | Similar to the wishlist target, but for saving money | 🟢 | ⭐⭐ |
-| K8 | ⬜ **Search & filters for transactions** | Search note, category, place and amount (even "october" or "monday"); filter by type, period, category and amount | A search bar and filter chips on Expenses (all transactions are on the device now, so it can search instantly, even offline) | 🟡 | ⭐⭐ |
 | K9 | ⬜ **Year heatmap & week view** | A 12-month heatmap of spending/income and a week view | Extra views for the dashboard calendar | 🟡 | ⭐⭐ |
-| K10 | ⬜ **Customisable dashboard** | Choose which dashboard sections to show; the choice syncs | A "Dashboard sections" setting stored in `preferences` | 🟢 | ⭐⭐ |
 | K11 | ⬜ **Time & place on transactions** | Each entry can have a time and a place | Two optional fields; the scanner already reads the shop name | 🟢 | ⭐ |
-| K12 | ⬜ **One "+" for everything** | A centre "+" in the bottom bar opens quick entry or the scanner | A single add button on phones: transaction, task, habit or scan | 🟡 | ⭐⭐ |
+| K12 | ⬜ **One "+" for everything** | A centre "+" in the bottom bar opens quick entry or the scanner | Center "+" or launcher "+ New entry" in bottom bar (More sheet already features quick "+ New entry" launcher modal for tasks, bills, savings goals, deposits, wishlist, and habits) | 🟡 | ⭐⭐ |
 | K13 | ⬜ **Board column editing** | Custom columns, drag columns left/right, numbered tickets | Let users rename and reorder Kanban columns | 🟡 | ⭐ |
 | K14 | ⬜ **Encrypted token storage on phones** | The login session lives in Keystore-encrypted storage | Now that there's an Android app, use `flutter_secure_storage` on Android/iOS instead of SharedPreferences | 🟢 | ⭐⭐ (security) |
 | K16 | ⬜ **Journal** | A daily log with a mood, next to custom habits | A short daily note on the Habits page | 🟢 | ⭐ |
 
-**Suggested picks next:** K3 Undo and K2 to-do scanning (small, reuse the scanner), K14 secure token storage (small, matters now that there's an APK), then K5 category budgets and K6 bills (big everyday value).
+**Suggested picks next:** K3 Undo and K2 to-do scanning (small, reuse the scanner), K14 secure token storage (small, matters now that there's an APK), then K4 mood tracking (rich everyday personal value).

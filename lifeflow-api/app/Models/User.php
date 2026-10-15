@@ -57,6 +57,21 @@ class User extends Authenticatable
         return $this->hasMany(WishlistItem::class);
     }
 
+    public function savings()
+    {
+        return $this->hasMany(Saving::class);
+    }
+
+    public function bills()
+    {
+        return $this->hasMany(Bill::class);
+    }
+
+    public function savingsGoals()
+    {
+        return $this->hasMany(SavingsGoal::class);
+    }
+
     /**
      * "Now" in the user's own timezone (falls back to APP_TIMEZONE). Use this,
      * not now(), for anything that depends on which day it is for the user.

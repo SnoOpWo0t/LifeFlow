@@ -12,6 +12,9 @@ const syncedStores = [
   'habit_logs',
   'transactions',
   'wishlist',
+  'savings',
+  'bills',
+  'savings_goals',
 ];
 
 /// A random UUID (v4) for records made on this device.

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Task;
 use App\Models\Habit;
 use App\Models\HabitLog;
+use App\Models\Saving;
 use App\Models\Transaction;
 
 class DashboardController extends Controller
@@ -130,6 +131,23 @@ class DashboardController extends Controller
             $accountBalances[$acc] = (float) ($income - $expense);
         }
 
+        // Savings summary per account (Cash, bKash, Nagad, Bank) and total
+        $savingsBalances = [];
+        $totalSavings = 0.0;
+        foreach ($accounts as $acc) {
+            $dep = (float) Saving::where('user_id', $user->id)
+                ->where('account', $acc)
+                ->where('type', 'deposit')
+                ->sum('amount');
+            $with = (float) Saving::where('user_id', $user->id)
+                ->where('account', $acc)
+                ->where('type', 'withdrawal')
+                ->sum('amount');
+            $net = $dep - $with;
+            $savingsBalances[$acc] = round($net, 2);
+            $totalSavings += $net;
+        }
+
         // Budget from preferences
         $monthlyBudget = isset($user->preferences['monthly_budget']) ? (float) $user->preferences['monthly_budget'] : 0;
 
@@ -148,6 +166,10 @@ class DashboardController extends Controller
             'productivity_score' => (int) round($productivityScore),
             'recent_activity' => $recentActivity,
             'account_balances' => $accountBalances,
+            'savings_summary' => [
+                'total' => round($totalSavings, 2),
+                'by_account' => $savingsBalances,
+            ],
         ]);
     }
 }

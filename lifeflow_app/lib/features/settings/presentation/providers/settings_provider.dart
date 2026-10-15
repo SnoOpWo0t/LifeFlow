@@ -58,3 +58,52 @@ class WeatherLocationNotifier extends Notifier<WeatherLocation> {
         .saveSettings(weatherLocation: location);
   }
 }
+
+final dashboardSectionsProvider =
+    NotifierProvider<DashboardSectionsNotifier, Map<String, bool>>(
+  DashboardSectionsNotifier.new,
+);
+
+class DashboardSectionsNotifier extends Notifier<Map<String, bool>> {
+  @override
+  Map<String, bool> build() {
+    ref.watch(_signedInUserIdProvider);
+    return ref.watch(settingsRepositoryProvider).dashboardSections;
+  }
+
+  Future<void> toggleSection(String key) async {
+    final updated = Map<String, bool>.from(state);
+    updated[key] = !(updated[key] ?? true);
+    state = updated;
+    await ref.read(settingsRepositoryProvider).saveDashboardSections(updated);
+  }
+
+  Future<void> resetToDefaults() async {
+    final defaults = SettingsRepository.defaultDashboardSections;
+    state = Map.from(defaults);
+    await ref.read(settingsRepositoryProvider).saveDashboardSections(defaults);
+  }
+}
+
+final vaultModeProvider = NotifierProvider<VaultModeNotifier, bool>(
+  VaultModeNotifier.new,
+);
+
+class VaultModeNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    ref.watch(_signedInUserIdProvider);
+    return ref.watch(settingsRepositoryProvider).vaultMode;
+  }
+
+  Future<void> toggle() async {
+    final next = !state;
+    state = next;
+    await ref.read(settingsRepositoryProvider).setVaultMode(next);
+  }
+
+  Future<void> setVaultMode(bool enabled) async {
+    state = enabled;
+    await ref.read(settingsRepositoryProvider).setVaultMode(enabled);
+  }
+}

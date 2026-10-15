@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bill;
 use App\Models\ExpenseCategory;
 use App\Models\Habit;
 use App\Models\HabitLog;
+use App\Models\Saving;
+use App\Models\SavingsGoal;
 use App\Models\Task;
 use App\Models\Transaction;
 use App\Models\User;
@@ -33,7 +36,7 @@ use Illuminate\Support\Facades\Validator;
 class SyncController extends Controller
 {
     /** Parents before children, so references resolve in one request. */
-    private const COLLECTIONS = ['categories', 'tasks', 'habits', 'habit_logs', 'transactions', 'wishlist'];
+    private const COLLECTIONS = ['categories', 'tasks', 'habits', 'habit_logs', 'transactions', 'wishlist', 'savings', 'bills', 'savings_goals'];
 
     private const MAX_PER_COLLECTION = 1000;
 
@@ -203,6 +206,33 @@ class SyncController extends Controller
                 'link' => ['nullable', 'string', 'max:2048'],
                 'sort_order' => ['nullable', 'integer'],
             ],
+            'savings' => [
+                'amount' => ['required', 'numeric', 'min:0.01'],
+                'type' => ['required', 'in:deposit,withdrawal'],
+                'account' => ['required', 'in:cash,bkash,nagad,bank'],
+                'transaction_date' => ['required', 'date'],
+                'note' => ['nullable', 'string', 'max:500'],
+            ],
+            'bills' => [
+                'title' => ['required', 'string', 'max:255'],
+                'category_id' => ['nullable', 'string', 'max:64'],
+                'amount' => ['required', 'numeric', 'min:0.01'],
+                'due_date' => ['required', 'date'],
+                'frequency' => ['required', 'in:one_time,weekly,monthly,quarterly,yearly'],
+                'account' => ['nullable', 'in:cash,bkash,nagad,bank'],
+                'is_paid' => ['nullable', 'boolean'],
+                'last_paid_at' => ['nullable', 'date'],
+                'note' => ['nullable', 'string', 'max:500'],
+            ],
+            'savings_goals' => [
+                'title' => ['required', 'string', 'max:255'],
+                'target_amount' => ['required', 'numeric', 'min:0.01'],
+                'saved_amount' => ['nullable', 'numeric', 'min:0'],
+                'target_date' => ['nullable', 'date'],
+                'category' => ['nullable', 'string', 'max:60'],
+                'color_hex' => ['nullable', 'string', 'max:7'],
+                'is_completed' => ['nullable', 'boolean'],
+            ],
         };
     }
 
@@ -240,6 +270,35 @@ class SyncController extends Controller
                 'link' => $r['link'] ?? null,
                 'sort_order' => (int) ($r['sort_order'] ?? 0),
             ],
+            'savings' => [
+                'amount' => $r['amount'],
+                'type' => $r['type'],
+                'account' => $r['account'] ?? 'cash',
+                'transaction_date' => substr((string) $r['transaction_date'], 0, 10),
+                'note' => $r['note'] ?? null,
+            ],
+            'bills' => [
+                'title' => $r['title'],
+                'category_id' => isset($r['category_id'])
+                    ? ExpenseCategory::withTrashed()->where('user_id', $user->id)->where('uuid', $r['category_id'])->value('id')
+                    : null,
+                'amount' => $r['amount'],
+                'due_date' => substr((string) $r['due_date'], 0, 10),
+                'frequency' => $r['frequency'] ?? 'monthly',
+                'account' => $r['account'] ?? 'bank',
+                'is_paid' => (bool) ($r['is_paid'] ?? false),
+                'last_paid_at' => isset($r['last_paid_at']) ? substr((string) $r['last_paid_at'], 0, 10) : null,
+                'note' => $r['note'] ?? null,
+            ],
+            'savings_goals' => [
+                'title' => $r['title'],
+                'target_amount' => $r['target_amount'],
+                'saved_amount' => $r['saved_amount'] ?? 0.00,
+                'target_date' => isset($r['target_date']) ? substr((string) $r['target_date'], 0, 10) : null,
+                'category' => $r['category'] ?? null,
+                'color_hex' => $r['color_hex'] ?? null,
+                'is_completed' => (bool) ($r['is_completed'] ?? false),
+            ],
         };
     }
 
@@ -265,7 +324,7 @@ class SyncController extends Controller
         $rows = $query->orderBy('id')->get();
 
         $uuids = match ($collection) {
-            'transactions' => ExpenseCategory::withTrashed()->where('user_id', $user->id)->pluck('uuid', 'id'),
+            'transactions', 'bills' => ExpenseCategory::withTrashed()->where('user_id', $user->id)->pluck('uuid', 'id'),
             'habit_logs' => Habit::withTrashed()->where('user_id', $user->id)->pluck('uuid', 'id'),
             default => collect(),
         };
@@ -312,6 +371,33 @@ class SyncController extends Controller
                 'link' => $row->link,
                 'sort_order' => (int) $row->sort_order,
             ],
+            'savings' => [
+                'amount' => $money($row->amount),
+                'type' => $row->type,
+                'account' => $row->account ?? 'cash',
+                'transaction_date' => substr((string) $row->transaction_date, 0, 10),
+                'note' => $row->note,
+            ],
+            'bills' => [
+                'title' => $row->title,
+                'category_id' => $row->category_id ? ($uuids[$row->category_id] ?? null) : null,
+                'amount' => $money($row->amount),
+                'due_date' => substr((string) $row->due_date, 0, 10),
+                'frequency' => $row->frequency ?? 'monthly',
+                'account' => $row->account ?? 'bank',
+                'is_paid' => (bool) $row->is_paid,
+                'last_paid_at' => $row->last_paid_at ? substr((string) $row->last_paid_at, 0, 10) : null,
+                'note' => $row->note,
+            ],
+            'savings_goals' => [
+                'title' => $row->title,
+                'target_amount' => $money($row->target_amount),
+                'saved_amount' => $money($row->saved_amount),
+                'target_date' => $row->target_date ? substr((string) $row->target_date, 0, 10) : null,
+                'category' => $row->category,
+                'color_hex' => $row->color_hex,
+                'is_completed' => (bool) $row->is_completed,
+            ],
         } + [
             'created_at' => $time($row->created_at),
             'updated_at' => $time($row->client_updated_at ?? $row->updated_at),
@@ -334,6 +420,9 @@ class SyncController extends Controller
             'habits' => Habit::class,
             'transactions' => Transaction::class,
             'wishlist' => WishlistItem::class,
+            'savings' => Saving::class,
+            'bills' => Bill::class,
+            'savings_goals' => SavingsGoal::class,
         };
     }
 }

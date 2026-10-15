@@ -24,6 +24,22 @@ class SettingsRepository {
   static const _cityKey = 'default_city';
   static const _locationKey = 'weather_location';
   static const _budgetKey = 'monthly_budget';
+  static const _categoryBudgetsKey = 'category_budgets';
+  static const _savingsGoalsVisibleKey = 'savings_goals_visible';
+  static const _dashboardSectionsKey = 'dashboard_sections';
+
+  static const Map<String, bool> defaultDashboardSections = {
+    'weather': true,
+    'productivity': true,
+    'stats': true,
+    'calendar': true,
+    'budget': true,
+    'accounts': true,
+    'savings': true,
+    'savings_goals': true,
+    'wishlist': true,
+    'recent': true,
+  };
 
   /// Follows the device unless the user picked Light or Dark. Accounts that
   /// only have the old on/off setting keep their choice.
@@ -52,6 +68,104 @@ class SettingsRepository {
     } catch (_) {
       return WeatherLocation.fallback;
     }
+  }
+
+  Map<String, bool> get dashboardSections {
+    final raw = _prefs.getString(_dashboardSectionsKey);
+    if (raw == null) return Map.from(defaultDashboardSections);
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final result = Map<String, bool>.from(defaultDashboardSections);
+      for (final entry in decoded.entries) {
+        if (entry.value is bool) {
+          result[entry.key] = entry.value as bool;
+        }
+      }
+      return result;
+    } catch (_) {
+      return Map.from(defaultDashboardSections);
+    }
+  }
+
+  Map<String, double> get categoryBudgets {
+    final raw = _prefs.getString(_categoryBudgetsKey);
+    if (raw == null) return {};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final result = <String, double>{};
+      for (final entry in decoded.entries) {
+        final val = double.tryParse(entry.value.toString());
+        if (val != null && val > 0) {
+          result[entry.key] = val;
+        }
+      }
+      return result;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveCategoryBudgets(Map<String, double> budgets) async {
+    await _prefs.setString(_categoryBudgetsKey, jsonEncode(budgets));
+    try {
+      await _apiClient.dio.put(
+        '/profile/settings',
+        data: {
+          'preferences': {
+            _categoryBudgetsKey: budgets,
+          },
+        },
+      );
+    } catch (_) {}
+  }
+
+  bool get savingsGoalsVisible =>
+      _prefs.getBool(_savingsGoalsVisibleKey) ?? true;
+
+  Future<void> setSavingsGoalsVisible(bool visible) async {
+    await _prefs.setBool(_savingsGoalsVisibleKey, visible);
+    try {
+      await _apiClient.dio.put(
+        '/profile/settings',
+        data: {
+          'preferences': {
+            _savingsGoalsVisibleKey: visible,
+          },
+        },
+      );
+    } catch (_) {}
+  }
+
+  static const _vaultModeKey = 'vault_mode';
+
+  bool get vaultMode => _prefs.getBool(_vaultModeKey) ?? false;
+
+  Future<void> setVaultMode(bool enabled) async {
+    await _prefs.setBool(_vaultModeKey, enabled);
+    try {
+      await _apiClient.dio.put(
+        '/profile/settings',
+        data: {
+          'preferences': {
+            _vaultModeKey: enabled,
+          },
+        },
+      );
+    } catch (_) {}
+  }
+
+  Future<void> saveDashboardSections(Map<String, bool> sections) async {
+    await _prefs.setString(_dashboardSectionsKey, jsonEncode(sections));
+    try {
+      await _apiClient.dio.put(
+        '/profile/settings',
+        data: {
+          'preferences': {
+            _dashboardSectionsKey: sections,
+          },
+        },
+      );
+    } catch (_) {}
   }
 
   Future<void> saveSettings({
@@ -129,6 +243,26 @@ class SettingsRepository {
       await _prefs.setString(_locationKey, jsonEncode(location));
       await _prefs.setString(_cityKey, location['name'].toString());
     }
+    final sections = remote[_dashboardSectionsKey];
+    if (sections is Map) {
+      final merged = Map<String, bool>.from(defaultDashboardSections);
+      for (final e in sections.entries) {
+        if (e.value is bool) merged[e.key.toString()] = e.value as bool;
+      }
+      await _prefs.setString(_dashboardSectionsKey, jsonEncode(merged));
+    }
+    final catBudgets = remote[_categoryBudgetsKey];
+    if (catBudgets is Map) {
+      await _prefs.setString(_categoryBudgetsKey, jsonEncode(catBudgets));
+    }
+    final goalsVis = remote[_savingsGoalsVisibleKey];
+    if (goalsVis is bool) {
+      await _prefs.setBool(_savingsGoalsVisibleKey, goalsVis);
+    }
+    final vault = remote[_vaultModeKey];
+    if (vault is bool) {
+      await _prefs.setBool(_vaultModeKey, vault);
+    }
   }
 
   /// Forget the signed-out user's preferences so the next account starts clean.
@@ -140,6 +274,10 @@ class SettingsRepository {
       _cityKey,
       _locationKey,
       _budgetKey,
+      _categoryBudgetsKey,
+      _savingsGoalsVisibleKey,
+      _vaultModeKey,
+      _dashboardSectionsKey,
     ]) {
       await _prefs.remove(key);
     }
@@ -149,7 +287,9 @@ class SettingsRepository {
   Map<String, dynamic> get preferences => {
     _themeKey: themeMode.name,
     _budgetKey: monthlyBudget,
+    _categoryBudgetsKey: categoryBudgets,
     _locationKey: weatherLocation.toJson(),
+    _vaultModeKey: vaultMode,
   };
 
   Future<String> uploadAvatar(List<int> bytes, String filename) async {

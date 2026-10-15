@@ -13,9 +13,9 @@
   <img src="https://img.shields.io/github/v/release/SnoOpWo0t/LifeFlow?style=for-the-badge&logo=android&logoColor=white&label=Download%20for%20Android&color=3DDC84&labelColor=1F2937" alt="Download LifeFlow for Android (APK)" height="44">
 </a>
 
-**[⬇️ Download LifeFlow.apk](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)**
+**[⬇️ Download Universal APK (LifeFlow.apk)](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)** &nbsp;·&nbsp; **[⚡ Download Arm64 APK (Smaller)](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow-arm64.apk)**
 <br />
-<sub>Always the latest version · works offline, no account needed · <a href="https://github.com/SnoOpWo0t/LifeFlow/releases/latest">smaller arm64 build &amp; release notes</a> · <a href="#3-android-app">how to install</a></sub>
+<sub>Latest release: **v1.2.0** · works 100% offline, no account required · <a href="https://github.com/SnoOpWo0t/LifeFlow/releases">All Releases &amp; Notes</a> · <a href="https://github.com/SnoOpWo0t/LifeFlow/actions/workflows/android.yml">GitHub Actions Builds</a> · <a href="#3-android-app">Installation Guide</a></sub>
 
 🌐 **Live server:** [`https://lifeflow-api-06bt.onrender.com`](https://lifeflow-api-06bt.onrender.com/up) &nbsp;·&nbsp; the app is already connected to it: just **Sign up**, nothing to type
 
@@ -65,11 +65,17 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
 ## ✨ Key Features
 
 - **📴 Works offline:** all your data lives in a database on the device, so adding, editing and every chart work with no internet. Use it **without an account** if you like (data stays on that device), or sign in to **back it up and sync** across phone and web. Changes upload a few seconds after you make them and whenever you're back online; if two devices edit the same thing, the newest edit wins. Settings shows *Synced just now* / *Offline, 3 changes waiting*, and pull-to-refresh syncs.
-- **📊 Dashboard:** live weather, a productivity score, **today's tasks** (due today, overdue, or finished today), habit progress, monthly budget overview positioned above live **multi-wallet accounts** (Cash, bKash, Nagad, Bank), Wishlist targets preview, and a recent-activity feed. Two columns on desktop, one on phones.
+- **🛡️ Financial Privacy Shield (Vault Mode):** quick-toggle privacy mode inside the More launcher sheet. Instantly conceals sensitive balances, bank/mobile wallet reserves, goal progress, and transaction figures across the entire app with `••••••` for public screen privacy. Persists locally and syncs to your account profile.
+- **📊 Customizable Dashboard:** live weather, a productivity score, **today's tasks** (due today, overdue, or finished today), habit progress, monthly budget overview positioned above live **multi-wallet accounts** (Cash, bKash, Nagad, Bank), **Savings Vault summary**, Savings Goals, Wishlist targets preview, and a recent-activity feed. Personalize your view with the **tune button** (`tune`) in the header to show or hide any section!
+- **🏦 Dedicated Savings Tracker (Vault) & Goals:** keep your savings reserves **completely isolated from daily expenses**. Deposit or withdraw savings across specific wallets (`cash`, `bkash`, `nagad`, `bank`), track purpose notes and transaction dates, monitor total funds, and define **customizable Savings Goals** with visual progress bars and quick one-tap contribution buttons.
+- **🧾 Bills & Recurring Payments:** track recurring expenses and subscriptions with due dates, recurrence frequencies (weekly, monthly, yearly, one-time), alert indicators (upcoming, due soon, overdue), and payment accounts. One-tap **"Mark as Paid"** automatically records an expense in your transaction history and advances the schedule.
+- **🎯 Category Budgets:** set monthly spending thresholds per category with dynamic progress bars, alert chips when approaching 80% limit, and warning badges when 100%+ exceeded.
+- **🔍 Transaction Search & Filter:** instant on-device search across transaction notes, categories, amounts, and wallets. Filter effortlessly using dedicated chips for **Income / Expense** and specific **Wallets** with a live result counter and quick filter reset.
+- **📱 Decluttered 5-Destination Navigation:** a clean 5-button bottom bar on phones (Home, Tasks, Expenses, Analytics, More) with a bottom sheet housing **Habits**, **Wishlist**, **Savings**, **Bills**, and **Settings**. Full side rail navigation on desktop.
 - **📅 Calendar:** your month at a glance on the dashboard. Each day shows dots for tasks due, habits checked (all or some) and money spent; tap a day to see its tasks, habit check-ins and transactions. A full month grid on desktop; a one-week strip you can expand on phones.
 - **📋 Kanban Task Manager:** *To Do*, *In Progress* and *Done* lanes with priorities and due dates. Drag and drop on desktop; a lane switcher and a "Move to…" menu on phones. Deleting asks for confirmation.
 - **💰 Expense Tracker:** income and expenses with multi-wallet account tags (`cash`, `bkash`, `nagad`, `bank`), colour-coded categories (create, edit, delete), a monthly budget, an income-vs-expense bar chart and a **spending-by-category donut** for the month. **Tap any transaction to edit or delete it.** Amounts are shown with thousands separators (`৳ 124,123`).
-- **🎁 Wishlist & Target Purchases:** track dream purchases with **customizable categories** (e.g. Perfume, Tech, Fashion, Books, etc.), set estimated prices, assign priorities (Low, Normal, High), store store links, reorder with custom sorting, filter by category or status, and seamlessly convert acquired items into wallet expense transactions with a single tap!
+- **🎁 Wishlist & Target Purchases:** track dream purchases with **customizable categories** (e.g. Perfume, Tech, Fashion, Books, etc.), set estimated prices, assign priorities (Low, Normal, High), store store links, reorder with custom sorting, filter by category or status, and seamlessly convert acquired items into wallet expense transactions with a single tap! Optimized responsive layout keeps long item titles fully legible.
 - **📸 AI photo scanner** (needs internet and an account): take a photo or choose a screenshot of a **receipt**, your **money notes** (Notepad, notes apps, chats, handwriting) or a **shopping list / product page**. Google Gemini reads it (English or Bengali) and you **review every line** before anything is saved: fix names and amounts, switch income/expense, pick categories (new ones are created for you), the date and the wallet. Receipt discounts are shared across items, or save the whole receipt as one expense.
 - **✨ AI summaries** (needs internet and an account): on the Analytics tab, one tap writes a short read of **this week or this month**: a headline, what happened with your money, tasks and habits (compared with the previous period), the highlights, and 2–4 concrete suggestions. Summaries are saved, so opening them again costs nothing, and the app tells you when there's newer data so you can refresh.
 - **🔥 Habit Tracker:** daily check-ins with a small animation (and a vibration on phones), a 7-day view and streaks **calculated from your check-in history**, so they're always accurate. Rename or delete habits from the card menu.
@@ -88,8 +94,12 @@ LifeFlow keeps all your data **on your device** and treats the server as a backu
 | | Without internet | Notes |
 |---|---|---|
 | Tasks, expenses, categories, wallets, budget | ✅ | Add, edit, delete, charts and totals |
+| Category Budgets & limits | ✅ | Monthly limits, progress meters & warnings |
+| Bills & Recurring Payments | ✅ | Due tracking, recurrence schedules, 1-tap paid |
 | Habits and streaks | ✅ | Check-ins and streaks are calculated on the device |
-| Wishlist | ✅ | Including reordering and "convert to expense" |
+| Wishlist & Target Purchases | ✅ | Custom categories, reordering, convert to expense |
+| Savings Vault & Goals | ✅ | Deposits, withdrawals, per-wallet reserves & goals |
+| Financial Privacy Shield (Vault Mode) | ✅ | Masks numbers across all tabs with `••••••` |
 | Dashboard, calendar, weekly analytics | ✅ | Built from the data on the device |
 | Export my data (JSON / CSV) | ✅ | The file is made on the device |
 | Use without an account | ✅ | Data stays on that device until you sign in |
@@ -196,36 +206,38 @@ LifeFlow/
 ├── .github/workflows/ci.yml       # Automatic tests on every push (GitHub Actions)
 ├── .github/workflows/android.yml  # Builds the Android APK on GitHub (on demand or on a v* tag)
 ├── lifeflow-api/                  # Backend REST API (Laravel)
-│   ├── app/Http/Controllers/      # Sync, Auth, Dashboard, Calendar, Tasks, Expenses, Wishlist, Habits, Analytics, Scan, Insights, Profile
+│   ├── app/Http/Controllers/      # Sync, Auth, Dashboard, Calendar, Tasks, Expenses, Wishlist, Habits, Savings, Bills, Analytics, Scan, Insights
 │   ├── app/Http/Requests/         # Validation rules, one class per action (Form Requests)
 │   ├── app/Http/Resources/        # The exact JSON shape returned for each model (API Resources)
 │   ├── app/Http/Middleware/       # Remembers each user's timezone (X-Timezone header)
 │   ├── app/Services/              # Gemini client, photo reader, AI summary writer (prompts, schemas, cleaning)
 │   ├── app/Policies/              # "Only the owner may edit/delete" rules
 │   ├── app/Models/                # Eloquent models (Concerns/Syncable: uuid, edit time, soft deletes)
-│   ├── routes/api.php             # 43 endpoints under /api/v1
-│   ├── database/migrations/       # Database schema (16 migrations)
-│   └── tests/Feature/             # Feature & API tests (68 tests: Api, Sync, Wishlist, Scan, Insight…)
+│   ├── routes/api.php             # 43+ endpoints under /api/v1 (Tasks, Expenses, Wishlist, Savings, Bills, Sync)
+│   ├── database/migrations/       # Database schema (19 migrations)
+│   └── tests/Feature/             # Feature & API tests (68 tests: Api, Sync, Wishlist, Savings, Bills, Scan, Insight…)
 │
 └── lifeflow_app/                  # Frontend (Flutter)
     ├── lib/
-    │   ├── core/                  # On-device database (local/), sync (sync/), API client, storage, theme
-    │   ├── features/              # One folder per feature: data / domain / presentation
+    │   ├── core/                  # On-device database (local/), sync (sync/), API client, storage, theme, formatters
+    │   ├── features/              # Modular feature folders: data / domain / presentation
     │   │   ├── auth/              # Sign in / sign up / use without an account
-    │   │   ├── dashboard/         # Summary + live weather
+    │   │   ├── dashboard/         # Summary, multi-wallet accounts, custom section ordering, live weather
     │   │   ├── calendar/          # Month-at-a-glance calendar + day details
     │   │   ├── tasks/             # Kanban board
-    │   │   ├── expenses/          # Transactions, categories, budget, multi-wallet
-    │   │   ├── wishlist/          # Target purchases with custom categories & expense conversion
+    │   │   ├── expenses/          # Transactions, categories, category budgets, search & filter, multi-wallet
+    │   │   ├── bills/             # Bills & recurring subscriptions with due tracking and auto-expense
+    │   │   ├── savings/           # Dedicated Savings Vault, wallet reserves, and customizable Savings Goals
+    │   │   ├── wishlist/          # Target purchases with custom categories, priority, and optimized layout
     │   │   ├── scan/              # AI photo scanner: pick a photo, review, save
     │   │   ├── habits/            # Habit cards and streaks
-    │   │   ├── analytics/         # Weekly charts
+    │   │   ├── analytics/         # Weekly charts and AI summary digest
     │   │   ├── insights/          # AI summaries of your week or month
-    │   │   └── settings/          # Profile, preferences, weather location
+    │   │   └── settings/          # Profile, preferences, Vault Mode privacy shield, weather location
     │   ├── main.dart              # App entry point
-    │   └── main_screen.dart       # Responsive navigation (6-destination bar with modal sheet / side rail)
+    │   └── main_screen.dart       # Responsive navigation (5-destination bar, More launcher grid, desktop rail)
     ├── android/                   # Android app: id com.lifeflow.app, LifeFlow icons, signing
-    └── test/                      # Flutter unit and widget tests (41 tests; offline_test.dart covers storage and sync)
+    └── test/                      # Flutter unit and widget tests (52 tests; offline_test.dart covers storage and sync)
 ```
 
 More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJECT_BLUEPRINT.md).
@@ -267,7 +279,7 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 
 ## ✅ Quality & Security
 
-- **Automated tests:** 68 backend tests (PHPUnit) and 41 Flutter tests, run on every push by GitHub Actions.
+- **Automated tests:** 68 backend tests (PHPUnit) and 52 Flutter tests, run on every push by GitHub Actions.
 - **Data isolation:** every edit and delete goes through Laravel Policies, lists and new records are always scoped to the signed-in user, and sync rejects records that belong to someone else, so nobody can read or change anyone else's data (covered by tests).
 - **Signing out clears the device:** your synced data is removed from the phone when you log out (it warns first if changes haven't uploaded yet), and a different account never sees the previous one's data.
 - **Login protection:** passwords are hashed, login/register are limited to 10 attempts per minute, logout revokes the token on the server, and an expired session returns you to the sign-in screen.
@@ -293,10 +305,17 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 - [X]  Installable Android app (APK built by GitHub Actions)
 - [X]  Offline-first: on-device database, use without an account, background sync
 - [X]  Responsive layouts for phone and desktop
-- [X]  Automated tests and CI
-- [X]  Wishlist & target purchases (custom categories, priority, drag-and-drop sort, store link, 1-tap expense conversion)
+- [X]  Automated tests and CI (68 Laravel tests + 52 Flutter tests)
+- [X]  Wishlist & target purchases (custom categories, priority, drag-and-drop sort, store link, 1-tap expense conversion, optimized long title layout)
 - [X]  Multi-wallet accounting (Cash, bKash, Nagad, Bank balances per transaction and dashboard card)
 - [X]  Decluttered bottom navigation with IndexedStack tab state preservation
+- [X]  Modern "More" sheet launcher (4-column grid, "+ New entry" quick launcher, Vault Mode switch, Theme toggle)
+- [X]  Financial Privacy Shield (Vault Mode to conceal sensitive figures across all screens with `••••••`)
+- [X]  Category budgets (monthly spending limits per category, progress meters, warning badges)
+- [X]  Bills & recurring payments (due dates, frequencies, alert status, 1-tap "Mark as Paid" auto-expense)
+- [X]  Dedicated Savings Vault & customizable Savings Goals with direct contribution tracking
+- [X]  Customizable Dashboard (reorder/toggle sections via header tune button)
+- [X]  Transaction search & filter (by notes, category, amount, wallet, and income/expense type)
 - [ ]  Reminders / push notifications for habits and overdue tasks
 - [ ]  Sign in with Google
 - [ ]  Multi-currency support
@@ -304,7 +323,7 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 - [X]  Production database on Neon (PostgreSQL), verified end to end
 - [X]  Public API on Render (`https://lifeflow-api-06bt.onrender.com`), deployed from `render.yaml`
 
-The full prioritised list, all of it doable for free, is in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md), including ideas from the [Catalyst](https://github.com/HAVIC-47/catalyst-app) app (mood tracking, category budgets, bills, savings goals…), with a checklist of what's already done.
+The full prioritised list, all of it doable for free, is in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md), including ideas from the [Catalyst](https://github.com/HAVIC-47/catalyst-app) app (category budgets, bills, savings goals, mood tracking…), with a live checklist of what's implemented.
 
 ---
 
@@ -343,11 +362,24 @@ flutter run -d web-server --web-port 8080     # → http://localhost:8080
 
 ### 3. Android app
 
-**Just want the app?** [Download LifeFlow.apk](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk), open it on your phone and allow *Install unknown apps* once. Then either tap **Continue without an account** (fully offline) or **Sign up**: the app is connected to the live API (`https://lifeflow-api-06bt.onrender.com`, data in Neon PostgreSQL), so accounts, sync, the AI scanner and AI summaries work anywhere. The free server sleeps when idle, so the first sign-in after a break can take up to a minute.
+**Download the latest APK:**
+- 📱 **[Universal APK (LifeFlow.apk)](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)** — works on any modern Android device.
+- ⚡ **[Arm64 APK (LifeFlow-arm64.apk)](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow-arm64.apk)** — smaller download (~40% smaller), optimized for 64-bit phones.
+- 📦 **[All Releases & Changelogs](https://github.com/SnoOpWo0t/LifeFlow/releases)**
 
-You never need to type a server address: the app comes connected to the live server, and an old or wrong address typed into an earlier version is forgotten automatically. (**Server: …** on the sign-in screen is only for pointing a test build at your own laptop or server.)
+**Installation steps:**
+1. Download the APK file directly to your phone.
+2. Tap the downloaded file in your browser or Downloads folder.
+3. If prompted, allow *Install unknown apps* for your browser once, then tap **Install**.
+4. Open LifeFlow! You can immediately tap **Continue without an account** (100% offline functionality) or **Sign up** to sync across devices. The app comes pre-configured to connect to the live API on Render with Neon PostgreSQL.
 
-**Building it yourself** needs no Android Studio: on GitHub open **Actions → Android APK → Run workflow** (or push a `v*` tag to publish a release), then download the APK from the run's *Artifacts*. Details, including testing against your laptop over Wi-Fi, are in [HOW_TO_RUN.md](HOW_TO_RUN.md#5--android-app-apk).
+**Building & Publishing the updated APK on GitHub:**
+1. **Automated on tag:** Pushing any release tag (e.g. `v1.2.0`) builds the APK and automatically publishes a new release on GitHub Releases:
+   ```bash
+   git tag v1.2.0
+   git push origin v1.2.0
+   ```
+2. **On-demand build:** In your GitHub repo, go to **Actions → "Android APK" → "Run workflow"**. Once the action completes (~4 minutes), download the APKs from the run's **Artifacts** (`LifeFlow-android.zip`).
 
 ### 4. Database and hosting
 

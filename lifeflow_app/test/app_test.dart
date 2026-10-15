@@ -23,6 +23,9 @@ import 'package:lifeflow_app/features/settings/domain/weather_location.dart';
 import 'package:lifeflow_app/features/wishlist/domain/wishlist_item.dart';
 import 'package:lifeflow_app/features/wishlist/domain/wishlist_category_utils.dart';
 import 'package:lifeflow_app/features/wishlist/presentation/providers/wishlist_provider.dart';
+import 'package:lifeflow_app/features/savings/domain/savings_models.dart';
+import 'package:lifeflow_app/features/savings/domain/savings_goal_models.dart';
+import 'package:lifeflow_app/features/bills/domain/bill_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -35,6 +38,11 @@ void main() {
 
     test('puts the minus sign before the currency', () {
       expect(formatMoney(-2500), '-৳ 2,500');
+    });
+
+    test('masks amounts when isVault is true', () {
+      expect(formatMoney(124123, isVault: true), '৳ ••••••');
+      expect(formatMoney(-500, isVault: true), '৳ ••••••');
     });
   });
 
@@ -596,6 +604,203 @@ void main() {
     });
     expect(none.insight, isNull);
     expect(none.configured, isFalse);
+  });
+
+  group('savings models & summary', () {
+    test('Saving model parses fromJson and serializes toJson accurately', () {
+      final s = Saving.fromJson({
+        'id': 'save-123',
+        'amount': '2500.50',
+        'type': 'deposit',
+        'account': 'bkash',
+        'note': 'Emergency fund deposit',
+        'transaction_date': '2026-10-16',
+      });
+      expect(s.id, 'save-123');
+      expect(s.amount, 2500.50);
+      expect(s.isDeposit, isTrue);
+      expect(s.isWithdrawal, isFalse);
+      expect(s.account, 'bkash');
+      expect(s.note, 'Emergency fund deposit');
+      expect(s.transactionDate.year, 2026);
+      expect(s.transactionDate.month, 10);
+      expect(s.transactionDate.day, 16);
+
+      final json = s.toJson();
+      expect(json['amount'], 2500.50);
+      expect(json['type'], 'deposit');
+      expect(json['account'], 'bkash');
+      expect(json['note'], 'Emergency fund deposit');
+      expect(json['transaction_date'], '2026-10-16');
+    });
+
+    test('SavingsAccountMeta maps key to correct label, icon, and color', () {
+      final bank = SavingsAccountMeta.forAccount('bank');
+      expect(bank.label, 'Bank');
+      expect(bank.key, 'bank');
+
+      final bkash = SavingsAccountMeta.forAccount('bKash');
+      expect(bkash.label, 'bKash');
+      expect(bkash.key, 'bkash');
+
+      final fallback = SavingsAccountMeta.forAccount('unknown');
+      expect(fallback.key, 'cash');
+    });
+  });
+
+  group('transaction search and filtering', () {
+    final sampleTransactions = [
+      Transaction(
+        id: 'tx-1',
+        amount: 1500,
+        type: 'expense',
+        account: 'bkash',
+        transactionDate: DateTime(2026, 10, 15),
+        note: 'Grocery market shopping',
+        category: ExpenseCategory(id: 'c1', name: 'Food', type: 'expense'),
+      ),
+      Transaction(
+        id: 'tx-2',
+        amount: 25000,
+        type: 'income',
+        account: 'bank',
+        transactionDate: DateTime(2026, 10, 14),
+        note: 'Monthly salary credit',
+        category: ExpenseCategory(id: 'c2', name: 'Salary', type: 'income'),
+      ),
+      Transaction(
+        id: 'tx-3',
+        amount: 350,
+        type: 'expense',
+        account: 'cash',
+        transactionDate: DateTime(2026, 10, 16),
+        note: 'Rickshaw fare',
+        category: ExpenseCategory(id: 'c3', name: 'Transport', type: 'expense'),
+      ),
+    ];
+
+    test('search query matches note or category name', () {
+      final results = sampleTransactions.where((tx) {
+        const query = 'grocery';
+        final noteMatch = tx.note?.toLowerCase().contains(query) ?? false;
+        final catMatch = tx.category?.name.toLowerCase().contains(query) ?? false;
+        return noteMatch || catMatch;
+      }).toList();
+
+      expect(results.length, 1);
+      expect(results.first.id, 'tx-1');
+    });
+
+    test('type and wallet filtering work accurately', () {
+      // Filter by income
+      final income = sampleTransactions.where((tx) => tx.type == 'income').toList();
+      expect(income.length, 1);
+      expect(income.first.id, 'tx-2');
+
+      // Filter by bkash
+      final bkash = sampleTransactions.where((tx) => tx.account == 'bkash').toList();
+      expect(bkash.length, 1);
+      expect(bkash.first.id, 'tx-1');
+    });
+  });
+
+  group('dashboard customization settings', () {
+    test('defaultDashboardSections has all 10 sections enabled', () {
+      final defaults = SettingsRepository.defaultDashboardSections;
+      expect(defaults['weather'], isTrue);
+      expect(defaults['productivity'], isTrue);
+      expect(defaults['stats'], isTrue);
+      expect(defaults['calendar'], isTrue);
+      expect(defaults['budget'], isTrue);
+      expect(defaults['accounts'], isTrue);
+      expect(defaults['savings'], isTrue);
+      expect(defaults['savings_goals'], isTrue);
+      expect(defaults['wishlist'], isTrue);
+      expect(defaults['recent'], isTrue);
+    });
+  });
+
+  group('Bills and Recurring Payments', () {
+    test('Bill model fromJson and toJson round trip', () {
+      final json = {
+        'id': 'bill-1',
+        'title': 'Internet Fiber',
+        'amount': '1500.00',
+        'due_date': '2026-11-01',
+        'frequency': 'monthly',
+        'account': 'bank',
+        'is_paid': false,
+        'note': 'Optical link',
+      };
+
+      final bill = Bill.fromJson(json);
+      expect(bill.id, 'bill-1');
+      expect(bill.title, 'Internet Fiber');
+      expect(bill.amount, 1500.0);
+      expect(bill.frequency, 'monthly');
+      expect(bill.isPaid, isFalse);
+
+      final encoded = bill.toJson();
+      expect(encoded['title'], 'Internet Fiber');
+      expect(encoded['amount'], 1500.0);
+      expect(encoded['due_date'], '2026-11-01');
+      expect(encoded['frequency'], 'monthly');
+    });
+
+    test('Bill calculates due status correctly', () {
+      final overdueBill = Bill(
+        id: '1',
+        title: 'Electricity',
+        amount: 2000,
+        dueDate: DateTime.now().subtract(const Duration(days: 2)),
+      );
+      expect(overdueBill.isOverdue, isTrue);
+      expect(overdueBill.dueStatusText, contains('Overdue by 2 days'));
+
+      final paidBill = Bill(
+        id: '2',
+        title: 'Gas',
+        amount: 500,
+        dueDate: DateTime.now(),
+        isPaid: true,
+      );
+      expect(paidBill.isPaid, isTrue);
+      expect(paidBill.dueStatusText, 'Paid');
+    });
+  });
+
+  group('Savings Goals', () {
+    test('SavingsGoal model calculates progress and remaining amounts accurately', () {
+      final goal = SavingsGoal(
+        id: 'goal-1',
+        title: 'MacBook M3',
+        targetAmount: 200000,
+        savedAmount: 50000,
+        category: 'Tech & Gadgets',
+      );
+
+      expect(goal.progressRatio, 0.25);
+      expect(goal.remainingAmount, 150000);
+      expect(goal.isCompleted, isFalse);
+    });
+
+    test('SavingsGoal fromJson and toJson round trip', () {
+      final json = {
+        'id': 'g-1',
+        'title': 'Emergency Fund',
+        'target_amount': '100000',
+        'saved_amount': '100000',
+        'is_completed': true,
+        'category': 'Emergency',
+      };
+
+      final goal = SavingsGoal.fromJson(json);
+      expect(goal.id, 'g-1');
+      expect(goal.targetAmount, 100000.0);
+      expect(goal.savedAmount, 100000.0);
+      expect(goal.isCompleted, isTrue);
+      expect(goal.progressRatio, 1.0);
+    });
   });
 }
 

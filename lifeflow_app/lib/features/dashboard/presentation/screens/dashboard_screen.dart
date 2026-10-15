@@ -10,6 +10,9 @@ import '../../../calendar/presentation/widgets/dashboard_calendar.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../settings/presentation/widgets/city_picker.dart';
 import '../../../wishlist/presentation/providers/wishlist_provider.dart';
+import '../../../savings/presentation/providers/savings_provider.dart';
+import '../../../savings/domain/savings_models.dart';
+import '../../../savings/presentation/providers/savings_goals_provider.dart';
 import '../../../../main_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -19,6 +22,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).value;
     final summaryAsync = ref.watch(dashboardSummaryProvider);
+    final isVault = ref.watch(vaultModeProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -28,6 +32,21 @@ class DashboardScreen extends ConsumerWidget {
           'Dashboard',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          if (isVault)
+            const Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: Tooltip(
+                message: 'Vault Mode Active: Balances concealed',
+                child: Icon(Icons.shield, size: 20, color: Color(0xFF10B981)),
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.tune_outlined),
+            tooltip: 'Customize Dashboard',
+            onPressed: () => _showCustomizeSheet(context, ref),
+          ),
+        ],
       ),
       body: summaryAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -45,6 +64,18 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ),
         data: (summary) {
+          final sections = ref.watch(dashboardSectionsProvider);
+          final showWeather = sections['weather'] ?? true;
+          final showProductivity = sections['productivity'] ?? true;
+          final showStats = sections['stats'] ?? true;
+          final showCalendar = sections['calendar'] ?? true;
+          final showBudget = sections['budget'] ?? true;
+          final showAccounts = sections['accounts'] ?? true;
+          final showSavings = sections['savings'] ?? true;
+          final showSavingsGoals = sections['savings_goals'] ?? true;
+          final showWishlist = sections['wishlist'] ?? true;
+          final showRecent = sections['recent'] ?? true;
+
           final initials = (user?.name ?? '')
               .trim()
               .split(RegExp(r'\s+'))
@@ -246,7 +277,7 @@ class DashboardScreen extends ConsumerWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Warning: You have exceeded your monthly budget by ${formatMoney(left.abs())}!',
+                              'Warning: You have exceeded your monthly budget by ${formatMoney(left.abs(), isVault: isVault)}!',
                               style: const TextStyle(
                                 color: Colors.redAccent,
                                 fontWeight: FontWeight.bold,
@@ -309,7 +340,10 @@ class DashboardScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        formatMoney(summary.monthlyIncome),
+                                        formatMoney(
+                                          summary.monthlyIncome,
+                                          isVault: isVault,
+                                        ),
                                         style: theme.textTheme.titleLarge
                                             ?.copyWith(
                                               fontWeight: FontWeight.bold,
@@ -333,7 +367,7 @@ class DashboardScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        formatMoney(budget),
+                                        formatMoney(budget, isVault: isVault),
                                         style: theme.textTheme.titleLarge
                                             ?.copyWith(
                                               fontWeight: FontWeight.bold,
@@ -361,7 +395,7 @@ class DashboardScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        formatMoney(spent),
+                                        formatMoney(spent, isVault: isVault),
                                         style: theme.textTheme.titleLarge
                                             ?.copyWith(
                                               fontWeight: FontWeight.bold,
@@ -383,7 +417,7 @@ class DashboardScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        formatMoney(left),
+                                        formatMoney(left, isVault: isVault),
                                         style: theme.textTheme.titleLarge
                                             ?.copyWith(
                                               fontWeight: FontWeight.bold,
@@ -519,7 +553,7 @@ class DashboardScreen extends ConsumerWidget {
                         trailing: isTask || item.amount == null
                             ? null
                             : Text(
-                                '${item.isIncome == true ? '+' : '-'}${formatMoney(item.amount!)}',
+                                '${item.isIncome == true ? '+' : '-'}${formatMoney(item.amount!, isVault: isVault)}',
                                 style: TextStyle(
                                   color: item.isIncome == true
                                       ? Colors.green
@@ -551,8 +585,19 @@ class DashboardScreen extends ConsumerWidget {
                   context,
                   isDark: isDark,
                   balances: summary.accountBalances,
+                  isVault: isVault,
                 );
                 final wishlistCard = _buildWishlistCard(
+                  context,
+                  ref,
+                  isDark: isDark,
+                );
+                final savingsCard = _buildSavingsCard(
+                  context,
+                  ref,
+                  isDark: isDark,
+                );
+                final savingsGoalsCard = _buildSavingsGoalsCard(
                   context,
                   ref,
                   isDark: isDark,
@@ -572,13 +617,10 @@ class DashboardScreen extends ConsumerWidget {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    weather,
-                                    gap,
-                                    productivity,
-                                    gap,
-                                    stats,
-                                    gap,
-                                    calendar,
+                                    if (showWeather) ...[weather, gap],
+                                    if (showProductivity) ...[productivity, gap],
+                                    if (showStats) ...[stats, gap],
+                                    if (showCalendar) ...[calendar],
                                   ],
                                 ),
                               ),
@@ -588,13 +630,12 @@ class DashboardScreen extends ConsumerWidget {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    budgetCard,
-                                    const SizedBox(height: 24),
-                                    accountsCard,
-                                    const SizedBox(height: 24),
-                                    wishlistCard,
-                                    const SizedBox(height: 24),
-                                    recent,
+                                    if (showBudget) ...[budgetCard, const SizedBox(height: 24)],
+                                    if (showAccounts) ...[accountsCard, const SizedBox(height: 24)],
+                                    if (showSavings) ...[savingsCard, const SizedBox(height: 24)],
+                                    if (showSavingsGoals) ...[savingsGoalsCard, const SizedBox(height: 24)],
+                                    if (showWishlist) ...[wishlistCard, const SizedBox(height: 24)],
+                                    if (showRecent) ...[recent],
                                   ],
                                 ),
                               ),
@@ -604,21 +645,16 @@ class DashboardScreen extends ConsumerWidget {
                       : [
                           greeting,
                           const SizedBox(height: 24),
-                          weather,
-                          gap,
-                          productivity,
-                          gap,
-                          stats,
-                          gap,
-                          calendar,
-                          gap,
-                          budgetCard,
-                          gap,
-                          accountsCard,
-                          gap,
-                          wishlistCard,
-                          const SizedBox(height: 32),
-                          recent,
+                          if (showWeather) ...[weather, gap],
+                          if (showProductivity) ...[productivity, gap],
+                          if (showStats) ...[stats, gap],
+                          if (showCalendar) ...[calendar, gap],
+                          if (showBudget) ...[budgetCard, gap],
+                          if (showAccounts) ...[accountsCard, gap],
+                          if (showSavings) ...[savingsCard, gap],
+                          if (showSavingsGoals) ...[savingsGoalsCard, gap],
+                          if (showWishlist) ...[wishlistCard, const SizedBox(height: 32)],
+                          if (showRecent) ...[recent],
                         ],
                 );
               },
@@ -751,6 +787,7 @@ class DashboardScreen extends ConsumerWidget {
     BuildContext context, {
     required bool isDark,
     required Map<String, double> balances,
+    bool isVault = false,
   }) {
     final theme = Theme.of(context);
 
@@ -869,7 +906,7 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            formatMoney(balance),
+                            formatMoney(balance, isVault: isVault),
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: isNegative ? Colors.redAccent : acc.color,
@@ -895,6 +932,7 @@ class DashboardScreen extends ConsumerWidget {
     required bool isDark,
   }) {
     final stats = ref.watch(wishlistStatsProvider);
+    final isVault = ref.watch(vaultModeProvider);
     final theme = Theme.of(context);
     final percent = (stats.progress * 100).round();
 
@@ -962,7 +1000,7 @@ class DashboardScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    formatMoney(stats.totalValue),
+                    formatMoney(stats.totalValue, isVault: isVault),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -995,6 +1033,471 @@ class DashboardScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSavingsCard(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isDark,
+  }) {
+    final theme = Theme.of(context);
+    final summary = ref.watch(savingsSummaryProvider);
+    final isVault = ref.watch(vaultModeProvider);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.savings_rounded,
+                      color: Color(0xFF10B981),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Savings Vault',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: const Color(0xFF10B981),
+                ),
+                onPressed: () {
+                  ref
+                      .read(selectedTabProvider.notifier)
+                      .selectTab(AppTab.savings);
+                },
+                icon: const Icon(Icons.arrow_forward, size: 14),
+                label: const Text(
+                  'Manage',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Total Savings',
+                style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+              ),
+              Text(
+                isVault
+                    ? '৳ ••••••'
+                    : '৳ ${summary.totalSavings.toStringAsFixed(2)}',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF10B981),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: SavingsAccountMeta.accounts.map((acc) {
+              final bal = summary.byAccount[acc.key] ?? 0.0;
+              return Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: acc.color.withValues(alpha: isDark ? 0.15 : 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: acc.color.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        acc.label,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: acc.color,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isVault ? '••••' : '৳${bal.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSavingsGoalsCard(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isDark,
+  }) {
+    final theme = Theme.of(context);
+    final activeGoals = ref.watch(activeSavingsGoalsProvider);
+    final isVault = ref.watch(vaultModeProvider);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.flag_rounded,
+                      color: Color(0xFF6366F1),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Savings Goals',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: const Color(0xFF6366F1),
+                ),
+                onPressed: () {
+                  ref
+                      .read(selectedTabProvider.notifier)
+                      .selectTab(AppTab.savings);
+                },
+                icon: const Icon(Icons.arrow_forward, size: 14),
+                label: const Text(
+                  'View All',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (activeGoals.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'All goals completed or none created yet!',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...activeGoals.take(2).map((goal) {
+              final ratio = goal.progressRatio;
+              final percent = (ratio * 100).round();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          goal.title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          isVault
+                              ? '•••••• / •••••• ($percent%)'
+                              : '৳${formatMoney(goal.savedAmount)} / ৳${formatMoney(goal.targetAmount)} ($percent%)',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: ratio,
+                        minHeight: 6,
+                        backgroundColor: isDark
+                            ? Colors.white12
+                            : Colors.grey[200],
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF6366F1),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  void _showCustomizeSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final theme = Theme.of(context);
+            final isDark = theme.brightness == Brightness.dark;
+            final sections = ref.watch(dashboardSectionsProvider);
+
+            final sectionItems = [
+              (
+                key: 'weather',
+                label: 'Live Weather',
+                icon: Icons.wb_sunny_outlined,
+                color: const Color(0xFFF59E0B),
+              ),
+              (
+                key: 'productivity',
+                label: 'Productivity Score',
+                icon: Icons.speed,
+                color: const Color(0xFF10B981),
+              ),
+              (
+                key: 'stats',
+                label: "Today's Tasks & Habits",
+                icon: Icons.check_circle_outline,
+                color: const Color(0xFFA855F7),
+              ),
+              (
+                key: 'calendar',
+                label: 'Calendar & Schedule',
+                icon: Icons.calendar_month_outlined,
+                color: const Color(0xFF3B82F6),
+              ),
+              (
+                key: 'budget',
+                label: 'Budget Overview',
+                icon: Icons.pie_chart_outline,
+                color: const Color(0xFF6366F1),
+              ),
+              (
+                key: 'accounts',
+                label: 'My Accounts (Wallets)',
+                icon: Icons.account_balance_wallet_outlined,
+                color: const Color(0xFF14B8A6),
+              ),
+              (
+                key: 'savings',
+                label: 'Savings Vault',
+                icon: Icons.savings_outlined,
+                color: const Color(0xFF10B981),
+              ),
+              (
+                key: 'savings_goals',
+                label: 'Savings Goals',
+                icon: Icons.flag_outlined,
+                color: const Color(0xFF6366F1),
+              ),
+              (
+                key: 'wishlist',
+                label: 'Wishlist Targets',
+                icon: Icons.card_giftcard_outlined,
+                color: const Color(0xFFEC4899),
+              ),
+              (
+                key: 'recent',
+                label: 'Recent Activity',
+                icon: Icons.history,
+                color: const Color(0xFF8B5CF6),
+              ),
+            ];
+
+            return Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white24 : Colors.black12,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Customize Dashboard',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Choose which sections appear on your dashboard',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: isDark ? Colors.white60 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          ref
+                              .read(dashboardSectionsProvider.notifier)
+                              .resetToDefaults();
+                        },
+                        child: const Text('Reset'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: sectionItems.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1),
+                      itemBuilder: (context, idx) {
+                        final item = sectionItems[idx];
+                        final isEnabled = sections[item.key] ?? true;
+
+                        return SwitchListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          secondary: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: item.color.withValues(alpha: isDark ? 0.2 : 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(item.icon, color: item.color, size: 20),
+                          ),
+                          title: Text(
+                            item.label,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          value: isEnabled,
+                          activeThumbColor: theme.colorScheme.primary,
+                          onChanged: (_) {
+                            ref
+                                .read(dashboardSectionsProvider.notifier)
+                                .toggleSection(item.key);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -11,6 +11,9 @@ use App\Http\Controllers\HabitController;
 use App\Http\Controllers\InsightController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScanController;
+use App\Http\Controllers\BillController;
+use App\Http\Controllers\SavingsGoalController;
+use App\Http\Controllers\SavingsController;
 use App\Http\Controllers\SyncController;
 use App\Http\Controllers\WishlistController;
 
@@ -62,6 +65,15 @@ Route::prefix('v1')->group(function () {
 
         Route::apiResource('wishlist', WishlistController::class)->parameters(['wishlist' => 'wishlistItem']);
         Route::post('/wishlist/reorder', [WishlistController::class, 'reorder']);
+
+        Route::get('/savings-summary', [SavingsController::class, 'summary']);
+        Route::apiResource('savings', SavingsController::class);
+
+        Route::post('/bills/{bill}/pay', [BillController::class, 'pay']);
+        Route::apiResource('bills', BillController::class);
+
+        Route::post('/savings-goals/{savingsGoal}/contribute', [SavingsGoalController::class, 'contribute']);
+        Route::apiResource('savings-goals', SavingsGoalController::class);
         
         // Profile & Settings Routes
         Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar']);

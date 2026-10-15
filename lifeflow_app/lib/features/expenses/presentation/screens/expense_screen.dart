@@ -7,6 +7,7 @@ import '../providers/expense_provider.dart';
 import '../../../scan/presentation/scan_sheet.dart';
 import 'category_management_dialog.dart'
     show CategoryManagementDialog, categoryColor;
+import 'category_budget_dialog.dart';
 import '../../domain/expense_models.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
@@ -19,6 +20,7 @@ class ExpenseScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionsProvider);
     final chartDataAsync = ref.watch(chartDataProvider);
+    final isVault = ref.watch(vaultModeProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isWide = MediaQuery.sizeOf(context).width >= 1100;
@@ -30,6 +32,14 @@ class ExpenseScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
+          if (isVault)
+            const Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: Tooltip(
+                message: 'Vault Mode Active: Balances concealed',
+                child: Icon(Icons.shield, size: 20, color: Color(0xFF10B981)),
+              ),
+            ),
           IconButton(
             tooltip: 'Scan a receipt or notes',
             icon: const Icon(Icons.document_scanner_outlined),
@@ -89,30 +99,75 @@ class ExpenseScreen extends ConsumerWidget {
               height: 250,
               child: Center(child: Text("Couldn't load the chart.")),
             ),
-            data: (chartData) => _buildBarChart(context, chartData, isDark),
+            data: (chartData) => _buildBarChart(
+              context,
+              chartData,
+              isDark,
+              isVault: isVault,
+            ),
           );
           final chart = Column(
             children: [
               barChart,
               if (ref.watch(spendingByCategoryProvider).value
-                  case final spending?)
-                _buildCategoryBreakdown(context, spending, isDark),
+                  case final spending?) ...[
+                _buildCategoryBreakdown(
+                  context,
+                  spending,
+                  isDark,
+                  isVault: isVault,
+                ),
+                _buildCategoryBudgetsSection(
+                  context,
+                  ref,
+                  spending,
+                  isDark,
+                  theme,
+                ),
+              ],
             ],
           );
+          final searchQuery = ref.watch(transactionSearchQueryProvider);
+          final typeFilter = ref.watch(transactionTypeFilterProvider);
+          final walletFilter = ref.watch(transactionWalletFilterProvider);
+          final isFiltering = searchQuery.isNotEmpty ||
+              typeFilter != 'all' ||
+              walletFilter != 'all';
+          final filteredTransactions = ref.watch(filteredTransactionsProvider);
+
           final transactionSlivers = <Widget>[
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 8.0,
-                ),
-                child: Text(
-                  'Recent Transactions',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                padding: const EdgeInsets.fromLTRB(20.0, 12.0, 20.0, 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Transactions',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (isFiltering && transactionsAsync.value != null)
+                      Text(
+                        '${filteredTransactions.length} of ${transactionsAsync.value!.items.length}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  ],
                 ),
               ),
+            ),
+            SliverToBoxAdapter(
+              child: _TransactionSearchBar(isDark: isDark),
+            ),
+            SliverToBoxAdapter(
+              child: _TransactionFilterChips(isDark: isDark),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 6),
             ),
             transactionsAsync.when(
               loading: () => const SliverFillRemaining(
@@ -129,8 +184,8 @@ class ExpenseScreen extends ConsumerWidget {
                 ),
               ),
               data: (feed) {
-                final transactions = feed.items;
-                if (transactions.isEmpty) {
+                final allTransactions = feed.items;
+                if (allTransactions.isEmpty) {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: _EmptyState(
@@ -144,6 +199,60 @@ class ExpenseScreen extends ConsumerWidget {
                     ),
                   );
                 }
+
+                if (filteredTransactions.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 48,
+                            color: isDark ? Colors.white38 : Colors.black38,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No matching transactions',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Try adjusting your search query or filters.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: isDark ? Colors.white60 : Colors.black54,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.clear_all, size: 16),
+                            label: const Text('Reset Search & Filters'),
+                            onPressed: () {
+                              ref
+                                  .read(transactionSearchQueryProvider.notifier)
+                                  .clear();
+                              ref
+                                  .read(transactionTypeFilterProvider.notifier)
+                                  .setFilter('all');
+                              ref
+                                  .read(transactionWalletFilterProvider.notifier)
+                                  .setFilter('all');
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final transactions = filteredTransactions;
                 return SliverPadding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16.0,
@@ -152,11 +261,7 @@ class ExpenseScreen extends ConsumerWidget {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       if (index == transactions.length) {
-                        // Next page is on its way.
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
+                        return const SizedBox.shrink();
                       }
                       final tx = transactions[index];
                       final isIncome = tx.type == 'income';
@@ -217,7 +322,9 @@ class ExpenseScreen extends ConsumerWidget {
                             ),
                           ),
                           trailing: Text(
-                            '${isIncome ? '+' : '-'}${formatMoney(tx.amount, decimals: 2)}',
+                            isVault
+                                ? '••••••'
+                                : '${isIncome ? '+' : '-'}${formatMoney(tx.amount, decimals: 2)}',
                             style: TextStyle(
                               color: isIncome ? Colors.green : Colors.redAccent,
                               fontWeight: FontWeight.bold,
@@ -608,6 +715,18 @@ class ExpenseScreen extends ConsumerWidget {
                       : Colors.grey[100],
                 ),
               ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.pie_chart_outline, size: 18),
+                label: const Text('Configure Category Budgets'),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  showDialog(
+                    context: context,
+                    builder: (context) => const CategoryBudgetDialog(),
+                  );
+                },
+              ),
             ],
           ),
           actions: [
@@ -666,8 +785,9 @@ class ExpenseScreen extends ConsumerWidget {
   Widget _buildBarChart(
     BuildContext context,
     List<Map<String, dynamic>> data,
-    bool isDark,
-  ) {
+    bool isDark, {
+    bool isVault = false,
+  }) {
     if (data.isEmpty)
       return const SizedBox(
         height: 200,
@@ -769,7 +889,7 @@ class ExpenseScreen extends ConsumerWidget {
                         isDark ? Colors.white : Colors.black87,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
-                        formatMoney(rod.toY),
+                        formatMoney(rod.toY, isVault: isVault),
                         TextStyle(
                           color: isDark ? Colors.black : Colors.white,
                           fontWeight: FontWeight.bold,
@@ -854,8 +974,9 @@ class ExpenseScreen extends ConsumerWidget {
   Widget _buildCategoryBreakdown(
     BuildContext context,
     List<CategorySpending> spending,
-    bool isDark,
-  ) {
+    bool isDark, {
+    bool isVault = false,
+  }) {
     if (spending.isEmpty) return const SizedBox.shrink();
 
     // The server returns categories largest first; keep five, group the rest.
@@ -948,7 +1069,7 @@ class ExpenseScreen extends ConsumerWidget {
                           style: TextStyle(fontSize: 11, color: Colors.grey),
                         ),
                         Text(
-                          formatMoney(total),
+                          isVault ? '••••••' : formatMoney(total),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
@@ -999,6 +1120,262 @@ class ExpenseScreen extends ConsumerWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryBudgetsSection(
+    BuildContext context,
+    WidgetRef ref,
+    List<CategorySpending> spending,
+    bool isDark,
+    ThemeData theme,
+  ) {
+    final budgets = ref.watch(categoryBudgetsProvider);
+    if (budgets.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark
+                ? Colors.white10
+                : Colors.black.withValues(alpha: 0.06),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.pie_chart_outline,
+                color: Colors.amber,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Category Budgets',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Set monthly spending limits for Food, Transport, etc.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const CategoryBudgetDialog(),
+                );
+              },
+              child: const Text('Set Limits'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final spendingMap = {
+      for (final s in spending) s.name.toLowerCase(): s.total,
+    };
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: Colors.teal,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Category Budgets',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.tune, size: 20),
+                tooltip: 'Edit Budgets',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const CategoryBudgetDialog(),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          for (final entry in budgets.entries) ...[
+            Builder(
+              builder: (context) {
+                final catName = entry.key;
+                final budgetLimit = entry.value;
+                final spent = spendingMap[catName.toLowerCase()] ?? 0.0;
+                final percent = budgetLimit > 0 ? (spent / budgetLimit) : 0.0;
+                final isOver = spent > budgetLimit;
+                final isWarning = !isOver && percent >= 0.8;
+
+                final Color progressColor = isOver
+                    ? Colors.redAccent
+                    : (isWarning ? Colors.amber : const Color(0xFF10B981));
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Text(
+                                  catName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                if (isOver) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      'Exceeded',
+                                      style: TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ] else if (isWarning) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      '80%+ Used',
+                                      style: TextStyle(
+                                        color: Colors.amber,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          Text(
+                            ref.watch(vaultModeProvider)
+                                ? '•••••• / ••••••'
+                                : '${formatMoney(spent)} / ${formatMoney(budgetLimit)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isOver ? Colors.redAccent : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: (percent.clamp(0.0, 1.0)).toDouble(),
+                          minHeight: 8,
+                          backgroundColor: isDark
+                              ? Colors.white10
+                              : Colors.black.withValues(alpha: 0.06),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            progressColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isOver
+                            ? (ref.watch(vaultModeProvider)
+                                ? 'Over budget'
+                                : 'Over budget by ${formatMoney(spent - budgetLimit)}')
+                            : (ref.watch(vaultModeProvider)
+                                ? '${(percent * 100).round()}% spent'
+                                : '${formatMoney(budgetLimit - spent)} remaining (${(percent * 100).round()}%)'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isOver ? Colors.redAccent : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
         ],
       ),
     );
@@ -1171,6 +1548,193 @@ class _EmptyState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TransactionSearchBar extends ConsumerStatefulWidget {
+  final bool isDark;
+  const _TransactionSearchBar({required this.isDark});
+
+  @override
+  ConsumerState<_TransactionSearchBar> createState() =>
+      _TransactionSearchBarState();
+}
+
+class _TransactionSearchBarState extends ConsumerState<_TransactionSearchBar> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: ref.read(transactionSearchQueryProvider),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final query = ref.watch(transactionSearchQueryProvider);
+    if (_controller.text != query) {
+      _controller.text = query;
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: widget.isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: widget.isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _controller,
+        onChanged: (val) {
+          ref.read(transactionSearchQueryProvider.notifier).setQuery(val);
+        },
+        decoration: InputDecoration(
+          hintText: 'Search note, category, or amount...',
+          hintStyle: TextStyle(
+            fontSize: 14,
+            color: widget.isDark ? Colors.white38 : Colors.black38,
+          ),
+          prefixIcon: const Icon(Icons.search, size: 20),
+          suffixIcon: query.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18),
+                  onPressed: () {
+                    _controller.clear();
+                    ref.read(transactionSearchQueryProvider.notifier).clear();
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionFilterChips extends ConsumerWidget {
+  final bool isDark;
+  const _TransactionFilterChips({required this.isDark});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentType = ref.watch(transactionTypeFilterProvider);
+    final currentWallet = ref.watch(transactionWalletFilterProvider);
+
+    const walletOptions = [
+      (
+        key: 'bank',
+        label: 'Bank',
+        icon: Icons.account_balance,
+        color: Color(0xFF60A5FA),
+      ),
+      (
+        key: 'bkash',
+        label: 'bKash',
+        icon: Icons.phone_android,
+        color: Color(0xFFEC4899),
+      ),
+      (
+        key: 'nagad',
+        label: 'Nagad',
+        icon: Icons.flash_on,
+        color: Color(0xFFF59E0B),
+      ),
+      (
+        key: 'cash',
+        label: 'Cash',
+        icon: Icons.wallet,
+        color: Color(0xFF34D399),
+      ),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      child: Row(
+        children: [
+          // Type filters
+          FilterChip(
+            selected: currentType == 'all',
+            label: const Text('All Types'),
+            onSelected: (_) =>
+                ref.read(transactionTypeFilterProvider.notifier).setFilter('all'),
+          ),
+          const SizedBox(width: 6),
+          FilterChip(
+            selected: currentType == 'income',
+            avatar:
+                const Icon(Icons.arrow_downward, size: 14, color: Colors.green),
+            label: const Text('Income'),
+            onSelected: (_) => ref
+                .read(transactionTypeFilterProvider.notifier)
+                .setFilter(currentType == 'income' ? 'all' : 'income'),
+          ),
+          const SizedBox(width: 6),
+          FilterChip(
+            selected: currentType == 'expense',
+            avatar:
+                const Icon(Icons.arrow_upward, size: 14, color: Colors.redAccent),
+            label: const Text('Expense'),
+            onSelected: (_) => ref
+                .read(transactionTypeFilterProvider.notifier)
+                .setFilter(currentType == 'expense' ? 'all' : 'expense'),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            height: 20,
+            width: 1,
+            color: isDark ? Colors.white24 : Colors.black12,
+          ),
+          const SizedBox(width: 12),
+
+          // Wallet filters
+          FilterChip(
+            selected: currentWallet == 'all',
+            label: const Text('All Wallets'),
+            onSelected: (_) =>
+                ref.read(transactionWalletFilterProvider.notifier).setFilter('all'),
+          ),
+          const SizedBox(width: 6),
+          ...walletOptions.map((w) {
+            final isSelected = currentWallet == w.key;
+            return Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: FilterChip(
+                selected: isSelected,
+                avatar: Icon(w.icon, size: 14, color: w.color),
+                label: Text(w.label),
+                onSelected: (_) => ref
+                    .read(transactionWalletFilterProvider.notifier)
+                    .setFilter(isSelected ? 'all' : w.key),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

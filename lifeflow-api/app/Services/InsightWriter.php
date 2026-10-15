@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\HabitLog;
+use App\Models\Saving;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
@@ -44,6 +45,7 @@ class InsightWriter
             HabitLog::whereIn('habit_id', $user->habits()->select('id'))
                 ->where('completed_date', '>=', $range[0])->where('completed_date', '<', $range[1])->max('updated_at'),
             $user->wishlistItems()->max('updated_at'),
+            $user->savings()->max('updated_at'),
         ]);
 
         return $stamps ? Carbon::parse(max($stamps)) : null;
@@ -98,6 +100,11 @@ class InsightWriter
                 'wanted_value' => round((float) $user->wishlistItems()->where('is_purchased', false)->sum('estimated_price'), 2),
                 'high_priority_wanted' => $user->wishlistItems()->where('is_purchased', false)->where('priority', 'high')->count(),
                 'bought_items' => $user->wishlistItems()->where('is_purchased', true)->count(),
+            ],
+            'savings' => [
+                'total_saved' => round((float) ($user->savings()->where('type', 'deposit')->sum('amount') - $user->savings()->where('type', 'withdrawal')->sum('amount')), 2),
+                'period_deposits' => round((float) $user->savings()->where('type', 'deposit')->where('transaction_date', '>=', $from->toDateString())->where('transaction_date', '<=', $to->toDateString())->sum('amount'), 2),
+                'period_withdrawals' => round((float) $user->savings()->where('type', 'withdrawal')->where('transaction_date', '>=', $from->toDateString())->where('transaction_date', '<=', $to->toDateString())->sum('amount'), 2),
             ],
         ];
     }

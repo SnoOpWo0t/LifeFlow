@@ -8,6 +8,7 @@ import '../../domain/wishlist_category_utils.dart';
 import '../providers/wishlist_provider.dart';
 import '../widgets/wishlist_dialog.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 class WishlistScreen extends ConsumerStatefulWidget {
   const WishlistScreen({super.key});
@@ -35,6 +36,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
     final activeCategory = ref.watch(wishlistCategoryFilterProvider);
     final categories = ref.watch(wishlistCategoriesProvider);
     final activeSort = ref.watch(wishlistSortProvider);
+    final isVault = ref.watch(vaultModeProvider);
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -212,6 +214,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                       theme: theme,
                       isDark: isDark,
                       stats: stats,
+                      isVault: isVault,
                     ),
                   ),
                 ),
@@ -353,6 +356,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                           item: item,
                           canDrag: true,
                           dragIndex: index,
+                          isVault: isVault,
                         );
                       },
                     ),
@@ -371,6 +375,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                           isDark: isDark,
                           item: item,
                           canDrag: false,
+                          isVault: isVault,
                         );
                       }, childCount: filteredItems.length),
                     ),
@@ -388,6 +393,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
     required ThemeData theme,
     required bool isDark,
     required WishlistStats stats,
+    bool isVault = false,
   }) {
     final percent = (stats.progress * 100).round();
 
@@ -442,7 +448,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      formatMoney(stats.totalValue),
+                      formatMoney(stats.totalValue, isVault: isVault),
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
@@ -499,7 +505,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                   iconColor: const Color(0xFFF59E0B),
                   title: 'Wanted',
                   value:
-                      '${stats.wantedCount} ${stats.wantedCount == 1 ? 'item' : 'items'} · ${formatMoney(stats.wantedValue)}',
+                      '${stats.wantedCount} ${stats.wantedCount == 1 ? 'item' : 'items'} · ${formatMoney(stats.wantedValue, isVault: isVault)}',
                 ),
               ),
               const SizedBox(width: 8),
@@ -510,7 +516,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                   iconColor: const Color(0xFF10B981),
                   title: 'Purchased',
                   value:
-                      '${stats.purchasedCount} ${stats.purchasedCount == 1 ? 'item' : 'items'} · ${formatMoney(stats.purchasedValue)}',
+                      '${stats.purchasedCount} ${stats.purchasedCount == 1 ? 'item' : 'items'} · ${formatMoney(stats.purchasedValue, isVault: isVault)}',
                 ),
               ),
             ],
@@ -639,6 +645,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
     required WishlistItem item,
     required bool canDrag,
     int? dragIndex,
+    bool isVault = false,
   }) {
     final priorityColor = switch (item.priority) {
       'high' => const Color(0xFFF43F5E),
@@ -670,86 +677,91 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Interactive Checkbox / Circle
-                GestureDetector(
-                  onTap: () async {
-                    final willBePurchased = !item.isPurchased;
-                    await ref
-                        .read(wishlistProvider.notifier)
-                        .togglePurchased(item);
+                // Interactive Checkbox / Circle (aligned with top line)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: GestureDetector(
+                    onTap: () async {
+                      final willBePurchased = !item.isPurchased;
+                      await ref
+                          .read(wishlistProvider.notifier)
+                          .togglePurchased(item);
 
-                    if (willBePurchased && context.mounted) {
-                      // Offer converting to expense!
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Purchased "${item.title}"!'),
-                          action: SnackBarAction(
-                            label: 'Record Expense',
-                            textColor: Colors.amberAccent,
-                            onPressed: () {
-                              showConvertToExpenseDialog(
-                                context,
-                                ref: ref,
-                                item: item.copyWith(isPurchased: true),
-                              );
-                            },
+                      if (willBePurchased && context.mounted) {
+                        // Offer converting to expense!
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Purchased "${item.title}"!'),
+                            action: SnackBarAction(
+                              label: 'Record Expense',
+                              textColor: Colors.amberAccent,
+                              onPressed: () {
+                                showConvertToExpenseDialog(
+                                  context,
+                                  ref: ref,
+                                  item: item.copyWith(isPurchased: true),
+                                );
+                              },
+                            ),
+                            behavior: SnackBarBehavior.floating,
                           ),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: item.isPurchased
-                          ? const Color(0xFF10B981)
-                          : Colors.transparent,
-                      border: Border.all(
+                        );
+                      }
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
                         color: item.isPurchased
                             ? const Color(0xFF10B981)
-                            : Colors.grey.withValues(alpha: 0.5),
-                        width: 2,
+                            : Colors.transparent,
+                        border: Border.all(
+                          color: item.isPurchased
+                              ? const Color(0xFF10B981)
+                              : Colors.grey.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
                       ),
+                      child: item.isPurchased
+                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                          : null,
                     ),
-                    child: item.isPurchased
-                        ? const Icon(Icons.check, size: 18, color: Colors.white)
-                        : null,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
 
-                // Title, priority badge, notes, link
+                // Title (up to 2 lines), category badge, priority badge, notes, link
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Text(
+                        item.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          decoration: item.isPurchased
+                              ? TextDecoration.lineThrough
+                              : null,
+                          color: item.isPurchased
+                              ? Colors.grey
+                              : (isDark ? Colors.white : Colors.black87),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                decoration: item.isPurchased
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                color: item.isPurchased
-                                    ? Colors.grey
-                                    : (isDark ? Colors.white : Colors.black87),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
                           if (item.category != null &&
-                              item.category!.trim().isNotEmpty) ...[
-                            const SizedBox(width: 6),
+                              item.category!.trim().isNotEmpty)
                             InkWell(
                               borderRadius: BorderRadius.circular(6),
                               onTap: () {
@@ -809,8 +821,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                 ),
                               ),
                             ),
-                          ],
-                          const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -884,13 +894,14 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                 ),
                 const SizedBox(width: 10),
 
-                // Price
-                if (item.estimatedPrice != null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
+                // Trailing Column: Price on top, compact 3-dots + drag handle row below
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (item.estimatedPrice != null) ...[
                       Text(
-                        formatMoney(item.estimatedPrice!),
+                        formatMoney(item.estimatedPrice!, isVault: isVault),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -908,139 +919,163 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                      const SizedBox(height: 4),
                     ],
-                  ),
-
-                // Menu
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, size: 20),
-                  onSelected: (action) async {
-                    switch (action) {
-                      case 'record_expense':
-                        showConvertToExpenseDialog(
-                          context,
-                          ref: ref,
-                          item: item,
-                        );
-                        break;
-                      case 'edit':
-                        showWishlistDialog(context, existing: item);
-                        break;
-                      case 'toggle':
-                        await ref
-                            .read(wishlistProvider.notifier)
-                            .togglePurchased(item);
-                        break;
-                      case 'delete':
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            icon: Icon(
+                              Icons.more_vert,
+                              size: 18,
+                              color: isDark ? Colors.white60 : Colors.black54,
                             ),
-                            title: const Text('Delete Wishlist Item?'),
-                            content: Text(
-                              'Are you sure you want to remove "${item.title}" from your wishlist?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(false),
-                                child: const Text('Cancel'),
-                              ),
-                              FilledButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(true),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.redAccent,
+                            onSelected: (action) async {
+                              switch (action) {
+                                case 'record_expense':
+                                  showConvertToExpenseDialog(
+                                    context,
+                                    ref: ref,
+                                    item: item,
+                                  );
+                                  break;
+                                case 'edit':
+                                  showWishlistDialog(context, existing: item);
+                                  break;
+                                case 'toggle':
+                                  await ref
+                                      .read(wishlistProvider.notifier)
+                                      .togglePurchased(item);
+                                  break;
+                                case 'delete':
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      title: const Text('Delete Wishlist Item?'),
+                                      content: Text(
+                                        'Are you sure you want to remove "${item.title}" from your wishlist?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(true),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: Colors.redAccent,
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm == true) {
+                                    await ref
+                                        .read(wishlistProvider.notifier)
+                                        .deleteItem(item.id);
+                                  }
+                                  break;
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'record_expense',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.shopping_bag_outlined, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Record as Expense'),
+                                  ],
                                 ),
-                                child: const Text('Delete'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_outlined, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Edit Item'),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'toggle',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      item.isPurchased
+                                          ? Icons.undo
+                                          : Icons.check_circle_outline,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      item.isPurchased
+                                          ? 'Mark as Wanted'
+                                          : 'Mark as Purchased',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuDivider(),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.redAccent,
+                                      size: 18,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.redAccent),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                        );
-                        if (confirm == true) {
-                          await ref
-                              .read(wishlistProvider.notifier)
-                              .deleteItem(item.id);
-                        }
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'record_expense',
-                      child: Row(
-                        children: [
-                          Icon(Icons.shopping_bag_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text('Record as Expense'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text('Edit Item'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'toggle',
-                      child: Row(
-                        children: [
-                          Icon(
-                            item.isPurchased
-                                ? Icons.undo
-                                : Icons.check_circle_outline,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            item.isPurchased
-                                ? 'Mark as Wanted'
-                                : 'Mark as Purchased',
+                        ),
+                        if (canDrag && dragIndex != null) ...[
+                          const SizedBox(width: 2),
+                          ReorderableDragStartListener(
+                            index: dragIndex,
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.grab,
+                              child: Tooltip(
+                                message: 'Drag to reorder',
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 2,
+                                  ),
+                                  child: Icon(
+                                    Icons.drag_indicator,
+                                    size: 18,
+                                    color: isDark
+                                        ? Colors.white38
+                                        : Colors.grey[400],
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
-                      ),
-                    ),
-                    const PopupMenuDivider(),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.delete_outline,
-                            color: Colors.redAccent,
-                            size: 18,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Delete',
-                            style: TextStyle(color: Colors.redAccent),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                   ],
                 ),
-                if (canDrag && dragIndex != null)
-                  ReorderableDragStartListener(
-                    index: dragIndex,
-                    child: const MouseRegion(
-                      cursor: SystemMouseCursors.grab,
-                      child: Tooltip(
-                        message: 'Drag to reorder',
-                        child: Padding(
-                          padding: EdgeInsets.only(left: 4),
-                          child: Icon(Icons.drag_indicator, color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
