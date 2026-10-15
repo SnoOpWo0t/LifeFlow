@@ -12,6 +12,7 @@ import 'features/analytics/presentation/providers/analytics_provider.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/calendar/presentation/providers/calendar_provider.dart';
 import 'features/dashboard/presentation/providers/dashboard_provider.dart';
+import 'features/insights/data/insights_repository.dart';
 
 /// Screen index constants used across the app.
 abstract class AppTab {
@@ -70,6 +71,7 @@ class MainScreen extends ConsumerWidget {
         ref.invalidate(calendarDayProvider);
       } else if (next == AppTab.analytics) {
         ref.invalidate(weeklyAnalyticsProvider);
+        ref.invalidate(insightProvider);
       }
     });
     final bool isDesktop = MediaQuery.of(context).size.width >= 800;

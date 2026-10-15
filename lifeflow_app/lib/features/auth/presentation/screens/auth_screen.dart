@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/network/api_constants.dart';
 import '../providers/auth_provider.dart';
 
 // Brand palette, taken from the LifeFlow logo (cyan → violet on deep navy).
@@ -93,8 +95,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         message = data['message'] as String;
       } else if (error.type == DioExceptionType.connectionError ||
           error.type == DioExceptionType.connectionTimeout) {
-        message =
-            "Can't reach the LifeFlow server. Make sure the API is running.";
+        message = kIsWeb
+            ? "Can't reach the LifeFlow server. Make sure the API is running."
+            : "Can't reach the LifeFlow server. Check the server address below "
+                  'and that the API is running.';
       }
     }
 
@@ -302,9 +306,120 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 isLoading: isLoading,
                 onPressed: _submit,
               ),
+              // The web app is served next to its API; the phone app has to
+              // be told where the server is.
+              if (!kIsWeb) ...[
+                const SizedBox(height: 12),
+                const _ServerButton(),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Shows which server the app talks to, and lets you change it (e.g. to your
+/// laptop's Wi-Fi address while testing the APK).
+/// Pops the new API base URL, '' for the built-in default, or null on cancel.
+class _ServerDialog extends StatefulWidget {
+  const _ServerDialog({required this.current});
+  final String current;
+
+  @override
+  State<_ServerDialog> createState() => _ServerDialogState();
+}
+
+class _ServerDialogState extends State<_ServerDialog> {
+  late final _ctrl = TextEditingController(
+    text: widget.current.replaceFirst(RegExp(r'/api/v1$'), ''),
+  );
+  String? _error;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final url = ApiConstants.normalizeServer(_ctrl.text);
+    if (url == null) {
+      setState(() => _error = 'Enter an address like 192.168.0.105:8000');
+    } else {
+      Navigator.pop(context, url);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Server address'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Where the LifeFlow API runs, e.g. https://lifeflow-api.onrender.com '
+            "or your laptop's Wi-Fi address like 192.168.0.105:8000.",
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _ctrl,
+            autofocus: true,
+            keyboardType: TextInputType.url,
+            onSubmitted: (_) => _save(),
+            decoration: InputDecoration(
+              hintText: 'https://… or 192.168.x.x:8000',
+              errorText: _error,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, ''),
+          child: const Text('Use default'),
+        ),
+        FilledButton(onPressed: _save, child: const Text('Save')),
+      ],
+    );
+  }
+}
+
+class _ServerButton extends ConsumerStatefulWidget {
+  const _ServerButton();
+
+  @override
+  ConsumerState<_ServerButton> createState() => _ServerButtonState();
+}
+
+class _ServerButtonState extends ConsumerState<_ServerButton> {
+  Future<void> _edit(String current) async {
+    final storage = ref.read(storageServiceProvider);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => _ServerDialog(current: current),
+    );
+    if (result == null) return;
+    await storage.saveServerUrl(result.isEmpty ? null : result);
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current =
+        ref.read(storageServiceProvider).getServerUrl() ?? ApiConstants.baseUrl;
+    final host = Uri.tryParse(current)?.authority ?? current;
+
+    return TextButton.icon(
+      onPressed: () => _edit(current),
+      icon: const Icon(Icons.dns_outlined, size: 18, color: _textMuted),
+      label: Text(
+        'Server: $host',
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(color: _textMuted),
       ),
     );
   }

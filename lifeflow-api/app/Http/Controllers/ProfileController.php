@@ -109,6 +109,7 @@ class ProfileController extends Controller
                 Transaction::with('category')->where('user_id', $user->id)->orderBy('transaction_date')->get()
             ),
             'wishlist' => WishlistItemResource::collection($user->wishlistItems()->get()),
+            'ai_summaries' => $user->aiInsights()->orderBy('period_start')->get(['period', 'period_start', 'content', 'updated_at']),
         ];
 
         return response()->json($data, 200, [

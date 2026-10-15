@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\HabitController;
+use App\Http\Controllers\InsightController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScanController;
 use App\Http\Controllers\WishlistController;
@@ -33,6 +34,10 @@ Route::prefix('v1')->group(function () {
 
         // AI photo reader: receipts, notes and shopping lists -> entries to review.
         Route::post('/scan', ScanController::class);
+
+        // AI summaries: GET = saved summary (no AI call), POST = write a new one.
+        Route::get('/insights', [InsightController::class, 'show']);
+        Route::post('/insights', [InsightController::class, 'generate']);
         Route::get('/analytics/weekly', [App\Http\Controllers\AnalyticsController::class, 'weekly']);
         
         Route::apiResource('tasks', TaskController::class);

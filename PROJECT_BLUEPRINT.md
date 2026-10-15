@@ -37,6 +37,10 @@ Index: `(user_id, transaction_date)`
 ### wishlist_items
 `id`, `user_id` (foreign key, `ON DELETE CASCADE`), `title`, `note` (nullable), `estimated_price` (decimal 12,2, nullable), `priority` (`low` | `normal` | `high`), `category` (string 60, nullable), `is_purchased` (boolean), `link` (nullable), `sort_order` (integer), timestamps
 
+### ai_insights
+`id`, `user_id` (`ON DELETE CASCADE`), `period` (`week` | `month`), `period_start` (date: the Monday, or the 1st of the month), `content` (JSON: `headline`, `summary`, `highlights[]`, `suggestions[{title, detail, area}]`), timestamps (`updated_at` = when it was written)
+Unique: `(user_id, period, period_start)`: one saved summary per week or month; writing again replaces it.
+
 ### Framework tables
 `personal_access_tokens` (Sanctum API tokens), `sessions`, `cache`, `jobs`, `password_reset_tokens`
 
@@ -45,7 +49,7 @@ Index: `(user_id, transaction_date)`
 ## 2. API endpoints
 
 All under `/api/v1`. Everything except register, login and (signed) avatar links needs an `Authorization: Bearer <token>` header (Laravel Sanctum). The app also sends `X-Timezone: <IANA name>`, which the server stores on the user.
-**40 endpoints** in total. Responses are built by API Resources (`app/Http/Resources/`); single objects are returned unwrapped.
+**42 endpoints** in total. Responses are built by API Resources (`app/Http/Resources/`); single objects are returned unwrapped.
 
 ### Authentication
 | Method | Path | What it does |
@@ -109,6 +113,12 @@ All under `/api/v1`. Everything except register, login and (signed) avatar links
 |---|---|---|
 | POST | `/scan` | Read a photo with Gemini and return entries to review (nothing is saved). Body: `image` (base64), `mime_type` (jpeg/png/webp/heic), `target`: `money` or `wishlist`. Returns `{"kind": "receipt", "receipt": {merchant, date, items[], extras[], discount, total}}`, `{"kind": "notes", "notes": {date, entries[{type, name, amount, category, new_category, date}]}}` or `{"kind": "wishlist", "wishlist": {items[{title, note, price, priority, category, link}]}}`. 422 when the photo isn't a receipt, note or list; 429 after the daily limit (`GEMINI_DAILY_SCANS`, default 40); 503 when no `GEMINI_API_KEY` is set |
 
+### AI summaries
+| Method | Path | What it does |
+|---|---|---|
+| GET | `/insights?period=week\|month` | The saved summary for the current week (Mon–Sun) or month, **without calling the AI**: `{period, from, to, configured, insight: {headline, summary, highlights[], suggestions[], generated_at} \| null, stale}`. `stale` is true when tasks, transactions, check-ins or wishlist items changed after it was written. Optional `date=YYYY-MM-DD` picks another period |
+| POST | `/insights` | Write (or rewrite) that summary with Gemini from a digest of the user's own data (money vs the previous period, top categories and expenses, wallets, budget, tasks, habit check-ins, wishlist) and save it. Same body as above. 429 after the daily limit (`GEMINI_DAILY_SUMMARIES`, default 20); 503 when no key is set or the AI is busy; 502 when it fails |
+
 ### Wishlist
 | Method | Path | What it does |
 |---|---|---|
@@ -134,12 +144,12 @@ Organised by feature. Each feature has `data/` (API calls), `domain/` (models) a
 lifeflow_app/lib/
 ├── core/
 │   ├── files/          # Save downloaded files (browser download on web, Downloads folder on mobile)
-│   ├── network/        # Dio client: adds the token and X-Timezone, signs out on 401; API base URL (--dart-define)
-│   ├── storage/        # Token storage (SharedPreferences)
+│   ├── network/        # Dio client: adds the token and X-Timezone, signs out on 401; API base URL (--dart-define, or the server address chosen on the phone)
+│   ├── storage/        # Token and server address storage (SharedPreferences)
 │   ├── theme/          # Material 3 light/dark themes (Outfit font)
 │   └── utils/          # formatMoney() etc.
 ├── features/
-│   ├── auth/           # Sign in / sign up screen, AuthNotifier (loads account settings on sign-in)
+│   ├── auth/           # Sign in / sign up screen (plus "Server: …" address on phones), AuthNotifier (loads account settings on sign-in)
 │   ├── dashboard/      # Summary screen, live weather provider (Open-Meteo)
 │   ├── calendar/       # Dashboard calendar: month grid / week strip, dots per day, day details
 │   ├── tasks/          # Kanban board (lanes on desktop, lane switcher on phones)
@@ -147,17 +157,20 @@ lifeflow_app/lib/
 │   ├── wishlist/       # Dream & plan purchases: targets, priorities, custom reordering, convert to expense
 │   ├── scan/           # AI photo scanner: camera/gallery picker, review sheet (edit, untick, categories, wallet), save
 │   ├── habits/         # Habit cards, check-ins, rename/delete
-│   ├── analytics/      # Weekly charts
+│   ├── analytics/      # AI summary card + weekly charts
+│   ├── insights/       # AI summaries: repository (GET/POST /insights), models, summary card
 │   └── settings/       # Profile photo, appearance (System/Light/Dark), weather location, delete account
 ├── main.dart           # Providers, theme, signed-in vs signed-out routing
 └── main_screen.dart    # Bottom navigation (phones) / navigation rail (≥800px)
 ```
 
+**Android:** `lifeflow_app/android/` (app id `com.lifeflow.app`, label "LifeFlow", adaptive launcher icons, navy launch screen, `usesCleartextTraffic` so a phone can reach an `http://` API on the local Wi-Fi while testing, release signing from `key.properties` or the debug key). The APK is built by `.github/workflows/android.yml` (universal + arm64, uploaded as artifacts, attached to a GitHub Release on `v*` tags; optional `API_BASE_URL` and signing secrets).
+
 **Responsive breakpoints:** one-lane Kanban below 700px; navigation rail from 800px; two-column dashboard from 960px; habits grid and desktop "Add" buttons from 1000px; side-by-side charts and expense list from 1100px. Page content is capped at 1200px wide.
 
 **External services (free, no API keys):** Open-Meteo (forecast and city search), BigDataCloud (reverse geocoding for "use my location").
 
-**AI (optional, free tier with a key):** Google Gemini, called only by the API (`app/Services/Gemini.php`, models tried in order with fallback on busy/retired models). `app/Services/PhotoReader.php` holds the prompts, the JSON response schemas and the cleaning of every returned field (amounts, dates not after today, lengths, http(s) links only). Design adapted from the [Catalyst](https://github.com/HAVIC-47/catalyst-app) app.
+**AI (optional, free tier with a key):** Google Gemini, called only by the API (`app/Services/Gemini.php`, models tried in order with fallback on busy/retired models). `app/Services/InsightWriter.php` builds the summary digest (only the signed-in user's rows), the prompt and schema, and trims the reply. `app/Services/PhotoReader.php` holds the scanner's prompts, the JSON response schemas and the cleaning of every returned field (amounts, dates not after today, lengths, http(s) links only). Design adapted from the [Catalyst](https://github.com/HAVIC-47/catalyst-app) app.
 
 ---
 
@@ -173,4 +186,5 @@ These were in the original plan or came up later. See [NEXT_LEVEL_ROADMAP.md](NE
 - Custom/unlimited user-created wallet accounts (standard Cash/bKash/Nagad/Bank already built)
 - Your own calendar events and reminders (the dashboard calendar currently shows tasks, habits and money)
 - Multi-currency
-- AI assistant (natural-language task entry, spending insights)
+- AI assistant (natural-language task entry); AI summaries of the week/month are already built
+- More ideas adapted from Catalyst (mood tracking, category budgets, bills, savings goals…): checklist in [NEXT_LEVEL_ROADMAP.md, section 6](NEXT_LEVEL_ROADMAP.md#6-ideas-from-catalyst-a-friends-money-and-mood-app-checklist)

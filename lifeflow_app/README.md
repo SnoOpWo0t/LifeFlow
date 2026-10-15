@@ -1,9 +1,9 @@
 # LifeFlow App (Flutter)
 
-The web, Android and iOS client for [LifeFlow](../README.md): tasks, multi-wallet expenses, wishlist target purchases, habits, calendar, dashboard and analytics.
+The web, Android and iOS client for [LifeFlow](../README.md): tasks, multi-wallet expenses, wishlist target purchases, habits, calendar, dashboard, analytics with AI summaries, and the AI photo scanner.
 
 - **Stack:** Flutter (Dart 3), Riverpod, Dio, fl_chart, geolocator, flutter_timezone
-- **Talks to:** the Laravel API at `http://127.0.0.1:8000/api/v1` by default
+- **Talks to:** the Laravel API at `http://127.0.0.1:8000/api/v1` by default (on phones, change it with **Server: …** under the Sign in button)
 
 ## Run
 
@@ -25,15 +25,19 @@ Point a build at another API (e.g. production):
 flutter build web --release --dart-define=API_BASE_URL=https://your-api.example.com/api/v1
 ```
 
+## Android APK
+
+GitHub builds it: **Actions → Android APK → Run workflow**, then download it from the run's *Artifacts* (`.github/workflows/android.yml`). App id `com.lifeflow.app`; icons in `android/app/src/main/res/mipmap-*`; optional release signing via `android/key.properties` (see `key.properties.example`). Step by step, including testing against your laptop over Wi-Fi: [HOW_TO_RUN.md, section 5](../HOW_TO_RUN.md#5--android-app-apk).
+
 ## Tests
 
 ```bash
 flutter analyze
-flutter test        # 24 tests in test/app_test.dart
+flutter test        # 29 tests in test/app_test.dart
 ```
 
 ## Structure
 
-`lib/core/` holds shared code (API client, storage, theme, formatters). `lib/features/<feature>/` holds each feature (auth, dashboard, calendar, tasks, expenses, wishlist with custom categories & filters, habits, analytics, settings), split into `data/` (API calls), `domain/` (models) and `presentation/` (providers and screens). `lib/main_screen.dart` provides responsive navigation (ergonomic 6-destination bottom bar with a Material 3 "More" bottom sheet on phones, side rail on ≥800px) and keeps tab state active via `IndexedStack`.
+`lib/core/` holds shared code (API client, storage, theme, formatters). `lib/features/<feature>/` holds each feature (auth, dashboard, calendar, tasks, expenses, wishlist with custom categories & filters, scan, insights, habits, analytics, settings), split into `data/` (API calls), `domain/` (models) and `presentation/` (providers and screens). `lib/main_screen.dart` provides responsive navigation (ergonomic 6-destination bottom bar with a Material 3 "More" bottom sheet on phones, side rail on ≥800px) and keeps tab state active via `IndexedStack`.
 
 See [HOW_TO_RUN.md](../HOW_TO_RUN.md) for full setup and troubleshooting.

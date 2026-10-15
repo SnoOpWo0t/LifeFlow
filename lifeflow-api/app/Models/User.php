@@ -47,6 +47,11 @@ class User extends Authenticatable
         return $this->hasMany(ExpenseCategory::class);
     }
 
+    public function aiInsights()
+    {
+        return $this->hasMany(AiInsight::class);
+    }
+
     public function wishlistItems()
     {
         return $this->hasMany(WishlistItem::class);

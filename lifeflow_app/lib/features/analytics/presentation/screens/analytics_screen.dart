@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../insights/presentation/ai_summary_card.dart';
 import '../../../../core/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -46,6 +47,8 @@ class AnalyticsScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16.0),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
+                      const AiSummaryCard(),
+                      const SizedBox(height: 24),
                       _buildSummaryCards(context, analytics, isDark, theme),
                       const SizedBox(height: 24),
                       // Charts side by side on desktop, stacked on phones.

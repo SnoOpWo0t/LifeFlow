@@ -1,0 +1,8 @@
+# Copy to android/key.properties (gitignored) to sign release builds with your
+# own key. Create the keystore once with:
+#   keytool -genkey -v -keystore ~/lifeflow-release.jks -keyalg RSA \
+#     -keysize 2048 -validity 10000 -alias lifeflow
+storePassword=change-me
+keyPassword=change-me
+keyAlias=lifeflow
+storeFile=/home/you/lifeflow-release.jks

@@ -6,6 +6,7 @@ LifeFlow has two parts that run side by side:
 |---|---|---|
 | Laravel API (backend) | `lifeflow-api/` | `http://127.0.0.1:8000` |
 | Flutter web app (frontend) | `lifeflow_app/` | `http://127.0.0.1:8080` |
+| Android app (optional) | `lifeflow_app/android/` | APK built on GitHub, see [section 5](#5--android-app-apk) |
 
 Start the API first. The app expects it at `http://127.0.0.1:8000/api/v1`.
 
@@ -56,19 +57,20 @@ php artisan storage:link          # needed for profile photos
 
 After pulling new code, run `php artisan migrate` again: new versions can add database columns.
 
-### Optional: turn on the AI photo scanner
+### Optional: turn on the AI features (photo scanner and AI summaries)
 
-The **Scan** buttons (Expenses and Wishlist) need a Google Gemini API key. A free one works:
+The **Scan** buttons (Expenses and Wishlist) and the **AI summary** card (Analytics) need a Google Gemini API key. A free one works:
 
 1. Go to **https://aistudio.google.com/app/apikey**, sign in with a Google account and click **Create API key**.
 2. Put it in `lifeflow-api/.env`:
    ```
    GEMINI_API_KEY=your-key-here
    GEMINI_DAILY_SCANS=40          # photos per user per day
+   GEMINI_DAILY_SUMMARIES=20      # AI summaries written per user per day
    ```
 3. Restart the API (`php artisan serve`, or `systemctl --user restart lifeflow-api`).
 
-The key stays on the server; the app only sends the photo. Without a key, the app says scanning isn't set up and everything else works normally. Free-tier limits change, and Google may use free-tier requests to improve its models, so don't scan anything you'd consider private.
+The key stays on the server; the app only sends the photo (or, for summaries, just asks for "this week" or "this month" and the server builds the numbers from your own data). Saved summaries are shown again without calling the AI. Without a key, the app says these features aren't set up and everything else works normally. Free-tier limits change, and Google may use free-tier requests to improve its models, so don't scan anything you'd consider private.
 
 ### Set up the Flutter app
 
@@ -138,8 +140,8 @@ They don't start automatically after a reboot; run the two `systemd-run` lines a
 ## 3. Run the tests
 
 ```bash
-cd lifeflow-api && php artisan test                  # 56 backend tests
-cd lifeflow_app && flutter analyze && flutter test   # static checks + 24 Flutter tests
+cd lifeflow-api && php artisan test                  # 61 backend tests
+cd lifeflow_app && flutter analyze && flutter test   # static checks + 29 Flutter tests
 ```
 
 The same checks run automatically on GitHub for every push (`.github/workflows/ci.yml`).
@@ -158,6 +160,64 @@ Free hosting options are covered in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.m
 
 ---
 
+## 5. 📱 Android app (APK)
+
+You don't need Android Studio or Java: GitHub builds the APK for free (`.github/workflows/android.yml`).
+
+### Build and install
+
+1. Push the code to GitHub (the workflow file has to be on GitHub).
+2. On GitHub, open **Actions → Android APK → Run workflow**. Leave *API base URL* empty for now and click **Run workflow**.
+3. After about 10 minutes, open the finished run and download **LifeFlow-android** under *Artifacts*. The zip has two files:
+   - `LifeFlow-1.0.0.apk`: works on every Android phone.
+   - `LifeFlow-1.0.0-arm64.apk`: smaller, for almost every phone made since 2017.
+4. Copy one to your phone (Google Drive, USB, Telegram…) and open it. Android asks you to allow **Install unknown apps** for the app you opened it from; allow it once.
+
+To publish a download link for others, bump `version:` in `lifeflow_app/pubspec.yaml`, then push a tag: `git tag v1.0.1 && git push origin v1.0.1`. The APK is attached to a new **GitHub Release**.
+
+### Use it with the API on your laptop (before you deploy)
+
+The phone can't reach `127.0.0.1` on your laptop, so point it at the laptop's Wi-Fi address:
+
+1. Phone and laptop on the **same Wi-Fi**.
+2. Find the laptop's address: `hostname -I` (Linux, first number) or `ipconfig` (Windows, "IPv4 Address"), e.g. `192.168.0.105`.
+3. Start the API so other devices can reach it:
+   ```bash
+   cd lifeflow-api
+   php artisan serve --host=0.0.0.0 --port=8000
+   ```
+   (If it runs as the `lifeflow-api` service: `systemctl --user stop lifeflow-api`, then run the line above, or re-create the service with `--host=0.0.0.0`.) If you use a firewall: `sudo ufw allow 8000`.
+4. In the app, tap **Server: …** under the Sign in button, enter `192.168.0.105:8000` and tap **Save**. Then sign in or create an account.
+
+Only do this on a Wi-Fi you trust: plain `http://` isn't encrypted. Once the API is deployed with `https://`, use that address instead.
+
+### After you deploy the API
+
+Either type the public address into **Server: …** in the app, or bake it in so nobody has to: run the workflow again with *API base URL* set to e.g. `https://lifeflow-api.onrender.com/api/v1` (or save it once as a repository variable named `API_BASE_URL` under *Settings → Secrets and variables → Actions → Variables*).
+
+### Your own signing key (recommended before sharing)
+
+Without one, each GitHub build is signed with a new throw-away debug key, so a newer APK **won't install over an older one** ("App not installed"): uninstall first. To fix that for good, create a key once and store it as GitHub secrets:
+
+```bash
+keytool -genkey -v -keystore lifeflow-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias lifeflow
+base64 -w0 lifeflow-release.jks     # copy the output
+```
+
+Add the repository secrets `ANDROID_KEYSTORE_BASE64` (that output), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`lifeflow`) and `ANDROID_KEY_PASSWORD`. Keep the `.jks` file and passwords safe and **never commit them**: losing them means you can't update the app. (`keytool` comes with Java; if you don't have Java, any online guide for "create Android keystore" works, or skip this until you need it.) For local builds, copy `lifeflow_app/android/key.properties.example` to `key.properties` (gitignored).
+
+### Building locally instead (optional)
+
+If you install Android Studio (or the Android SDK command-line tools and Java 17), run `flutter doctor --android-licenses` once, then:
+
+```bash
+cd lifeflow_app
+flutter build apk --release --split-per-abi
+# → build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+```
+
+---
+
 ## 💡 Troubleshooting
 
 | Problem | Fix |
@@ -173,3 +233,6 @@ Free hosting options are covered in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.m
 | Old version of the app, icon or title after rebuilding | The release build caches itself in the browser (a Flutter service worker). Hard reload with **Ctrl+Shift+R**, or close and reopen the tab |
 | Scan says "isn't set up on the server yet" | Add `GEMINI_API_KEY` to `lifeflow-api/.env` and restart the API (see "Turn on the AI photo scanner") |
 | Scan says the reader is busy | Gemini's free tier is rate-limited. Wait a minute and try again |
+| AI summary says "busy" or takes long | Writing a summary takes 10–30 seconds; on the free tier Gemini is sometimes overloaded. Wait a minute and tap **Write my summary** / **Refresh** again |
+| Android app: "Can't reach the LifeFlow server" | Check the **Server: …** address under Sign in, that the API was started with `--host=0.0.0.0`, and that the phone is on the same Wi-Fi. Opening `http://<laptop-ip>:8000/up` in the phone's browser should show a page |
+| Android: "App not installed" when updating | The new APK was signed with a different key. Uninstall the old one first, or set up your own signing key (section 5) |

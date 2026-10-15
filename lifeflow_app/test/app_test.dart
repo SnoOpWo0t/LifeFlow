@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lifeflow_app/core/network/api_client.dart';
+import 'package:lifeflow_app/core/network/api_constants.dart';
 import 'package:lifeflow_app/core/storage/storage_service.dart';
 import 'package:lifeflow_app/core/utils/formatters.dart';
 import 'package:lifeflow_app/features/calendar/domain/calendar_models.dart';
@@ -11,6 +13,7 @@ import 'package:lifeflow_app/features/expenses/data/expense_repository.dart';
 import 'package:lifeflow_app/features/expenses/presentation/providers/expense_provider.dart';
 import 'package:lifeflow_app/features/scan/data/scan_repository.dart';
 import 'package:lifeflow_app/features/scan/presentation/scan_sheet.dart';
+import 'package:lifeflow_app/features/insights/domain/ai_insight.dart';
 import 'package:lifeflow_app/features/scan/domain/scan_result.dart';
 import 'package:lifeflow_app/features/settings/data/settings_repository.dart';
 import 'package:lifeflow_app/features/auth/presentation/providers/auth_provider.dart';
@@ -100,6 +103,67 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Full name'), findsOneWidget);
     expect(find.text('Create your account'), findsOneWidget);
+  });
+
+  test('server addresses typed on the phone become API URLs', () {
+    expect(
+      ApiConstants.normalizeServer(' 192.168.0.105:8000 '),
+      'http://192.168.0.105:8000/api/v1',
+    );
+    expect(
+      ApiConstants.normalizeServer('https://lifeflow-api.onrender.com/'),
+      'https://lifeflow-api.onrender.com/api/v1',
+    );
+    expect(
+      ApiConstants.normalizeServer('https://x.com/api/v1'),
+      'https://x.com/api/v1',
+    );
+    expect(ApiConstants.normalizeServer(''), isNull);
+    expect(ApiConstants.normalizeServer('ftp://x.com'), isNull);
+  });
+
+  testWidgets('the server address can be changed from the sign-in screen', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        child: const MaterialApp(home: AuthScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Server: 127.0.0.1:8000'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '192.168.0.105:8000');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Server: 192.168.0.105:8000'), findsOneWidget);
+    expect(prefs.getString('server_url'), 'http://192.168.0.105:8000/api/v1');
+  });
+
+  test('requests go to the server chosen on the phone', () async {
+    SharedPreferences.setMockInitialValues({
+      'server_url': 'http://192.168.0.105:8000/api/v1',
+    });
+    final client = ApiClient(
+      StorageService(await SharedPreferences.getInstance()),
+    );
+    late String sentTo;
+    client.dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          sentTo = options.uri.toString();
+          handler.reject(DioException(requestOptions: options));
+        },
+      ),
+    );
+    await expectLater(client.dio.get('/user'), throwsA(isA<DioException>()));
+    expect(sentTo, 'http://192.168.0.105:8000/api/v1/user');
   });
 
   group('appearance setting', () {
@@ -488,6 +552,68 @@ void main() {
       );
     },
   );
+
+  testWidgets('scan review: unpriced wishlist items can be added', (
+    tester,
+  ) async {
+    final added = <Map<String, dynamic>>[];
+    await tester.binding.setSurfaceSize(const Size(500, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          scanRepositoryProvider.overrideWithValue(_FakeWishlistScan()),
+          wishlistProvider.overrideWith(() => _RecordingWishlist(added)),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: ScanReviewSheet(bytes: [0xFF, 0xD8], target: 'wishlist'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Neither item has a price, but both count as selected.
+    expect(find.text('2 of 2 selected'), findsOneWidget);
+    await tester.tap(find.text('Add to wishlist'));
+    await tester.pumpAndSettle();
+
+    expect([for (final i in added) i['title']], ['Eggs (12)', 'Desk lamp']);
+    expect(added.first.containsKey('estimated_price'), isFalse);
+  });
+
+  test('AI summary state parses saved and missing summaries', () {
+    final saved = InsightState.fromJson({
+      'period': 'week',
+      'from': '2026-10-12',
+      'to': '2026-10-18',
+      'configured': true,
+      'stale': true,
+      'insight': {
+        'headline': 'A calm week',
+        'summary': 'You spent ৳4,500 so far.',
+        'highlights': ['Food is your top category'],
+        'suggestions': [
+          {'title': 'Cook at home', 'detail': 'Saves money.', 'area': 'money'},
+        ],
+        'generated_at': '2026-10-15T10:33:15+06:00',
+      },
+    });
+    expect(saved.insight!.headline, 'A calm week');
+    expect(saved.insight!.suggestions.single.area, 'money');
+    expect(saved.insight!.generatedAt, isNotNull);
+    expect(saved.stale, isTrue);
+
+    final none = InsightState.fromJson({
+      'period': 'month',
+      'configured': false,
+      'insight': null,
+    });
+    expect(none.insight, isNull);
+    expect(none.configured, isFalse);
+  });
 }
 
 class _MockWishlistNotifier extends AsyncNotifier<List<WishlistItem>>
@@ -562,4 +688,23 @@ class _FakeExpenseRepository implements ExpenseRepository {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeWishlistScan implements ScanRepository {
+  @override
+  Future<ScanResult> scan(List<int> bytes, String target) async =>
+      const ScannedWishlist(
+        items: [
+          ScannedWishItem(title: 'Eggs (12)', category: 'Groceries'),
+          ScannedWishItem(title: 'Desk lamp', priority: 'high'),
+        ],
+      );
+}
+
+class _RecordingWishlist extends _MockWishlistNotifier {
+  _RecordingWishlist(this.added) : super(const []);
+  final List<Map<String, dynamic>> added;
+
+  @override
+  Future<void> addItem(Map<String, dynamic> data) async => added.add(data);
 }

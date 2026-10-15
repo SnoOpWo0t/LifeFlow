@@ -287,8 +287,16 @@ class _ScanReviewSheetState extends ConsumerState<ScanReviewSheet> {
         .key;
   }
 
-  List<_Line> get _selected =>
-      _lines.where((l) => l.selected && l.value > 0).toList();
+  /// Ticked lines that can be saved: money needs an amount; a wishlist item
+  /// only needs a title (most shopping-list items have no price, and the old
+  /// amount check left "0 of N selected" with everything ticked).
+  List<_Line> get _selected => _lines
+      .where(
+        (l) =>
+            l.selected &&
+            (l.type == 'wish' ? l.name.text.trim().isNotEmpty : l.value > 0),
+      )
+      .toList();
 
   /// Discount share per selected line (receipt items only, not extras).
   Map<_Line, double> _shares() {

@@ -15,7 +15,8 @@ class ApiClient {
   static String? deviceTimezone;
 
   ApiClient(this._storageService, {this.onUnauthorized}) : _dio = Dio() {
-    _dio.options.baseUrl = ApiConstants.baseUrl;
+    _dio.options.baseUrl =
+        _storageService.getServerUrl() ?? ApiConstants.baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 10);
     _dio.options.receiveTimeout = const Duration(seconds: 10);
     _dio.options.headers = {
@@ -26,6 +27,8 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          options.baseUrl =
+              _storageService.getServerUrl() ?? ApiConstants.baseUrl;
           final token = _storageService.getToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';

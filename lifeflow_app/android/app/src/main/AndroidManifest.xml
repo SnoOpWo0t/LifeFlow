@@ -1,8 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- usesCleartextTraffic: lets the app reach an http:// API on your Wi-Fi
+         (e.g. http://192.168.0.105:8000) while testing. A deployed API should
+         use https://, which needs no exception. -->
     <application
-        android:label="lifeflow_app"
+        android:label="LifeFlow"
+        android:usesCleartextTraffic="true"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
