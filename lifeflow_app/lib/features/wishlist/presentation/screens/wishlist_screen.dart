@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../scan/presentation/scan_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/wishlist_item.dart';
@@ -86,6 +87,11 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                 ],
               ),
         actions: [
+          IconButton(
+            tooltip: 'Scan a shopping list or product screenshot',
+            icon: const Icon(Icons.document_scanner_outlined),
+            onPressed: () => startScan(context, target: 'wishlist'),
+          ),
           IconButton(
             tooltip: _isSearching ? 'Close search' : 'Search items',
             icon: Icon(_isSearching ? Icons.close : Icons.search),
@@ -265,19 +271,20 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                               isSelected: activeCategory == 'all',
                               color: theme.colorScheme.primary,
                               onTap: () => ref
-                                  .read(
-                                      wishlistCategoryFilterProvider.notifier)
+                                  .read(wishlistCategoryFilterProvider.notifier)
                                   .setCategory('all'),
                               theme: theme,
                             ),
                             ...categories.map((cat) {
                               final isSelected =
                                   activeCategory.toLowerCase() ==
-                                      cat.toLowerCase();
+                                  cat.toLowerCase();
                               final count = allItems
-                                  .where((i) =>
-                                      i.category?.trim().toLowerCase() ==
-                                      cat.toLowerCase())
+                                  .where(
+                                    (i) =>
+                                        i.category?.trim().toLowerCase() ==
+                                        cat.toLowerCase(),
+                                  )
                                   .length;
                               final color = WishlistCategoryUtils.getColor(cat);
                               final icon = WishlistCategoryUtils.getIcon(cat);
@@ -290,8 +297,9 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                   isSelected: isSelected,
                                   color: color,
                                   onTap: () => ref
-                                      .read(wishlistCategoryFilterProvider
-                                          .notifier)
+                                      .read(
+                                        wishlistCategoryFilterProvider.notifier,
+                                      )
                                       .setCategory(isSelected ? 'all' : cat),
                                   theme: theme,
                                 ),
@@ -327,6 +335,9 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                     child: ReorderableListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
+                      // Flutter's default desktop handle was drawn over the
+                      // card's edge; the card shows its own handle instead.
+                      buildDefaultDragHandles: false,
                       itemCount: filteredItems.length,
                       // ignore: deprecated_member_use
                       onReorder: (oldIndex, newIndex) {
@@ -343,6 +354,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                           isDark: isDark,
                           item: item,
                           canDrag: true,
+                          dragIndex: index,
                         );
                       },
                     ),
@@ -352,20 +364,17 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                   SliverPadding(
                     padding: const EdgeInsets.only(bottom: 80),
                     sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final item = filteredItems[index];
-                          return _buildItemCard(
-                            key: ValueKey(item.id),
-                            context: context,
-                            theme: theme,
-                            isDark: isDark,
-                            item: item,
-                            canDrag: false,
-                          );
-                        },
-                        childCount: filteredItems.length,
-                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final item = filteredItems[index];
+                        return _buildItemCard(
+                          key: ValueKey(item.id),
+                          context: context,
+                          theme: theme,
+                          isDark: isDark,
+                          item: item,
+                          canDrag: false,
+                        );
+                      }, childCount: filteredItems.length),
                     ),
                   ),
               ],
@@ -445,8 +454,10 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
@@ -490,7 +501,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                   iconColor: const Color(0xFFF59E0B),
                   title: 'Wanted',
                   value:
-                      '${stats.wantedCount} items · ${formatMoney(stats.wantedValue)}',
+                      '${stats.wantedCount} ${stats.wantedCount == 1 ? 'item' : 'items'} · ${formatMoney(stats.wantedValue)}',
                 ),
               ),
               const SizedBox(width: 8),
@@ -501,7 +512,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                   iconColor: const Color(0xFF10B981),
                   title: 'Purchased',
                   value:
-                      '${stats.purchasedCount} items · ${formatMoney(stats.purchasedValue)}',
+                      '${stats.purchasedCount} ${stats.purchasedCount == 1 ? 'item' : 'items'} · ${formatMoney(stats.purchasedValue)}',
                 ),
               ),
             ],
@@ -587,8 +598,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
           color: isSelected
               ? color.withValues(alpha: isDark ? 0.25 : 0.15)
               : (isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : Colors.black.withValues(alpha: 0.04)),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.04)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? color : Colors.transparent,
@@ -629,6 +640,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
     required bool isDark,
     required WishlistItem item,
     required bool canDrag,
+    int? dragIndex,
   }) {
     final priorityColor = switch (item.priority) {
       'high' => const Color(0xFFF43F5E),
@@ -642,8 +654,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
       _ => 'Normal',
     };
 
-    return Container(
-      key: key,
+    final card = Container(
+      key: canDrag && dragIndex != null ? null : key,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -709,11 +721,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                       ),
                     ),
                     child: item.isPurchased
-                        ? const Icon(
-                            Icons.check,
-                            size: 18,
-                            color: Colors.white,
-                          )
+                        ? const Icon(Icons.check, size: 18, color: Colors.white)
                         : null,
                   ),
                 ),
@@ -747,16 +755,21 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                             InkWell(
                               borderRadius: BorderRadius.circular(6),
                               onTap: () {
-                                final currentCat =
-                                    ref.read(wishlistCategoryFilterProvider);
+                                final currentCat = ref.read(
+                                  wishlistCategoryFilterProvider,
+                                );
                                 if (currentCat.toLowerCase() ==
                                     item.category!.trim().toLowerCase()) {
                                   ref
-                                      .read(wishlistCategoryFilterProvider.notifier)
+                                      .read(
+                                        wishlistCategoryFilterProvider.notifier,
+                                      )
                                       .setCategory('all');
                                 } else {
                                   ref
-                                      .read(wishlistCategoryFilterProvider.notifier)
+                                      .read(
+                                        wishlistCategoryFilterProvider.notifier,
+                                      )
                                       .setCategory(item.category!.trim());
                                 }
                               },
@@ -767,8 +780,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: WishlistCategoryUtils.getColor(
-                                          item.category)
-                                      .withValues(alpha: 0.15),
+                                    item.category,
+                                  ).withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Row(
@@ -776,10 +789,12 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                   children: [
                                     Icon(
                                       WishlistCategoryUtils.getIcon(
-                                          item.category),
+                                        item.category,
+                                      ),
                                       size: 10,
                                       color: WishlistCategoryUtils.getColor(
-                                          item.category),
+                                        item.category,
+                                      ),
                                     ),
                                     const SizedBox(width: 3),
                                     Text(
@@ -788,7 +803,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
                                         color: WishlistCategoryUtils.getColor(
-                                            item.category),
+                                          item.category,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -998,8 +1014,11 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline,
-                              color: Colors.redAccent, size: 18),
+                          Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                            size: 18,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'Delete',
@@ -1010,11 +1029,32 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                     ),
                   ],
                 ),
+                if (canDrag && dragIndex != null)
+                  ReorderableDragStartListener(
+                    index: dragIndex,
+                    child: const MouseRegion(
+                      cursor: SystemMouseCursors.grab,
+                      child: Tooltip(
+                        message: 'Drag to reorder',
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 4),
+                          child: Icon(Icons.drag_indicator, color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
         ),
       ),
+    );
+    if (!canDrag || dragIndex == null) return card;
+    // Long-press anywhere to drag (touch); the handle below drags right away.
+    return ReorderableDelayedDragStartListener(
+      key: key,
+      index: dragIndex,
+      child: card,
     );
   }
 
@@ -1036,11 +1076,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
               color: color.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              size: 42,
-              color: color,
-            ),
+            child: Icon(icon, size: 42, color: color),
           ),
           const SizedBox(height: 14),
           Text(

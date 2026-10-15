@@ -9,8 +9,8 @@ final wishlistRepositoryProvider = Provider<WishlistRepository>((ref) {
 
 final wishlistProvider =
     AsyncNotifierProvider<WishlistNotifier, List<WishlistItem>>(
-  WishlistNotifier.new,
-);
+      WishlistNotifier.new,
+    );
 
 class WishlistNotifier extends AsyncNotifier<List<WishlistItem>> {
   @override
@@ -104,8 +104,7 @@ class WishlistNotifier extends AsyncNotifier<List<WishlistItem>> {
 }
 
 /// Filter state: 'all', 'wanted', 'purchased'
-final wishlistFilterProvider =
-    NotifierProvider<WishlistFilterNotifier, String>(
+final wishlistFilterProvider = NotifierProvider<WishlistFilterNotifier, String>(
   WishlistFilterNotifier.new,
 );
 
@@ -119,8 +118,8 @@ class WishlistFilterNotifier extends Notifier<String> {
 /// Category filter state: 'all', or a specific category name
 final wishlistCategoryFilterProvider =
     NotifierProvider<WishlistCategoryFilterNotifier, String>(
-  WishlistCategoryFilterNotifier.new,
-);
+      WishlistCategoryFilterNotifier.new,
+    );
 
 class WishlistCategoryFilterNotifier extends Notifier<String> {
   @override
@@ -145,8 +144,7 @@ final wishlistCategoriesProvider = Provider<List<String>>((ref) {
 });
 
 /// Sort state: 'custom', 'priority', 'price_asc', 'price_desc', 'newest'
-final wishlistSortProvider =
-    NotifierProvider<WishlistSortNotifier, String>(
+final wishlistSortProvider = NotifierProvider<WishlistSortNotifier, String>(
   WishlistSortNotifier.new,
 );
 
@@ -158,8 +156,7 @@ class WishlistSortNotifier extends Notifier<String> {
 }
 
 /// Search query
-final wishlistSearchProvider =
-    NotifierProvider<WishlistSearchNotifier, String>(
+final wishlistSearchProvider = NotifierProvider<WishlistSearchNotifier, String>(
   WishlistSearchNotifier.new,
 );
 
@@ -265,20 +262,22 @@ final filteredWishlistProvider = Provider<List<WishlistItem>>((ref) {
   switch (sort) {
     case 'priority':
       int rank(String p) => switch (p.toLowerCase()) {
-            'high' => 3,
-            'normal' => 2,
-            'low' => 1,
-            _ => 0,
-          };
+        'high' => 3,
+        'normal' => 2,
+        'low' => 1,
+        _ => 0,
+      };
       sortedList.sort((a, b) => rank(b.priority).compareTo(rank(a.priority)));
       break;
     case 'price_asc':
-      sortedList.sort((a, b) =>
-          (a.estimatedPrice ?? 0).compareTo(b.estimatedPrice ?? 0));
+      sortedList.sort(
+        (a, b) => (a.estimatedPrice ?? 0).compareTo(b.estimatedPrice ?? 0),
+      );
       break;
     case 'price_desc':
-      sortedList.sort((a, b) =>
-          (b.estimatedPrice ?? 0).compareTo(a.estimatedPrice ?? 0));
+      sortedList.sort(
+        (a, b) => (b.estimatedPrice ?? 0).compareTo(a.estimatedPrice ?? 0),
+      );
       break;
     case 'newest':
       sortedList.sort((a, b) {

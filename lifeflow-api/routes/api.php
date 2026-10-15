@@ -9,6 +9,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\HabitController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ScanController;
 use App\Http\Controllers\WishlistController;
 
 Route::prefix('v1')->group(function () {
@@ -29,6 +30,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
         Route::get('/calendar', [CalendarController::class, 'month']);
         Route::get('/calendar/day', [CalendarController::class, 'day']);
+
+        // AI photo reader: receipts, notes and shopping lists -> entries to review.
+        Route::post('/scan', ScanController::class);
         Route::get('/analytics/weekly', [App\Http\Controllers\AnalyticsController::class, 'weekly']);
         
         Route::apiResource('tasks', TaskController::class);

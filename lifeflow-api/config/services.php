@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    // Photo reader (receipts, notes and shopping-list screenshots). The key
+    // stays on the server; the app never sees it. Free key: aistudio.google.com
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        // Tried in order; "model:thinkingLevel" sets Gemini's thinking level.
+        'models' => env('GEMINI_MODELS', 'gemini-3.5-flash:low,gemini-3.1-flash-lite,gemini-3.5-flash-lite'),
+        'daily_scans' => (int) env('GEMINI_DAILY_SCANS', 40),
+    ],
+
 ];

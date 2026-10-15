@@ -267,4 +267,18 @@ class WishlistTest extends TestCase
         $response->assertJsonFragment(['category' => 'Tech']);
         $this->assertEquals('Tech', $item->fresh()->category);
     }
+
+    public function test_new_items_appear_first_after_reload(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->postJson('/api/v1/wishlist', ['title' => 'Older'])->assertCreated();
+        $this->postJson('/api/v1/wishlist', ['title' => 'Newer'])->assertCreated();
+
+        // The app inserts new items at the top; the server order must agree.
+        $this->getJson('/api/v1/wishlist')
+            ->assertOk()
+            ->assertJsonPath('0.title', 'Newer')
+            ->assertJsonPath('1.title', 'Older');
+    }
 }

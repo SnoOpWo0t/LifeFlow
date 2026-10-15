@@ -483,4 +483,17 @@ class ApiTest extends TestCase
         $this->getJson('/api/v1/calendar?month=March')->assertStatus(422);
         $this->getJson('/api/v1/calendar/day')->assertStatus(422);
     }
+
+    public function test_transactions_default_to_cash_when_account_is_missing_or_null(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        $base = ['amount' => 5, 'type' => 'expense', 'transaction_date' => '2026-10-14'];
+
+        $this->postJson('/api/v1/transactions', $base + ['account' => null])
+            ->assertCreated()
+            ->assertJsonPath('account', 'cash');
+        $this->postJson('/api/v1/transactions', $base)->assertCreated()->assertJsonPath('account', 'cash');
+        $this->postJson('/api/v1/transactions', $base + ['account' => 'bkash'])->assertJsonPath('account', 'bkash');
+        $this->postJson('/api/v1/transactions', $base + ['account' => 'paypal'])->assertStatus(422);
+    }
 }

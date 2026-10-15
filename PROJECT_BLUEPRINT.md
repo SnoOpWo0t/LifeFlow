@@ -45,7 +45,7 @@ Index: `(user_id, transaction_date)`
 ## 2. API endpoints
 
 All under `/api/v1`. Everything except register, login and (signed) avatar links needs an `Authorization: Bearer <token>` header (Laravel Sanctum). The app also sends `X-Timezone: <IANA name>`, which the server stores on the user.
-**39 endpoints** in total. Responses are built by API Resources (`app/Http/Resources/`); single objects are returned unwrapped.
+**40 endpoints** in total. Responses are built by API Resources (`app/Http/Resources/`); single objects are returned unwrapped.
 
 ### Authentication
 | Method | Path | What it does |
@@ -69,7 +69,7 @@ All under `/api/v1`. Everything except register, login and (signed) avatar links
 |---|---|---|
 | GET | `/calendar?month=YYYY-MM` | Per-day activity for a month (defaults to the user's current month): `tasks_due`, `tasks_done`, `habits_done`, `spent`, `earned`, plus `habits_total`. Only days with activity are listed |
 | GET | `/calendar/day?date=YYYY-MM-DD` | Everything on one day: tasks due, each habit with `done`, and transactions |
-| GET | `/dashboard/summary` | Today's tasks (due today, overdue and open, or finished today), today's habits, this month's income/spending/budget, productivity score, recent activity |
+| GET | `/dashboard/summary` | Today's tasks (due today, overdue and open, or finished today), today's habits, this month's income/spending/budget, productivity score, recent activity, and `account_balances` (net balance per wallet: cash, bkash, nagad, bank) |
 | GET | `/analytics/weekly` | Last 7 days: income, expenses and productivity per day, weekly savings, best day |
 
 ### Tasks
@@ -98,17 +98,22 @@ All under `/api/v1`. Everything except register, login and (signed) avatar links
 | PUT | `/categories/{id}` | Rename / recolour / change type |
 | DELETE | `/categories/{id}` | Delete; its transactions are kept without a category |
 | GET | `/transactions` | Your transactions, newest first, **30 per page** (`?page=2`…): `{"data": [...], "links": {...}, "meta": {"current_page", "last_page", "total", …}}` |
-| POST | `/transactions` | Create (the category must be yours) |
+| POST | `/transactions` | Create (the category must be yours; `account` is optional and a missing or `null` account means `cash`) |
 | PUT | `/transactions/{id}` | Edit |
 | DELETE | `/transactions/{id}` | Delete |
 | GET | `/transactions/chart` | Daily income/expense totals for the last 7 days (bar chart) |
 | GET | `/transactions/by-category` | This month's spending per category, largest first (donut chart) |
 
+### AI photo scanner
+| Method | Path | What it does |
+|---|---|---|
+| POST | `/scan` | Read a photo with Gemini and return entries to review (nothing is saved). Body: `image` (base64), `mime_type` (jpeg/png/webp/heic), `target`: `money` or `wishlist`. Returns `{"kind": "receipt", "receipt": {merchant, date, items[], extras[], discount, total}}`, `{"kind": "notes", "notes": {date, entries[{type, name, amount, category, new_category, date}]}}` or `{"kind": "wishlist", "wishlist": {items[{title, note, price, priority, category, link}]}}`. 422 when the photo isn't a receipt, note or list; 429 after the daily limit (`GEMINI_DAILY_SCANS`, default 40); 503 when no `GEMINI_API_KEY` is set |
+
 ### Wishlist
 | Method | Path | What it does |
 |---|---|---|
 | GET | `/wishlist` | Your wishlist items (optional `?category=...` query filter; unpurchased first, then by sort order and creation date) |
-| POST | `/wishlist` | Create item (`title`, `estimated_price`, `priority`, `category`, `note`, `link`) |
+| POST | `/wishlist` | Create item (`title`, `estimated_price`, `priority`, `category`, `note`, `link`). New items go to the top (lowest `sort_order`), matching where the app shows them |
 | GET | `/wishlist/{id}` | Single item |
 | PUT | `/wishlist/{id}` | Edit item (change details/category or toggle `is_purchased`) |
 | DELETE | `/wishlist/{id}` | Delete item |
@@ -140,6 +145,7 @@ lifeflow_app/lib/
 │   ├── tasks/          # Kanban board (lanes on desktop, lane switcher on phones)
 │   ├── expenses/       # Transactions and categories (add/edit/delete), budget, bar + category charts
 │   ├── wishlist/       # Dream & plan purchases: targets, priorities, custom reordering, convert to expense
+│   ├── scan/           # AI photo scanner: camera/gallery picker, review sheet (edit, untick, categories, wallet), save
 │   ├── habits/         # Habit cards, check-ins, rename/delete
 │   ├── analytics/      # Weekly charts
 │   └── settings/       # Profile photo, appearance (System/Light/Dark), weather location, delete account
@@ -150,6 +156,8 @@ lifeflow_app/lib/
 **Responsive breakpoints:** one-lane Kanban below 700px; navigation rail from 800px; two-column dashboard from 960px; habits grid and desktop "Add" buttons from 1000px; side-by-side charts and expense list from 1100px. Page content is capped at 1200px wide.
 
 **External services (free, no API keys):** Open-Meteo (forecast and city search), BigDataCloud (reverse geocoding for "use my location").
+
+**AI (optional, free tier with a key):** Google Gemini, called only by the API (`app/Services/Gemini.php`, models tried in order with fallback on busy/retired models). `app/Services/PhotoReader.php` holds the prompts, the JSON response schemas and the cleaning of every returned field (amounts, dates not after today, lengths, http(s) links only). Design adapted from the [Catalyst](https://github.com/HAVIC-47/catalyst-app) app.
 
 ---
 

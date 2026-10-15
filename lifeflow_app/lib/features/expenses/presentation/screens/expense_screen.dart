@@ -3,6 +3,7 @@ import '../../../../core/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/expense_provider.dart';
+import '../../../scan/presentation/scan_sheet.dart';
 import 'category_management_dialog.dart'
     show CategoryManagementDialog, categoryColor;
 import '../../domain/expense_models.dart';
@@ -28,6 +29,11 @@ class ExpenseScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
+          IconButton(
+            tooltip: 'Scan a receipt or notes',
+            icon: const Icon(Icons.document_scanner_outlined),
+            onPressed: () => startScan(context, target: 'money'),
+          ),
           IconButton(
             tooltip: 'Set monthly budget',
             icon: const Icon(Icons.account_balance_wallet),

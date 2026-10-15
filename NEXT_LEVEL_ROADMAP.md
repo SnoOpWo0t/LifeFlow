@@ -35,6 +35,11 @@ A prioritised list of what's done and what to improve next. Everything here can 
 | `notification_service.dart` didn't compile (package never installed) | Removed; reminders will be rebuilt properly (see below) |
 | **Category colours were never saved** (the dialog always sent `"#"`) | The picked colour is saved; malformed colours fall back to grey |
 | `GET /tasks/{id}` was routed but the controller had no `show` method (crashed) | Implemented, owner-only |
+| Sending `"account": null` with a transaction crashed the API (500): the column is NOT NULL | Missing or null account now means cash; covered by a test |
+| New wishlist items appeared at the top, then jumped to the bottom after a reload (server gave them the *highest* sort order) | The server puts new items first too; covered by a test |
+| After tabs started staying alive (`IndexedStack`), Dashboard, Calendar and Analytics showed stale data until pulled to refresh | They reload whenever their tab is opened |
+| The selected tab survived logout, so the next user opened on the previous user's last tab | The tab resets to Dashboard for every sign-in |
+| Wishlist drag handles on desktop were drawn over the card's edge; "1 items" | Handle moved inside the card; correct singular/plural |
 
 ### Features & quality
 - Login page redesign with the LifeFlow logo and brand colours
@@ -51,10 +56,11 @@ A prioritised list of what's done and what to improve next. Everything here can 
 - **Export my data:** everything as JSON, or transactions as CSV
 - **Private profile photos:** signed, expiring links instead of permanent public URLs
 - **Dashboard calendar:** month at a glance (dots for tasks due, habits checked, spending) with the selected day's details; month grid on desktop, expandable week strip on phones
+- **AI photo scanner (Gemini):** take a photo or choose a screenshot of a receipt, your money notes or a shopping list; the API reads it and you review every line (edit, untick, change category, income/expense, date, wallet) before anything is saved. Receipt discounts are shared across items, missing categories are created, the key stays on the server, and each user has a daily limit. Adapted from the Catalyst app (section 6)
 - **Wishlist & target purchases:** customizable categories (e.g. Perfume, Tech, Fashion, Books), priority tiers (Low, Normal, High), estimated costs, custom drag-and-drop reordering, store link copy, target savings summary banner, category filter chips with live counts, and 1-tap conversion to recorded wallet expenses
 - **Multi-wallet accounting:** support for account/wallet types (`cash`, `bkash`, `nagad`, `bank`) on transactions with live per-wallet balances on the dashboard
 - **Decluttered mobile navigation:** ergonomic 6-destination bottom bar with a Material 3 hamburger "More" bottom sheet housing Wishlist and Settings
-- **Tab state preservation across navigation:** views remain mounted and preserve scroll and form state via `IndexedStack`
+- **Tab state preservation across navigation:** views remain mounted and preserve scroll and form state via `IndexedStack`; summary tabs (Dashboard, Analytics) refresh their data each time they're opened
 - **Responsive UI:** one-lane Kanban with "Move to…" on phones; two-column dashboard, side-by-side charts, habit grid and expense layout on desktop
 - Pull-to-refresh on every list; Retry buttons on error screens; confirmation before deletes
 - Money with thousands separators; chart axes in round numbers; chart dates like "7 Oct"
@@ -63,7 +69,7 @@ A prioritised list of what's done and what to improve next. Everything here can 
 - Login/register rate limit (10/min per IP); Laravel **Policies** for every edit/delete
 - Database indexes for dashboard and analytics queries
 - Configurable API address (`--dart-define=API_BASE_URL=...`)
-- **44 backend tests + 19 Flutter tests**, run on every push by **GitHub Actions** (`.github/workflows/ci.yml`)
+- **56 backend tests + 24 Flutter tests**, run on every push by **GitHub Actions** (`.github/workflows/ci.yml`)
 - Dead code removed (old login screen, an old unused chart function, deprecated `withOpacity`)
 
 ---
@@ -104,7 +110,7 @@ The goal is a public link that keeps working without paying or babysitting it.
 | **Sign in with Google** | Laravel Socialite + Google OAuth (free). The `users` table already has `provider` / `provider_id` columns | 🟡 | ⭐⭐⭐ |
 | **Password reset & email verification** | **Brevo** (~300 emails/day free) or **Resend** (free tier; Laravel ships a `resend` mail driver) | 🟡 | ⭐⭐ |
 | **Multi-currency** | **Frankfurter API** (free, no key, European Central Bank exchange rates) | 🟡 | ⭐⭐ |
-| **AI assistant** | **Google Gemini API** free tier, called from Laravel so the key stays on the server. "Add 'pay rent' tomorrow, high priority" → creates a task; a weekly spending summary | 🔴 | ⭐⭐⭐ |
+| **AI assistant** | **Google Gemini API** free tier (the photo scanner already uses it, so `App\Services\Gemini` can be reused), called from Laravel so the key stays on the server. "Add 'pay rent' tomorrow, high priority" → creates a task; a weekly spending summary | 🔴 | ⭐⭐⭐ |
 | **Error tracking** | **Sentry** free developer plan (Laravel + Flutter SDKs) | 🟢 | ⭐⭐ |
 | **Weather forecast** (next days) | Open-Meteo (already used): add `daily=` to the same request | 🟢 | ⭐ |
 
@@ -144,3 +150,31 @@ The goal is a public link that keeps working without paying or babysitting it.
 2. **Then:** reminders (section 2), A1 design tokens; once hosting is decided, cookie-based login (section 3).
 3. **Deploy:** section 1 (Neon + Render + Cloudflare Pages + UptimeRobot). **A live link on your CV beats any single feature.**
 4. **Stand-out features:** Google sign-in, AI assistant (Gemini free tier), multi-currency.
+
+---
+
+## 6. Ideas from Catalyst (a friend's money-and-mood app)
+
+[Catalyst](https://github.com/HAVIC-47/catalyst-app) (Flutter app + [web app](https://github.com/HAVIC-47/catalyst)) by a friend solves similar problems. LifeFlow's photo scanner is adapted from its memo and list scanners. Other features of it that would fit LifeFlow:
+
+| # | Idea | What it does in Catalyst | How it would fit LifeFlow | Effort | Impact |
+|---|---|---|---|---|---|
+| K1 | **AI summaries & suggestions** | A weekly, monthly or yearly read of money, savings, goals, bills, journal and mood, with suggestions. The server builds a digest from the user's own rows (the app never sends free text), saves the summary so it isn't regenerated, and caps requests per day | A summary card on Analytics and the dashboard, reusing `App\Services\Gemini` | 🟡 | ⭐⭐⭐ |
+| K2 | **Scan a to-do list** | A screenshot of a list becomes tickets on the board (ticked lines as done), with Undo | Add a `tasks` target to `POST /scan` and drop the items onto the Kanban board | 🟢 | ⭐⭐ |
+| K3 | **Undo after bulk adds** | A scan's items can be removed in one tap | An "Undo" action on the "Added N transactions" message | 🟢 | ⭐⭐ |
+| K4 | **Mood tracking × money** | Log a daily mood (five faces) with tags; calendar days are tinted by mood; a chart compares mood with net cash flow, with correlation | A mood row on the dashboard calendar and a chart in Analytics | 🟡 | ⭐⭐⭐ |
+| K5 | **Budgets per category** | A monthly limit per category that fills up and turns red when exceeded | LifeFlow has one overall budget; add limits per category beside the donut chart | 🟡 | ⭐⭐⭐ |
+| K6 | **Bills & recurring payments** | Due dates, recurrence, overdue / due-soon warnings, one-tap "paid" | Show bills as calendar dots; "paid" creates the expense | 🟡 | ⭐⭐⭐ |
+| K7 | **Savings goals** | Targets with progress bars and quick additions | Similar to the wishlist target, but for saving money | 🟢 | ⭐⭐ |
+| K8 | **Search & filters for transactions** | Search note, category, place and amount (even "october" or "monday"); filter by type, period, category and amount | A search bar and filter chips on Expenses (the list is already paginated server-side) | 🟡 | ⭐⭐ |
+| K9 | **Year heatmap & week view** | A 12-month heatmap of spending/income and a week view | Extra views for the dashboard calendar | 🟡 | ⭐⭐ |
+| K10 | **Customisable dashboard** | Choose which dashboard sections to show; the choice syncs | A "Dashboard sections" setting stored in `preferences` | 🟢 | ⭐⭐ |
+| K11 | **Time & place on transactions** | Each entry can have a time and a place | Two optional fields; the scanner already reads the shop name | 🟢 | ⭐ |
+| K12 | **One "+" for everything** | A centre "+" in the bottom bar opens quick entry or the scanner | A single add button on phones: transaction, task, habit or scan | 🟡 | ⭐⭐ |
+| K13 | **Board column editing** | Custom columns, drag columns left/right, numbered tickets | Let users rename and reorder Kanban columns | 🟡 | ⭐ |
+| K14 | **Encrypted token storage on phones** | The login session lives in Keystore-encrypted storage | Use `flutter_secure_storage` on Android/iOS instead of SharedPreferences | 🟢 | ⭐⭐ (security) |
+| K15 | **Downloadable Android app** | Signed, obfuscated APKs attached to every GitHub release, with a small arm64 build | A GitHub Actions job that builds and publishes `LifeFlow.apk`; great for a CV | 🟡 | ⭐⭐⭐ |
+| K16 | **Journal** | A daily log with a mood, next to custom habits | A short daily note on the Habits page | 🟢 | ⭐ |
+
+**Suggested picks first:** K3 Undo and K2 to-do scanning (small, reuse the scanner), then K5 category budgets and K6 bills (big everyday value), then K15 an installable Android app.
+

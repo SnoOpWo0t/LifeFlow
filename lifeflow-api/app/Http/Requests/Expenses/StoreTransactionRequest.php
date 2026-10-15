@@ -12,6 +12,17 @@ class StoreTransactionRequest extends FormRequest
         return true;
     }
 
+    /**
+     * The `account` column is NOT NULL (default 'cash'); an explicit null used
+     * to reach the database and crash with a 500.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('account') && $this->input('account') === null) {
+            $this->merge(['account' => 'cash']);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -23,7 +34,8 @@ class StoreTransactionRequest extends FormRequest
             ],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'type' => ['required', 'in:income,expense'],
-            'account' => ['nullable', 'in:cash,bkash,nagad,bank'],
+            // Missing or null means cash (see prepareForValidation).
+            'account' => ['sometimes', 'in:cash,bkash,nagad,bank'],
             'transaction_date' => ['required', 'date'],
             'note' => ['nullable', 'string'],
         ];

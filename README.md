@@ -50,6 +50,7 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
 - **📋 Kanban Task Manager:** *To Do*, *In Progress* and *Done* lanes with priorities and due dates. Drag and drop on desktop; a lane switcher and a "Move to…" menu on phones. Deleting asks for confirmation.
 - **💰 Expense Tracker:** income and expenses with multi-wallet account tags (`cash`, `bkash`, `nagad`, `bank`), colour-coded categories (create, edit, delete), a monthly budget, an income-vs-expense bar chart and a **spending-by-category donut** for the month. **Tap any transaction to edit or delete it.** The list loads 30 at a time as you scroll. Amounts are shown with thousands separators (`৳ 124,123`).
 - **🎁 Wishlist & Target Purchases:** track dream purchases with **customizable categories** (e.g. Perfume, Tech, Fashion, Books, etc.), set estimated prices, assign priorities (Low, Normal, High), store store links, reorder with custom sorting, filter by category or status, and seamlessly convert acquired items into wallet expense transactions with a single tap!
+- **📸 AI photo scanner:** take a photo or choose a screenshot of a **receipt**, your **money notes** (Notepad, notes apps, chats, handwriting) or a **shopping list / product page**. Google Gemini reads it (English or Bengali) and you **review every line** before anything is saved: fix names and amounts, switch income/expense, pick categories (new ones are created for you), the date and the wallet. Receipt discounts are shared across items, or save the whole receipt as one expense.
 - **🔥 Habit Tracker:** daily check-ins with a small animation (and a vibration on phones), a 7-day view and streaks **calculated from your check-in history**, so they're always accurate. Rename or delete habits from the card menu.
 - **📈 Weekly Analytics:** an income-vs-expenses line chart and a daily productivity bar chart, with clean round-number axes.
 - **🌦️ Live Weather:** search any city, or tap **"Use my current location"**. Powered by free, key-less APIs (Open-Meteo, BigDataCloud).
@@ -76,6 +77,8 @@ The UI adapts to the screen. Phones get a bottom navigation bar, a one-lane-at-a
   <img src="Screenshots/desktop-tasks.png" alt="Task manager on desktop" width="49%">
   <img src="Screenshots/desktop-expenses.png" alt="Expenses on desktop" width="49%">
   <img src="Screenshots/desktop-analytics.png" alt="Analytics on desktop" width="49%">
+  <img src="Screenshots/desktop-wishlist.png" alt="Wishlist on desktop" width="49%">
+  <img src="Screenshots/desktop-scan.png" alt="Scanning a receipt or notes" width="49%">
 </div>
 
 ### Dark mode
@@ -122,10 +125,11 @@ LifeFlow/
 │   ├── app/Http/Requests/         # Validation rules, one class per action (Form Requests)
 │   ├── app/Http/Resources/        # The exact JSON shape returned for each model (API Resources)
 │   ├── app/Http/Middleware/       # Remembers each user's timezone (X-Timezone header)
+│   ├── app/Services/              # Gemini client + photo reader (prompts, schemas, cleaning)
 │   ├── app/Policies/              # "Only the owner may edit/delete" rules
 │   ├── app/Models/                # Eloquent models
-│   ├── routes/api.php             # 39 endpoints under /api/v1
-│   ├── database/migrations/       # Database schema (13 migrations)
+│   ├── routes/api.php             # 40 endpoints under /api/v1
+│   ├── database/migrations/       # Database schema (14 migrations)
 │   └── tests/Feature/             # Feature & API tests (ApiTest.php, WishlistTest.php)
 │
 └── lifeflow_app/                  # Frontend (Flutter)
@@ -138,6 +142,7 @@ LifeFlow/
     │   │   ├── tasks/             # Kanban board
     │   │   ├── expenses/          # Transactions, categories, budget, multi-wallet
     │   │   ├── wishlist/          # Target purchases with custom categories & expense conversion
+    │   │   ├── scan/              # AI photo scanner: pick a photo, review, save
     │   │   ├── habits/            # Habit cards and streaks
     │   │   ├── analytics/         # Weekly charts
     │   │   └── settings/          # Profile, preferences, weather location
@@ -175,17 +180,22 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 - [Open-Meteo](https://open-meteo.com/): weather forecasts and city search
 - [BigDataCloud](https://www.bigdatacloud.com/): turning your location into a city name
 
+**AI (optional, free tier)**
+
+- [Google Gemini](https://aistudio.google.com/): reads receipts, notes and shopping lists. The key lives only in the API's `.env`; the app never sees it
+
 ---
 
 ## ✅ Quality & Security
 
-- **Automated tests:** 44 backend tests (PHPUnit) and 19 Flutter tests, run on every push by GitHub Actions.
+- **Automated tests:** 56 backend tests (PHPUnit) and 24 Flutter tests, run on every push by GitHub Actions.
 - **Data isolation:** every edit and delete goes through Laravel Policies, and lists and new records are always scoped to the signed-in user, so nobody can read or change anyone else's data (covered by tests).
 - **Login protection:** passwords are hashed, login/register are limited to 10 attempts per minute, logout revokes the token on the server, and an expired session returns you to the sign-in screen.
 - **Validation:** on the server for every request (Laravel Form Requests), and in the forms before anything is sent.
 - **No data leaks in responses:** API Resources return only the fields the app needs (never internal columns such as `user_id` or `provider`).
 - **Private profile photos:** served only through signed links that expire, not a permanent public URL.
 - **Your data is yours:** export everything at any time, or delete the account and all its data.
+- **AI with guard-rails:** the scanner never saves on its own (you review first), every value Gemini returns is validated and clamped on the server, and each user has a daily photo limit so the key can't be abused.
 
 ---
 
@@ -198,6 +208,7 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 - [X]  Dashboard calendar (month at a glance + day details)
 - [X]  Delete account (with all data) and export my data (JSON / CSV)
 - [X]  Per-user timezone, paginated transactions, private profile photos
+- [X]  AI photo scanner for receipts, money notes and shopping lists (Gemini)
 - [X]  Responsive layouts for phone and desktop
 - [X]  Automated tests and CI
 - [X]  Wishlist & target purchases (custom categories, priority, drag-and-drop sort, store link, 1-tap expense conversion)
@@ -209,7 +220,7 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 - [ ]  AI assistant for adding tasks in plain language
 - [ ]  Public deployment (free hosting)
 
-The full prioritised list, all of it doable for free, is in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md).
+The full prioritised list, all of it doable for free, is in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md), including ideas from the [Catalyst](https://github.com/HAVIC-47/catalyst-app) app (AI summaries, mood tracking, category budgets, bills, an installable Android app…).
 
 ---
 
@@ -233,6 +244,8 @@ php artisan key:generate
 touch database/database.sqlite
 php artisan migrate
 php artisan storage:link
+# Optional: AI photo scanning. Put a free key from aistudio.google.com in .env:
+# GEMINI_API_KEY=your-key
 php artisan serve                     # → http://127.0.0.1:8000
 ```
 

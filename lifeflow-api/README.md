@@ -4,7 +4,7 @@ The REST backend for [LifeFlow](../README.md): authentication, tasks, habits, ex
 
 - **Stack:** Laravel 13, PHP 8.3+, Laravel Sanctum (API tokens)
 - **Database:** SQLite locally (`database/database.sqlite`), PostgreSQL in production
-- **Endpoints:** 39, all under `/api/v1`, listed in [PROJECT_BLUEPRINT.md](../PROJECT_BLUEPRINT.md)
+- **Endpoints:** 40, all under `/api/v1`, listed in [PROJECT_BLUEPRINT.md](../PROJECT_BLUEPRINT.md)
 
 ## Setup
 
@@ -18,6 +18,8 @@ php artisan storage:link
 php artisan serve                    # → http://127.0.0.1:8000
 ```
 
+Optional: set `GEMINI_API_KEY` in `.env` (free key from https://aistudio.google.com/app/apikey) to turn on the photo scanner (`POST /api/v1/scan`). Without it, scanning answers 503 and everything else works.
+
 Each user's "today" (habits, dashboard, weekly analytics) follows the timezone the app reports in its `X-Timezone` header, stored per user. `APP_TIMEZONE` in `.env` (default `Asia/Dhaka`) is only the fallback.
 
 ## Tests
@@ -26,7 +28,7 @@ Each user's "today" (habits, dashboard, weekly analytics) follows the timezone t
 php artisan test
 ```
 
-44 tests (`tests/Feature/ApiTest.php` and `tests/Feature/WishlistTest.php` plus Laravel's examples), on an in-memory SQLite database. They cover auth, rate limiting, token revocation, account deletion, data export, wishlist CRUD, custom category tagging & filtering, custom ordering, per-user data isolation (tasks, habits, transactions, categories, wishlist), per-user timezones, pagination, signed avatar links, the calendar, validation, habit streaks and the dashboard summary. They also run on every push via GitHub Actions.
+56 tests (`tests/Feature/ApiTest.php` and `tests/Feature/WishlistTest.php` plus Laravel's examples), on an in-memory SQLite database. They cover auth, rate limiting, token revocation, account deletion, data export, wishlist CRUD, custom category tagging & filtering, custom ordering, per-user data isolation (tasks, habits, transactions, categories, wishlist), per-user timezones, pagination, signed avatar links, the calendar, the wishlist, the AI photo scanner (with Gemini faked), validation, habit streaks and the dashboard summary. They also run on every push via GitHub Actions.
 
 ## Where things are
 
@@ -37,6 +39,8 @@ php artisan test
 | `app/Http/Requests/` | Validation rules, one Form Request per action |
 | `app/Http/Resources/` | API Resources: the exact JSON returned for each model |
 | `app/Http/Middleware/UseClientTimezone.php` | Saves the user's timezone from the `X-Timezone` header |
+| `app/Services/Gemini.php` | Gemini client (key from `GEMINI_API_KEY`, model fallback) |
+| `app/Services/PhotoReader.php` | Photo scanner prompts, response schemas and output cleaning |
 | `app/Policies/` | "Only the owner may update/delete" rules for tasks, habits, transactions, categories and wishlist |
 | `app/Models/` | Eloquent models |
-| `database/migrations/` | Schema (13 migrations) |
+| `database/migrations/` | Schema (14 migrations) |

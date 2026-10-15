@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Wishlist\ReorderWishlistRequest;
 use App\Http\Requests\Wishlist\StoreWishlistItemRequest;
 use App\Http\Requests\Wishlist\UpdateWishlistItemRequest;
 use App\Http\Resources\WishlistItemResource;
@@ -40,14 +41,15 @@ class WishlistController extends Controller
 
     public function store(StoreWishlistItemRequest $request): JsonResponse
     {
-        // New items go to the top of the list.
-        $maxSort = WishlistItem::where('user_id', $request->user()->id)->max('sort_order') ?? 0;
+        // New items go to the top of the list (lowest sort_order), matching
+        // where the app shows them straight after adding.
+        $minSort = WishlistItem::where('user_id', $request->user()->id)->min('sort_order');
 
         $item = WishlistItem::create(array_merge(
             $request->validated(),
             [
                 'user_id' => $request->user()->id,
-                'sort_order' => $request->input('sort_order', $maxSort + 1),
+                'sort_order' => $request->input('sort_order', $minSort === null ? 0 : $minSort - 1),
             ],
         ));
 
@@ -73,10 +75,8 @@ class WishlistController extends Controller
     }
 
     /** Bulk-reorder: accepts { "order": [3, 1, 5, 2, ...] } (item IDs). */
-    public function reorder(Request $request): JsonResponse
+    public function reorder(ReorderWishlistRequest $request): JsonResponse
     {
-        $request->validate(['order' => ['required', 'array'], 'order.*' => ['integer']]);
-
         $userId = $request->user()->id;
         foreach ($request->input('order') as $index => $id) {
             WishlistItem::where('id', $id)->where('user_id', $userId)->update(['sort_order' => $index]);

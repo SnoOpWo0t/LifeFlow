@@ -56,6 +56,20 @@ php artisan storage:link          # needed for profile photos
 
 After pulling new code, run `php artisan migrate` again: new versions can add database columns.
 
+### Optional: turn on the AI photo scanner
+
+The **Scan** buttons (Expenses and Wishlist) need a Google Gemini API key. A free one works:
+
+1. Go to **https://aistudio.google.com/app/apikey**, sign in with a Google account and click **Create API key**.
+2. Put it in `lifeflow-api/.env`:
+   ```
+   GEMINI_API_KEY=your-key-here
+   GEMINI_DAILY_SCANS=40          # photos per user per day
+   ```
+3. Restart the API (`php artisan serve`, or `systemctl --user restart lifeflow-api`).
+
+The key stays on the server; the app only sends the photo. Without a key, the app says scanning isn't set up and everything else works normally. Free-tier limits change, and Google may use free-tier requests to improve its models, so don't scan anything you'd consider private.
+
 ### Set up the Flutter app
 
 ```bash
@@ -124,8 +138,8 @@ They don't start automatically after a reboot; run the two `systemd-run` lines a
 ## 3. Run the tests
 
 ```bash
-cd lifeflow-api && php artisan test                  # 44 backend tests
-cd lifeflow_app && flutter analyze && flutter test   # static checks + 19 Flutter tests
+cd lifeflow-api && php artisan test                  # 56 backend tests
+cd lifeflow_app && flutter analyze && flutter test   # static checks + 24 Flutter tests
 ```
 
 The same checks run automatically on GitHub for every push (`.github/workflows/ci.yml`).
@@ -157,3 +171,5 @@ Free hosting options are covered in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.m
 | `flutter run -d chrome` can't find Chrome (Flatpak Chrome on Linux) | Use `-d web-server` and open the link yourself, or create a wrapper: `printf '#!/bin/sh\nexec flatpak run com.google.Chrome "$@"\n' > ~/.local/bin/chrome && chmod +x ~/.local/bin/chrome && export CHROME_EXECUTABLE=~/.local/bin/chrome` |
 | Profile photo upload fails | Run `php artisan storage:link`. Photos are resized to 512px before upload, so PHP's 2 MB limit isn't an issue |
 | Old version of the app, icon or title after rebuilding | The release build caches itself in the browser (a Flutter service worker). Hard reload with **Ctrl+Shift+R**, or close and reopen the tab |
+| Scan says "isn't set up on the server yet" | Add `GEMINI_API_KEY` to `lifeflow-api/.env` and restart the API (see "Turn on the AI photo scanner") |
+| Scan says the reader is busy | Gemini's free tier is rate-limited. Wait a minute and try again |

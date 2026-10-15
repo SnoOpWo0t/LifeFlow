@@ -42,17 +42,19 @@ class _WishlistFormDialogState extends ConsumerState<_WishlistFormDialog> {
   @override
   void initState() {
     super.initState();
-    _titleController =
-        TextEditingController(text: widget.existing?.title ?? '');
+    _titleController = TextEditingController(
+      text: widget.existing?.title ?? '',
+    );
     _priceController = TextEditingController(
       text: widget.existing?.estimatedPrice != null
           ? (widget.existing!.estimatedPrice! % 1 == 0
-              ? widget.existing!.estimatedPrice!.toInt().toString()
-              : widget.existing!.estimatedPrice!.toString())
+                ? widget.existing!.estimatedPrice!.toInt().toString()
+                : widget.existing!.estimatedPrice!.toString())
           : '',
     );
-    _categoryController =
-        TextEditingController(text: widget.existing?.category ?? '');
+    _categoryController = TextEditingController(
+      text: widget.existing?.category ?? '',
+    );
     _linkController = TextEditingController(text: widget.existing?.link ?? '');
     _noteController = TextEditingController(text: widget.existing?.note ?? '');
     _priority = widget.existing?.priority ?? 'normal';
@@ -78,8 +80,9 @@ class _WishlistFormDialogState extends ConsumerState<_WishlistFormDialog> {
 
     final title = _titleController.text.trim();
     final rawPrice = _priceController.text.replaceAll(',', '').trim();
-    final double? estimatedPrice =
-        rawPrice.isNotEmpty ? double.tryParse(rawPrice) : null;
+    final double? estimatedPrice = rawPrice.isNotEmpty
+        ? double.tryParse(rawPrice)
+        : null;
     final category = _categoryController.text.trim();
     final link = _linkController.text.trim();
     final note = _noteController.text.trim();
@@ -217,8 +220,9 @@ class _WishlistFormDialogState extends ConsumerState<_WishlistFormDialog> {
                 // Estimated Price
                 TextFormField(
                   controller: _priceController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Estimated Price (optional)',
                     hintText: 'e.g., 4,500',
@@ -234,8 +238,7 @@ class _WishlistFormDialogState extends ConsumerState<_WishlistFormDialog> {
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) return null;
-                    final num =
-                        double.tryParse(val.replaceAll(',', '').trim());
+                    final num = double.tryParse(val.replaceAll(',', '').trim());
                     if (num == null || num < 0) {
                       return 'Please enter a valid positive number';
                     }
@@ -273,10 +276,12 @@ class _WishlistFormDialogState extends ConsumerState<_WishlistFormDialog> {
                     hintText: 'e.g., Perfume, Tech, Fashion, Books...',
                     prefixIcon: Icon(
                       WishlistCategoryUtils.getIcon(
-                          _categoryController.text.trim()),
+                        _categoryController.text.trim(),
+                      ),
                       color: _categoryController.text.trim().isNotEmpty
                           ? WishlistCategoryUtils.getColor(
-                              _categoryController.text.trim())
+                              _categoryController.text.trim(),
+                            )
                           : null,
                       size: 20,
                     ),
@@ -313,9 +318,8 @@ class _WishlistFormDialogState extends ConsumerState<_WishlistFormDialog> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: allSuggestions.map((cat) {
-                          final isSelected = _categoryController.text
-                                  .trim()
-                                  .toLowerCase() ==
+                          final isSelected =
+                              _categoryController.text.trim().toLowerCase() ==
                               cat.toLowerCase();
                           final color = WishlistCategoryUtils.getColor(cat);
                           return Padding(
@@ -339,18 +343,21 @@ class _WishlistFormDialogState extends ConsumerState<_WishlistFormDialog> {
                               selected: isSelected,
                               onSelected: (selected) {
                                 setState(() {
-                                  _categoryController.text =
-                                      selected ? cat : '';
+                                  _categoryController.text = selected
+                                      ? cat
+                                      : '';
                                 });
                               },
                               selectedColor: color.withValues(
-                                  alpha: isDark ? 0.25 : 0.15),
+                                alpha: isDark ? 0.25 : 0.15,
+                              ),
                               checkmarkColor: color,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 side: BorderSide(
-                                  color:
-                                      isSelected ? color : Colors.transparent,
+                                  color: isSelected
+                                      ? color
+                                      : Colors.transparent,
                                 ),
                               ),
                             ),
@@ -449,8 +456,9 @@ class _WishlistFormDialogState extends ConsumerState<_WishlistFormDialog> {
         FilledButton(
           onPressed: _isSaving ? null : _submit,
           style: FilledButton.styleFrom(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
           child: _isSaving
@@ -498,18 +506,13 @@ class _WishlistFormDialogState extends ConsumerState<_WishlistFormDialog> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected ? color : Colors.grey,
-              ),
+              Icon(icon, size: 16, color: isSelected ? color : Colors.grey),
               const SizedBox(width: 4),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight:
-                      isSelected ? FontWeight.bold : FontWeight.w500,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   color: isSelected ? color : Colors.grey,
                 ),
               ),
@@ -558,8 +561,8 @@ class _ConvertToExpenseDialogState
     _amountController = TextEditingController(
       text: widget.item.estimatedPrice != null
           ? (widget.item.estimatedPrice! % 1 == 0
-              ? widget.item.estimatedPrice!.toInt().toString()
-              : widget.item.estimatedPrice!.toString())
+                ? widget.item.estimatedPrice!.toInt().toString()
+                : widget.item.estimatedPrice!.toString())
           : '',
     );
     _noteController = TextEditingController(
@@ -601,9 +604,7 @@ class _ConvertToExpenseDialogState
 
       // Mark wishlist item as purchased if not already
       if (!widget.item.isPurchased) {
-        await ref
-            .read(wishlistProvider.notifier)
-            .togglePurchased(widget.item);
+        await ref.read(wishlistProvider.notifier).togglePurchased(widget.item);
       }
 
       // Invalidate relevant providers to update the dashboard & expenses immediately
@@ -674,9 +675,7 @@ class _ConvertToExpenseDialogState
             children: [
               Text(
                 'Congratulations on getting this item! Record the purchase in your LifeFlow wallet so your expenses stay accurate.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
               ),
               const SizedBox(height: 16),
               if (_errorMessage != null)
@@ -702,8 +701,9 @@ class _ConvertToExpenseDialogState
               // Actual Amount Paid
               TextField(
                 controller: _amountController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Amount Paid *',
                   prefixIcon: const Icon(Icons.attach_money, size: 20),
@@ -740,11 +740,13 @@ class _ConvertToExpenseDialogState
                   if (effectiveCategory == null &&
                       widget.item.category != null &&
                       widget.item.category!.trim().isNotEmpty) {
-                    final itemCatLower =
-                        widget.item.category!.trim().toLowerCase();
+                    final itemCatLower = widget.item.category!
+                        .trim()
+                        .toLowerCase();
                     final match = expenseCats
                         .where(
-                            (c) => c.name.trim().toLowerCase() == itemCatLower)
+                          (c) => c.name.trim().toLowerCase() == itemCatLower,
+                        )
                         .firstOrNull;
                     if (match != null) {
                       effectiveCategory = match.id;
@@ -815,8 +817,9 @@ class _ConvertToExpenseDialogState
           onPressed: _isSaving ? null : _submit,
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFF10B981),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
           child: _isSaving

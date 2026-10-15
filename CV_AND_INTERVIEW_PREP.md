@@ -23,9 +23,9 @@ Every fact below comes from the actual codebase, so you can defend each one.
 *Personal project · Sole developer* · [github.com/SnoOpWo0t/LifeFlow](https://github.com/SnoOpWo0t/LifeFlow)
 
 - Designed and built a full-stack, cross-platform app (web, Android, iOS) from one **Flutter** codebase, combining task management, multi-wallet expense tracking, wishlist targets, habit tracking and analytics.
-- Built a versioned **Laravel REST API** with **39 endpoints**, secured by **Sanctum** token authentication, **Laravel Policies** for ownership checks, and rate limiting on login.
-- Wrote **44 backend tests (PHPUnit)** and **19 Flutter tests**, run automatically on every push with **GitHub Actions** CI. They cover authentication, data isolation between users, per-user timezones, pagination, data export, wishlist CRUD, custom categories & reordering, signed links, account deletion, streak logic and validation.
-- Modelled a relational schema with **13 migrations**: cascading foreign keys, enum-constrained fields, a composite unique index that prevents duplicate daily habit check-ins, and indexes on the dashboard's hot queries.
+- Built a versioned **Laravel REST API** with **40 endpoints**, secured by **Sanctum** token authentication, **Laravel Policies** for ownership checks, and rate limiting on login.
+- Wrote **56 backend tests (PHPUnit)** and **24 Flutter tests**, run automatically on every push with **GitHub Actions** CI. They cover authentication, data isolation between users, per-user timezones, pagination, data export, wishlist CRUD, custom categories & reordering, signed links, account deletion, streak logic and validation.
+- Modelled a relational schema with **14 migrations**: cascading foreign keys, enum-constrained fields, a composite unique index that prevents duplicate daily habit check-ins, and indexes on the dashboard's hot queries.
 - Built a **Kanban task board** with drag-and-drop on desktop and a lane switcher on phones, and a **habit tracker** whose streaks are recalculated on the server from the check-in history.
 - Built an **expense tracker** with multi-wallet account support (Cash, bKash, Nagad, Bank), editable colour-coded categories and transactions, monthly budgets with over-budget warnings, and **fl_chart** bar, line and donut charts.
 - Built a **Wishlist & target purchase manager** with customizable categories (e.g. Perfume, Tech, Fashion, Books), priority tiers, estimated costs, custom drag-and-drop ordering, category filtering, and 1-tap conversion into recorded wallet expenses.
@@ -33,6 +33,7 @@ Every fact below comes from the actual codebase, so you can defend each one.
 - Structured the API with **Form Requests** for validation and **API Resources** for responses, **paginated** the transaction list (infinite scroll in the app), and served profile photos through **signed, expiring URLs**.
 - Made "today" **timezone-aware per user**: the app reports its IANA timezone and the server computes days, weeks and months in it.
 - Built a **dashboard calendar** that ties the modules together: per-day dots for tasks due, habits checked and spending (from one month-summary endpoint), with the selected day's details below.
+- Integrated **Google Gemini** to turn photos of receipts, money notes and shopping lists into reviewable entries: structured JSON output via response schemas, prompts that include the user's own categories, server-side validation of every field, model fallback, a per-user daily limit, and tests that fake the AI so CI needs no key.
 - Combined data from every module into one dashboard endpoint: a **productivity score**, today's tasks, live multi-wallet balances, a budget overview and a recent-activity feed.
 - Integrated free, key-less APIs (**Open-Meteo**, **BigDataCloud**) for live weather, with city search and device geolocation.
 - Made the UI responsive: bottom navigation and single-column layouts on phones; a navigation rail and multi-column layouts on desktop; a theme that follows the device (or a fixed Light/Dark choice).
@@ -40,9 +41,10 @@ Every fact below comes from the actual codebase, so you can defend each one.
 
 ### Option B: Shorter version (when space is tight, 3–4 bullets)
 
-- Built a cross-platform productivity app in **Flutter** (web/Android/iOS) with a **Laravel REST API** (39 endpoints), **Sanctum** auth and **Policies** for per-user data isolation.
+- Built a cross-platform productivity app in **Flutter** (web/Android/iOS) with a **Laravel REST API** (40 endpoints), **Sanctum** auth and **Policies** for per-user data isolation.
 - Built Kanban tasks, multi-wallet expense tracking with charts and budgets, wishlist purchase planning with custom categories and filters, and habit streaks derived from check-in history; responsive phone and desktop layouts with state preservation.
-- Added **44 PHPUnit + 19 Flutter tests** with **GitHub Actions** CI; found and fixed a dashboard crash and a cross-user data leak through tests.
+- Added **56 PHPUnit + 24 Flutter tests** with **GitHub Actions** CI; found and fixed a dashboard crash and a cross-user data leak through tests.
+- Added an **AI photo scanner** (Google Gemini) that turns receipts and notes screenshots into transactions after user review.
 - Integrated free public APIs for live weather with city search and geolocation.
 
 ### How to write good bullets (the formula)
@@ -53,12 +55,12 @@ Every fact below comes from the actual codebase, so you can defend each one.
 |---|---|
 | "Made a to-do app" | "Built a Kanban task board with priorities and due dates in Flutter, backed by a Laravel REST API" |
 | "Used Laravel" | "Secured the API with Sanctum token auth and Laravel Policies so users can only modify their own records" |
-| "Wrote some tests" | "Added 44 PHPUnit tests in GitHub Actions CI, which caught a dashboard crash for users without transactions" |
+| "Wrote some tests" | "Added 56 PHPUnit tests in GitHub Actions CI, which caught a dashboard crash for users without transactions" |
 
 **Strong verbs:** Designed, Built, Engineered, Implemented, Integrated, Architected, Optimised, Secured, Modelled, Diagnosed, Tested, Deployed.
 
 **Rules:**
-- **Never invent numbers.** "39 endpoints", "13 migrations" and "44 tests" are real, so use them. Don't write "10,000 users" or "40% faster" unless you measured it.
+- **Never invent numbers.** "40 endpoints", "14 migrations" and "56 tests" are real, so use them. Don't write "10,000 users" or "40% faster" unless you measured it.
 - **Add real metrics later** if you can: users after deployment, Lighthouse score, API response time, test coverage %.
 - **Always include links:** GitHub repo, live demo (once deployed), and the demo video.
 - **Put it high on the CV** if you're a student or junior. A complete, tested full-stack project is a strong signal.
@@ -68,6 +70,7 @@ Every fact below comes from the actual codebase, so you can defend each one.
 **Languages:** Dart, PHP, SQL
 **Frontend:** Flutter, Riverpod, Material 3, fl_chart, responsive design
 **Backend:** Laravel, REST API design, Laravel Sanctum, Policies, Form Requests, API Resources, pagination, signed URLs, Eloquent ORM, migrations
+**AI:** Google Gemini API (vision, structured JSON output), prompt design, output validation
 **Testing & DevOps:** PHPUnit, flutter_test, GitHub Actions CI
 **Databases:** SQLite, PostgreSQL (relational design, indexing)
 **Tools:** Git, Dio, Composer, cURL, Open-Meteo API
@@ -81,10 +84,10 @@ Every fact below comes from the actual codebase, so you can defend each one.
 | Frontend | Flutter (Dart 3), Riverpod 3, Dio, fl_chart, google_fonts, image_picker, geolocator, flutter_timezone |
 | Backend | Laravel 13 (PHP 8.3+), Laravel Sanctum, Policies, Form Requests, API Resources |
 | Database | SQLite in development; PostgreSQL for production |
-| API | 39 endpoints under `/api/v1` |
+| API | 40 endpoints under `/api/v1` |
 | Tables | users, tasks, habits, habit_logs, expense_categories, transactions, wishlist_items, personal_access_tokens (+ Laravel cache/jobs/sessions) |
-| Migrations | 13 |
-| Tests | 44 backend (PHPUnit) + 19 Flutter; GitHub Actions on every push |
+| Migrations | 14 |
+| Tests | 56 backend (PHPUnit) + 24 Flutter; GitHub Actions on every push |
 | Size | ~8,400 lines of Dart, ~2,500 lines of PHP (app code, routes, migrations) |
 | Modules | Auth, Dashboard, Calendar, Tasks, Expenses, Wishlist, Habits, Analytics, Settings/Profile |
 | Platforms | Web, Android, iOS (plus desktop scaffolding) |
@@ -145,6 +148,9 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 **Q12b. Why Form Requests and API Resources instead of validating and returning models in the controller?**
 > "Separation of concerns. A Form Request holds the validation rules for one action, so controllers only do the work, and the rules are reusable: the update request extends the create request and just makes every field optional. API Resources decide exactly which fields leave the server. Returning raw models leaked internal columns like `user_id` and `provider`, and any new column would have leaked automatically. Resources also gave me pagination metadata for free when I paginated transactions. I set `withoutWrapping()` so the JSON shape stayed the same and the app didn't need changes."
 
+**Q12c. How does the AI photo scanner work, and how do you stop the AI from writing bad data?**
+> "The app resizes the photo to about 1600px and sends it as base64 to `POST /scan`. The API calls Gemini with a system prompt that includes the user's own category names, and a **response schema**, so Gemini must answer in a fixed JSON shape (receipt, notes or wishlist items). It never trusts that answer: amounts must be positive numbers, dates must be real dates and not after the user's today, text is trimmed and length-limited, links must be http(s), and unknown categories are flagged as new. Nothing is saved on the server. The app shows every line for review: the user can fix names and amounts, untick lines, change categories or the wallet, and a receipt's discount is shared across items in whole paisa. The Gemini key lives only in the server's `.env`; each user has a daily photo limit, and if one model is busy the next is tried. Tests fake Gemini with Laravel's `Http::fake`, so CI runs without a key or network. I adapted the design from a friend's app, Catalyst, and credited it."
+
 **Q13. How is the productivity score calculated?**
 > "It averages two ratios: today's tasks done over today's tasks, and habits checked today over total habits. 'Today's tasks' means due today, overdue and still open, or finished today, where 'today' is the user's own day: the app sends its timezone and the server stores it. A ratio only counts if that category has items, so someone with no habits isn't penalised. The result is scaled to 0–100."
 
@@ -190,7 +196,7 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 ### F. Testing & quality
 
 **Q22. How did you test it?**
-> "There are 44 backend tests in PHPUnit using an in-memory SQLite database and `Sanctum::actingAs()`. They cover registration and login, the rate limit, token revocation on logout, account deletion and data export, cross-user access returning 403 for tasks, habits, transactions, wishlist items and categories, scoped category validation, habit streaks, per-user timezones (for example a user at UTC+14 checking a habit gets *their* date), pagination, signed avatar links, wishlist CRUD, custom category tagging & query filtering, custom drag-and-drop reordering, the calendar's month summary and day details, the exact fields the user endpoint returns, and the dashboard's task counts. The 19 Flutter tests cover money formatting, the weather models, colour parsing, parsing a page of transactions, wishlist custom categories, category filter providers, category icon and color styling utilities, item conversion to wallet expenses, the calendar grid, the appearance setting's migration from the old on/off switch, and a widget test of the sign-in form's validation. GitHub Actions runs all of them, plus `flutter analyze` and a web build, on every push. The tests paid off immediately: they found a dashboard crash for users with no transactions."
+> "There are 56 backend tests in PHPUnit using an in-memory SQLite database and `Sanctum::actingAs()`. They cover registration and login, the rate limit, token revocation on logout, account deletion and data export, cross-user access returning 403 for tasks, habits, transactions, wishlist items and categories, scoped category validation, habit streaks, per-user timezones (for example a user at UTC+14 checking a habit gets *their* date), pagination, signed avatar links, wishlist CRUD, custom category tagging & query filtering, custom drag-and-drop reordering, the calendar's month summary and day details, the exact fields the user endpoint returns, and the dashboard's task counts. The 24 Flutter tests cover money formatting, the weather models, colour parsing, parsing a page of transactions, wishlist custom categories, category filter providers, category icon and color styling utilities, item conversion to wallet expenses, the calendar grid, the appearance setting's migration from the old on/off switch, and a widget test of the sign-in form's validation. GitHub Actions runs all of them, plus `flutter analyze` and a web build, on every push. The tests paid off immediately: they found a dashboard crash for users with no transactions."
 
 ### G. Deployment & scaling
 
@@ -210,7 +216,7 @@ Answer in your own words. Interviewers can tell when someone is reciting, so use
 > "How the pieces of a real app fit together: API contracts between frontend and backend, why validation and authorisation belong on the server, and how valuable tests are. They found bugs I'd never have spotted by clicking around. I also learned to debug across layers: a 'frontend' bug like a vanishing avatar turned out to be a PHP server setting."
 
 **Q27. What's next for LifeFlow?**
-> Reminders and notifications, Google sign-in, password reset, PDF reports, multi-currency, an AI assistant for adding tasks in plain language, and a public deployment. See `NEXT_LEVEL_ROADMAP.md`.
+> Reminders and notifications, AI summaries of spending (reusing the scanner's Gemini service), budgets per category, bills, Google sign-in, password reset, PDF reports, multi-currency, an AI assistant for adding tasks in plain language, and a public deployment. See `NEXT_LEVEL_ROADMAP.md`.
 
 ---
 

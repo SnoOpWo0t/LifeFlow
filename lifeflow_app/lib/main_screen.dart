@@ -8,6 +8,10 @@ import 'features/analytics/presentation/screens/analytics_screen.dart';
 import 'features/wishlist/presentation/screens/wishlist_screen.dart';
 import 'features/wishlist/presentation/providers/wishlist_provider.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
+import 'features/analytics/presentation/providers/analytics_provider.dart';
+import 'features/auth/presentation/providers/auth_provider.dart';
+import 'features/calendar/presentation/providers/calendar_provider.dart';
+import 'features/dashboard/presentation/providers/dashboard_provider.dart';
 
 /// Screen index constants used across the app.
 abstract class AppTab {
@@ -22,12 +26,18 @@ abstract class AppTab {
 
 /// Global provider for the active bottom/rail navigation tab index.
 /// Allows any screen to switch tabs programmatically.
-final selectedTabProvider =
-    NotifierProvider<SelectedTabNotifier, int>(SelectedTabNotifier.new);
+final selectedTabProvider = NotifierProvider<SelectedTabNotifier, int>(
+  SelectedTabNotifier.new,
+);
 
 class SelectedTabNotifier extends Notifier<int> {
   @override
-  int build() => AppTab.dashboard;
+  int build() {
+    // Start on the dashboard for every sign-in (otherwise the next user would
+    // open on whatever tab the previous one logged out from).
+    ref.watch(authProvider.select((auth) => auth.value?.id));
+    return AppTab.dashboard;
+  }
 
   void selectTab(int index) => state = index;
 }
@@ -48,11 +58,26 @@ class MainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(selectedTabProvider);
+
+    // IndexedStack keeps every tab alive, so summary screens no longer reload
+    // on their own. Refresh them whenever they're opened, so changes made in
+    // other tabs (tasks done, habits checked, money added) show up.
+    ref.listen(selectedTabProvider, (previous, next) {
+      if (previous == next) return;
+      if (next == AppTab.dashboard) {
+        ref.invalidate(dashboardSummaryProvider);
+        ref.invalidate(calendarMonthProvider);
+        ref.invalidate(calendarDayProvider);
+      } else if (next == AppTab.analytics) {
+        ref.invalidate(weeklyAnalyticsProvider);
+      }
+    });
     final bool isDesktop = MediaQuery.of(context).size.width >= 800;
 
     // On mobile, Wishlist (5) and Settings (6) are housed inside the "More" button (nav index 5)
-    final int mobileNavIndex =
-        currentIndex <= AppTab.analytics ? currentIndex : 5;
+    final int mobileNavIndex = currentIndex <= AppTab.analytics
+        ? currentIndex
+        : 5;
 
     return Scaffold(
       body: isDesktop
@@ -126,10 +151,7 @@ class MainScreen extends ConsumerWidget {
                 ),
               ],
             )
-          : IndexedStack(
-              index: currentIndex,
-              children: _screens,
-            ),
+          : IndexedStack(index: currentIndex, children: _screens),
       bottomNavigationBar: isDesktop
           ? null
           : NavigationBar(
@@ -217,8 +239,9 @@ class MainScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.15),
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -307,16 +330,15 @@ class MainScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
-              ? theme.colorScheme.primary
-                  .withValues(alpha: isDark ? 0.2 : 0.1)
+              ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.2 : 0.1)
               : (isDark ? Colors.black12 : Colors.grey[50]),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? theme.colorScheme.primary.withValues(alpha: 0.5)
                 : (isDark
-                    ? Colors.white10
-                    : Colors.black.withValues(alpha: 0.05)),
+                      ? Colors.white10
+                      : Colors.black.withValues(alpha: 0.05)),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -341,9 +363,7 @@ class MainScreen extends ConsumerWidget {
                         title,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : null,
+                          color: isSelected ? theme.colorScheme.primary : null,
                         ),
                       ),
                       if (badgeText != null) ...[
