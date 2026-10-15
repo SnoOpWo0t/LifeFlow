@@ -102,7 +102,7 @@ The goal is a public link that keeps working without paying or babysitting it.
 ### Deployment steps (🔴 ⭐⭐⭐)
 1. ✅ Create a Neon project and copy the connection string. *(Done; tables created.)*
 2. ✅ `Dockerfile` for `lifeflow-api` (PHP 8.3 + `pdo_pgsql`) and `render.yaml`. *(Done.)*
-3. ⬜ On Render: **New → Blueprint**, pick the repo, paste `APP_KEY`, `APP_URL`, `DB_URL` (and `GEMINI_API_KEY`). Migrations run on every deploy.
+3. ✅ On Render: **New → Blueprint**, pick the repo, paste `APP_KEY`, `APP_URL`, `DB_URL` (and `GEMINI_API_KEY`). Migrations run on every deploy. *(Live at `https://lifeflow-api-06bt.onrender.com`; the APK points there.)*
 4. `flutter build web --release --dart-define=API_BASE_URL=https://<your-api>.onrender.com/api/v1`, then deploy `build/web` to Cloudflare Pages.
 5. Restrict CORS to your Pages domain (`config/cors.php`, `allowed_origins`).
 6. Add an UptimeRobot monitor on `https://<your-api>.onrender.com/up`.
@@ -155,7 +155,7 @@ The goal is a public link that keeps working without paying or babysitting it.
 
 1. **Next:** K3 undo after a scan and D3 undo after delete, K2 to-do scanning, D2 skeleton loaders. All quick and visible.
 2. **Then:** reminders (section 2), A1 design tokens; once hosting is decided, cookie-based login (section 3).
-3. **Deploy:** section 1 (Neon is done; Render, Cloudflare Pages, UptimeRobot left), then rebuild the Android APK with the public API address and set up your own signing key ([HOW_TO_RUN.md, section 5](HOW_TO_RUN.md#5--android-app-apk)). **A live link and a downloadable APK on your CV beat any single feature.**
+3. **Deploy:** section 1 (Neon and Render are done; Cloudflare Pages for the web app and UptimeRobot left), then rebuild the Android APK with the public API address and set up your own signing key ([HOW_TO_RUN.md, section 5](HOW_TO_RUN.md#5--android-app-apk)). **A live link and a downloadable APK on your CV beat any single feature.**
 4. **Stand-out features:** Google sign-in, AI assistant (Gemini free tier), multi-currency.
 
 ---

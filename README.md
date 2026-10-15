@@ -300,7 +300,7 @@ More detail (database tables, every endpoint) is in [PROJECT_BLUEPRINT.md](PROJE
 - [ ]  Multi-currency support
 - [ ]  AI assistant for adding tasks in plain language
 - [X]  Production database on Neon (PostgreSQL), verified end to end
-- [ ]  Public API on Render (Dockerfile and `render.yaml` are ready: one click plus your secrets)
+- [X]  Public API on Render (`https://lifeflow-api-06bt.onrender.com`), deployed from `render.yaml`
 
 The full prioritised list, all of it doable for free, is in [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md), including ideas from the [Catalyst](https://github.com/HAVIC-47/catalyst-app) app (mood tracking, category budgets, bills, savings goals…), with a checklist of what's already done.
 
@@ -341,7 +341,9 @@ flutter run -d web-server --web-port 8080     # → http://localhost:8080
 
 ### 3. Android app
 
-**Just want the app?** [Download LifeFlow.apk](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk), open it on your phone and allow *Install unknown apps* once. Tap **Continue without an account** to use it fully offline, or sign in to sync (the phone needs to reach an API: your laptop on the same Wi-Fi, or the deployed one).
+**Just want the app?** [Download LifeFlow.apk](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk), open it on your phone and allow *Install unknown apps* once. Then either tap **Continue without an account** (fully offline) or **Sign up**: the app is connected to the live API (`https://lifeflow-api-06bt.onrender.com`, data in Neon PostgreSQL), so accounts, sync, the AI scanner and AI summaries work anywhere. The free server sleeps when idle, so the first sign-in after a break can take up to a minute.
+
+*Updating from 1.1.0?* If you typed a server address before, tap **Server: …** on the sign-in screen and choose **Use default**.
 
 **Building it yourself** needs no Android Studio: on GitHub open **Actions → Android APK → Run workflow** (or push a `v*` tag to publish a release), then download the APK from the run's *Artifacts*. Details, including testing against your laptop over Wi-Fi, are in [HOW_TO_RUN.md](HOW_TO_RUN.md#5--android-app-apk).
 
@@ -349,7 +351,7 @@ flutter run -d web-server --web-port 8080     # → http://localhost:8080
 
 - **Development:** SQLite, nothing to set up.
 - **Production:** [Neon](https://neon.tech) PostgreSQL. Put the connection string in `DB_URL` with `DB_CONNECTION=pgsql` and run `php artisan migrate --force` (see [HOW_TO_RUN.md](HOW_TO_RUN.md#using-the-neon-postgresql-database)). Pooled Neon addresses work because PDO emulates prepared statements for PostgreSQL (`config/database.php`).
-- **API hosting:** `lifeflow-api/Dockerfile` and [`render.yaml`](render.yaml) deploy it to Render's free plan; the container runs migrations on start. On Render choose **New → Blueprint**, pick this repository and paste `APP_KEY`, `APP_URL`, `DB_URL` (and optionally `GEMINI_API_KEY`) when asked.
+- **API hosting:** live at **https://lifeflow-api-06bt.onrender.com** (Render free plan). `lifeflow-api/Dockerfile` and [`render.yaml`](render.yaml) deploy it; the container runs migrations on start and every push to `main` redeploys. To set up your own: **New → Blueprint**, pick this repository and paste `APP_KEY`, `APP_URL`, `DB_URL` (and optionally `GEMINI_API_KEY`). Render may add a suffix to the name (here `-06bt`), so copy the address from the service page.
 
 ### 5. Run the tests
 

@@ -13,7 +13,7 @@ LifeFlow has three places data can live. The app always uses the first; the serv
 |---|---|---|
 | **On the device** | sembast (a file in the app's private folder on Android; IndexedDB in the browser) | Everything you see and edit. Works with no internet, with or without an account |
 | **Your laptop** | SQLite file `lifeflow-api/database/database.sqlite` | Development. Tests use a separate in-memory SQLite database, so they never touch it |
-| **Production** | **Neon PostgreSQL** (free tier) | The shared copy your phone and the web app sync with, once the API is online |
+| **Production** | **Neon PostgreSQL** (free tier) | The shared copy your phone and the web app sync with, through the live API on Render |
 
 ### On the device (offline-first)
 
@@ -48,12 +48,12 @@ and run `php artisan migrate`. Switch back to `DB_CONNECTION=sqlite` for everyda
 | Part | Service | Catch |
 |---|---|---|
 | Database | **Neon** ✅ | Short wake-up delay after idling |
-| Laravel API | **Render** (free web service, `Dockerfile` + `render.yaml` ready) | Sleeps when idle; first request after that takes ~30–60 s (the app doesn't mind: it works offline and syncs later) |
+| Laravel API | **Render** ✅ live at `https://lifeflow-api-06bt.onrender.com` (`Dockerfile` + `render.yaml`) | Sleeps when idle; first request after that takes ~30–60 s (the app doesn't mind: it works offline and syncs later) |
 | Flutter web app | **Cloudflare Pages**, Netlify, Vercel or GitHub Pages | None that matters |
 | Android APK | GitHub Releases ([direct link](https://github.com/SnoOpWo0t/LifeFlow/releases/latest/download/LifeFlow.apk)) | Set up your own signing key before sharing updates |
 | AI (scanner + summaries) | Google Gemini free tier, key in the API's environment (`GEMINI_API_KEY`) | Rate-limited; free-tier prompts may be used by Google |
 
-On Render: **New → Blueprint**, pick the repository, and paste `APP_KEY`, `APP_URL`, `DB_URL` (Neon's pooled string) and optionally `GEMINI_API_KEY`. Then put `https://<your-api>.onrender.com/api/v1` into the app's **Server: …** setting, or rebuild the APK with it. Full steps: [HOW_TO_RUN.md](HOW_TO_RUN.md#putting-the-api-online-render-free) and [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md).
+**Live:** `https://lifeflow-api-06bt.onrender.com` (Render free plan, Docker), using Neon; checked end to end after deploy (sign-up, sync, read-back, AI configured). Set up: **New → Blueprint**, pick the repository, and paste `APP_KEY`, `APP_URL`, `DB_URL` (Neon's pooled string) and optionally `GEMINI_API_KEY`. Then put `https://<your-api>.onrender.com/api/v1` into the app's **Server: …** setting, or rebuild the APK with it. Full steps: [HOW_TO_RUN.md](HOW_TO_RUN.md#putting-the-api-online-render-free) and [NEXT_LEVEL_ROADMAP.md](NEXT_LEVEL_ROADMAP.md).
 
 ### Schema
 

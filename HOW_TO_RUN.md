@@ -181,11 +181,11 @@ No sudo? The driver can be used without installing it: `apt-get download php8.3-
 | Variable | Value |
 |---|---|
 | `APP_KEY` | output of `php artisan key:generate --show` |
-| `APP_URL` | the service address, e.g. `https://lifeflow-api.onrender.com` |
+| `APP_URL` | the service address shown under its name, e.g. `https://lifeflow-api-06bt.onrender.com` (Render adds a suffix when the plain name is taken) |
 | `DB_URL` | Neon's pooled connection string |
 | `GEMINI_API_KEY` | optional: turns on the scanner and AI summaries |
 
-Each deploy runs the migrations (over Neon's direct address) and starts the API. Then point the app at `https://<your-api>.onrender.com/api/v1`: type it under **Server: …** on the phone's sign-in screen, or rebuild the APK with it (section 5). The free plan sleeps after 15 idle minutes, so the first request afterwards takes up to a minute; the app doesn't mind, because it works offline and syncs when the server answers.
+Paste each value on **one line**: a trailing Enter used to break the start-up ("A URI cannot contain CR/LF/TAB characters"); the start script now strips it, but keep values clean. Each deploy runs the migrations (over Neon's direct address) and starts the API; check it at `https://<your-address>/up` ("Application up"). Then point the app at `https://<your-api>.onrender.com/api/v1`: type it under **Server: …** on the phone's sign-in screen, or rebuild the APK with it (section 5). The free plan sleeps after 15 idle minutes, so the first request afterwards takes up to a minute; the app doesn't mind, because it works offline and syncs when the server answers.
 
 ### Offline use and sync
 
@@ -232,7 +232,7 @@ Only do this on a Wi-Fi you trust: plain `http://` isn't encrypted. Once the API
 
 ### After you deploy the API
 
-Either type the public address into **Server: …** in the app, or bake it in so nobody has to: run the workflow again with *API base URL* set to e.g. `https://lifeflow-api.onrender.com/api/v1` (or save it once as a repository variable named `API_BASE_URL` under *Settings → Secrets and variables → Actions → Variables*).
+The APK built by the workflow already points at the live API (`https://lifeflow-api-06bt.onrender.com/api/v1`, the default in `android.yml`). For a different server, type it into **Server: …** in the app (a domain gets `https://` automatically; a laptop IP gets `http://`), or bake it in: run the workflow with *API base URL* set to e.g. `https://lifeflow-api.onrender.com/api/v1` (or save it once as a repository variable named `API_BASE_URL` under *Settings → Secrets and variables → Actions → Variables*).
 
 ### Your own signing key (recommended before sharing)
 

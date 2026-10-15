@@ -4,7 +4,7 @@ The web, Android and iOS client for [LifeFlow](../README.md): tasks, multi-walle
 
 - **Stack:** Flutter (Dart 3), Riverpod, Dio, fl_chart, geolocator, flutter_timezone
 - **Data:** stored on the device (sembast; IndexedDB on the web), so the app works offline and without an account; synced through `POST /sync` when signed in
-- **Talks to:** the Laravel API at `http://127.0.0.1:8000/api/v1` by default (on phones, change it with **Server: …** under the Sign in button)
+- **Talks to:** the live API (`https://lifeflow-api-06bt.onrender.com/api/v1`) in the released APK; `http://127.0.0.1:8000/api/v1` in local builds (on phones, change it with **Server: …** under the Sign in button)
 
 ## Run
 

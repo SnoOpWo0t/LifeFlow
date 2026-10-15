@@ -30,8 +30,9 @@ jobs:
         working-directory: lifeflow_app
     env:
       # The run's input wins, then the repository variable API_BASE_URL
-      # (Settings → Secrets and variables → Actions → Variables).
-      API_URL: ${{ inputs.api_url || vars.API_BASE_URL }}
+      # (Settings → Secrets and variables → Actions → Variables), then the
+      # live API on Render.
+      API_URL: ${{ inputs.api_url || vars.API_BASE_URL || 'https://lifeflow-api-06bt.onrender.com/api/v1' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4

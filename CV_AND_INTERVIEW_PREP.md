@@ -257,7 +257,8 @@ Fixing one or two of these before an interview gives you extra stories. Password
 - [ ] Push to GitHub and check the CI badge turns green
 - [x] Android APK download link in the README
 - [x] Launch images for LinkedIn / portfolio: `Screenshots/launch/` (use `lifeflow-social-square.jpg` for posts, `lifeflow-cover.jpg` as a banner)
-- [ ] Add a live demo link once the API is on Render
+- [x] API live on Render: https://lifeflow-api-06bt.onrender.com (the APK uses it)
+- [ ] Put the web app on Cloudflare Pages for a clickable demo link
 - [ ] Record a fresh demo video (the current GIF shows an older UI)
 - [ ] Re-read every bullet and make sure you can explain it for two minutes
 - [ ] Practise the 30-second pitch out loud
